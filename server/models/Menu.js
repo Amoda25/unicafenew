@@ -16,7 +16,7 @@ const MenuSchema = new mongoose.Schema({
         required: true
     },
     category: {
-        type: String,
+        type: [String],
         enum: ['Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Beverages'],
         required: true
     },
@@ -25,9 +25,10 @@ const MenuSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
-    isVeg: {
-        type: Boolean,
-        default: false
+    dietary: {
+        type: [String],
+        enum: ['Veg', 'Non-Veg'],
+        default: ['Veg']
     },
     availableDays: {
         type: [String],

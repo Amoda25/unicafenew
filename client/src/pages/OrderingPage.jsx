@@ -14,6 +14,9 @@ const OrderingPage = () => {
     const [cart, setCart] = useState([]);
     const [isOrdered, setIsOrdered] = useState(false);
     const [language, setLanguage] = useState('en');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [dietaryFilter, setDietaryFilter] = useState('All'); // 'All', 'Veg', 'Non-Veg'
+    const [showFilters, setShowFilters] = useState(false);
     const navigate = useNavigate();
 
     // Queue States
@@ -25,7 +28,7 @@ const OrderingPage = () => {
 
     // Form States
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const [studentId, setStudentId] = useState(user.studentId || localStorage.getItem('studentId') || '');
+    const [username, setUsername] = useState(user.username || localStorage.getItem('username') || '');
 
     useEffect(() => {
         const fetchMenu = async () => {
@@ -162,9 +165,9 @@ const OrderingPage = () => {
     const handlePlaceOrder = async (e) => {
         e.preventDefault();
         const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-        const finalStudentId = studentId || currentUser.studentId || localStorage.getItem('studentId');
+        const finalUsername = username || currentUser.username || localStorage.getItem('username');
 
-        if (!finalStudentId) {
+        if (!finalUsername) {
             alert('Please login to place an order.');
             return;
         }
@@ -173,7 +176,7 @@ const OrderingPage = () => {
 
         try {
             await axios.post('/api/orders', {
-                studentId: finalStudentId,
+                username: finalUsername,
                 items: cart.map(i => ({ name: i.name.en, quantity: i.quantity, price: i.price })),
                 totalAmount: cartTotal,
                 pickupTime: new Date(Date.now() + 20 * 60000), // fixed 20 mins for UI demo
@@ -198,18 +201,56 @@ const OrderingPage = () => {
                 {/* Top Nav */}
                 <div style={{ padding: '1.5rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 10, background: 'rgba(249, 250, 251, 0.9)', backdropFilter: 'blur(10px)' }}>
                     
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '0.5rem 1rem', width: '350px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                            <Search size={18} color="#9CA3AF" />
-                            <input 
-                                type="text" 
-                                placeholder="Search food" 
-                                style={{ border: 'none', background: 'transparent', outline: 'none', marginLeft: '0.5rem', width: '100%', fontSize: '0.9rem', color: '#4B5563' }} 
-                            />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'flex-start' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '0.5rem 1rem', width: '350px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                <Search size={18} color="#9CA3AF" />
+                                <input 
+                                    type="text" 
+                                    placeholder="Search food" 
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    style={{ border: 'none', background: 'transparent', outline: 'none', marginLeft: '0.5rem', width: '100%', fontSize: '0.9rem', color: '#4B5563' }} 
+                                />
+                            </div>
+                            <button 
+                                onClick={() => setShowFilters(!showFilters)}
+                                style={{ background: showFilters ? 'rgba(255, 199, 44, 0.15)' : 'var(--primary-red)', border: showFilters ? '1px solid var(--primary-red)' : 'none', padding: '0.7rem 1.2rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', color: showFilters ? 'var(--primary-red)' : 'white', fontWeight: 600, cursor: 'pointer', boxShadow: showFilters ? 'none' : '0 4px 6px rgba(218, 41, 28, 0.2)', transition: 'all 0.3s' }}
+                            >
+                                Filter <Filter size={16} />
+                            </button>
                         </div>
-                        <button style={{ background: '#F97316', border: 'none', padding: '0.7rem 1.2rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'white', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 6px rgba(249, 115, 22, 0.2)' }}>
-                            Filter <Filter size={16} />
-                        </button>
+
+                        <AnimatePresence>
+                            {showFilters && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    style={{ display: 'flex', gap: '0.5rem', background: 'white', padding: '0.5rem', borderRadius: '12px', border: '1px solid #E5E7EB', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                                >
+                                    {['All', 'Veg', 'Non-Veg'].map(type => (
+                                        <button 
+                                            key={type}
+                                            onClick={() => setDietaryFilter(type)}
+                                            style={{ 
+                                                padding: '0.4rem 1rem', 
+                                                borderRadius: '8px', 
+                                                border: 'none', 
+                                                background: dietaryFilter === type ? 'var(--primary-red)' : 'transparent',
+                                                color: dietaryFilter === type ? 'white' : '#6B7280',
+                                                fontSize: '0.85rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {type}
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
@@ -252,7 +293,7 @@ const OrderingPage = () => {
                     <div style={{ marginBottom: '2.5rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1rem' }}>
                             <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#1F2937' }}>Explore Categories</h2>
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.8rem', color: '#F97316', fontWeight: 600, background: '#FFF7ED', padding: '0.3rem 0.8rem', borderRadius: '6px' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.8rem', color: 'var(--primary-red)', fontWeight: 600, background: 'rgba(255, 199, 44, 0.15)', padding: '0.3rem 0.8rem', borderRadius: '6px' }}>
                                 <Zap size={14} /> Queue: {queueData.estimatedWaitTime} min wait
                             </div>
                         </div>
@@ -266,8 +307,8 @@ const OrderingPage = () => {
                                         alignItems: 'center',
                                         gap: '0.75rem',
                                         padding: '0.75rem 1.25rem',
-                                        background: activeCategory === cat.name ? '#FFF7ED' : '#FFFFFF',
-                                        border: `1px solid ${activeCategory === cat.name ? '#F97316' : '#E5E7EB'}`,
+                                        background: activeCategory === cat.name ? 'rgba(255, 199, 44, 0.15)' : '#FFFFFF',
+                                        border: `1px solid ${activeCategory === cat.name ? 'var(--primary-red)' : '#E5E7EB'}`,
                                         borderRadius: '12px',
                                         cursor: 'pointer',
                                         minWidth: 'max-content',
@@ -275,7 +316,7 @@ const OrderingPage = () => {
                                     }}
                                 >
                                     <span style={{ fontSize: '1.5rem' }}>{cat.icon}</span>
-                                    <span style={{ fontSize: '0.95rem', fontWeight: activeCategory === cat.name ? 700 : 600, color: activeCategory === cat.name ? '#F97316' : '#4B5563' }}>
+                                    <span style={{ fontSize: '0.95rem', fontWeight: activeCategory === cat.name ? 700 : 600, color: activeCategory === cat.name ? 'var(--primary-red)' : '#4B5563' }}>
                                         {cat.displayName}
                                     </span>
                                 </div>
@@ -285,13 +326,25 @@ const OrderingPage = () => {
 
                     {/* Popular / Recent Tabs */}
                     <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '1px solid #E5E7EB', marginBottom: '1.5rem' }}>
-                        <div style={{ paddingBottom: '0.75rem', borderBottom: '3px solid #F97316', fontWeight: 700, color: '#1F2937', cursor: 'pointer' }}>Popular</div>
+                        <div style={{ paddingBottom: '0.75rem', borderBottom: '3px solid var(--primary-red)', fontWeight: 700, color: '#1F2937', cursor: 'pointer' }}>Popular</div>
                         <div style={{ paddingBottom: '0.75rem', borderBottom: '3px solid transparent', fontWeight: 600, color: '#6B7280', cursor: 'pointer' }}>Recent</div>
                     </div>
 
                     {/* Items Grid */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
-                        {menuItems.filter(item => item.category === activeCategory).map(item => (
+                        {menuItems.filter(item => {
+                            const matchesCategory = activeCategory === 'All' || (Array.isArray(item.category) ? item.category.includes(activeCategory) : item.category === activeCategory);
+                            const matchesSearch = 
+                                item.name.en.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                item.name.si.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                item.name.ta.toLowerCase().includes(searchQuery.toLowerCase());
+                            const isVegItem = item.isVeg || (Array.isArray(item.dietary) && item.dietary.includes('Veg'));
+                            const matchesDietary = 
+                                dietaryFilter === 'All' || 
+                                (dietaryFilter === 'Veg' && isVegItem) || 
+                                (dietaryFilter === 'Non-Veg' && !isVegItem);
+                            return matchesCategory && matchesSearch && matchesDietary;
+                        }).map(item => (
                             <div 
                                 key={item._id} 
                                 style={{ 
@@ -319,12 +372,18 @@ const OrderingPage = () => {
                                     />
                                 </div>
 
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1F2937', margin: '0 0 0.5rem 0', lineHeight: 1.3 }}>
-                                    {item.name[language]}
-                                </h3>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
+                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1F2937', margin: 0, lineHeight: 1.3 }}>
+                                        {item.name[language]}
+                                    </h3>
+                                    <div style={{ display: 'flex', gap: '4px' }}>
+                                        {(item.dietary?.includes('Veg') || item.isVeg) && <div style={{ width: '12px', height: '12px', border: '1px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Vegetarian"><div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#10b981' }} /></div>}
+                                        {item.dietary?.includes('Non-Veg') && <div style={{ width: '12px', height: '12px', border: '1px solid #f43f5e', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Non-Vegetarian"><div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#f43f5e' }} /></div>}
+                                    </div>
+                                </div>
 
                                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '1rem' }}>
-                                    <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#F97316' }}>LKR {item.price}</span>
+                                    <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-red)' }}>LKR {item.price}</span>
                                     <span style={{ fontSize: '0.8rem', color: '#9CA3AF', textDecoration: 'line-through' }}>LKR {Math.round(item.price * 1.15)}</span>
                                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#F59E0B', fontSize: '0.85rem', fontWeight: 600 }}>
                                         <Star size={14} fill="#F59E0B" /> 2.5K+
@@ -337,7 +396,7 @@ const OrderingPage = () => {
                                     </button>
                                     <button 
                                         onClick={() => addToCart(item)}
-                                        style={{ flex: 1, padding: '0.75rem', background: '#F97316', border: 'none', borderRadius: '10px', color: '#FFFFFF', fontWeight: 600, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', transition: 'background 0.2s', boxShadow: '0 4px 6px rgba(249, 115, 22, 0.2)' }}
+                                        style={{ flex: 1, padding: '0.75rem', background: 'var(--primary-red)', border: 'none', borderRadius: '10px', color: '#FFFFFF', fontWeight: 600, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', transition: 'background 0.2s', boxShadow: '0 4px 6px rgba(218, 41, 28, 0.2)' }}
                                     >
                                         Order Now
                                     </button>
@@ -412,18 +471,18 @@ const OrderingPage = () => {
                         style={{ 
                             width: '100%', 
                             padding: '1.1rem', 
-                            background: cart.length === 0 ? '#FCA5A5' : '#F97316', 
+                            background: cart.length === 0 ? '#FCA5A5' : 'var(--primary-red)', 
                             color: 'white', 
                             border: 'none', 
                             borderRadius: '12px', 
                             fontSize: '1rem', 
                             fontWeight: 700, 
                             cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
-                            boxShadow: cart.length > 0 ? '0 8px 16px rgba(249, 115, 22, 0.25)' : 'none',
+                            boxShadow: cart.length > 0 ? '0 8px 16px rgba(218, 41, 28, 0.25)' : 'none',
                             transition: 'all 0.2s'
                         }}
                     >
-                        Place An Order Now
+                        Order Now
                     </button>
                 </div>
             </div>

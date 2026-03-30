@@ -15,14 +15,14 @@ import {
     Monitor, CheckSquare, Layers, Lock, CreditCard, Camera, Info, Type, Mail, Link as LinkIcon, Edit2, Trash2, StopCircle, CornerUpRight, Play, ArrowLeft
 } from 'lucide-react';
 
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import AdminSidebar from '../components/AdminSidebar';
 import StatsCard from '../components/StatsCard';
 import PopularItems from '../components/PopularItems';
 import AIAssistant from '../components/AIAssistant';
 
 const AdminPage = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('dashboard');
     const [stats, setStats] = useState({ totalOrders: 0, totalRevenue: 0, totalMenuItems: 0, todayOrders: 0, analytics: { popularItems: [], weeklyTrends: [], avgOrderValue: 0 } });
     const [menuItems, setMenuItems] = useState([]);
@@ -33,7 +33,7 @@ const AdminPage = () => {
     const [showUserModal, setShowUserModal] = useState(false);
     const [userFormData, setUserFormData] = useState({
         name: '',
-        studentId: '',
+        username: '',
         password: '',
         role: 'student'
     });
@@ -41,8 +41,25 @@ const AdminPage = () => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [showSuccess, setShowSuccess] = useState('');
-    const [selectedReportDate, setSelectedReportDate] = useState(new Date().toISOString().split('T')[0]);
+    const [showError, setShowError] = useState('');
     const [showDailyReport, setShowDailyReport] = useState(false);
+    const [passwordRequirements, setPasswordRequirements] = useState({
+        length: false,
+        uppercase: false,
+        lowercase: false,
+        number: false,
+        special: false
+    });
+
+    const validatePassword = (pass) => {
+        setPasswordRequirements({
+            length: pass.length >= 8,
+            uppercase: /[A-Z]/.test(pass),
+            lowercase: /[a-z]/.test(pass),
+            number: /[0-9]/.test(pass),
+            special: /[^A-Za-z0-9]/.test(pass)
+        });
+    };
 
     // Inventory State
     const [inventoryTab, setInventoryTab] = useState('stock'); // stock, suppliers, reports
@@ -167,9 +184,16 @@ const AdminPage = () => {
         });
         setUserFormData({
             name: '',
-            studentId: '',
+            username: '',
             password: '',
             role: 'student'
+        });
+        setPasswordRequirements({
+            length: false,
+            uppercase: false,
+            lowercase: false,
+            number: false,
+            special: false
         });
     };
 
@@ -189,6 +213,15 @@ const AdminPage = () => {
 
     const handleAddUser = async (e) => {
         e.preventDefault();
+
+        // Password Validation
+        const isPasswordValid = Object.values(passwordRequirements).every(req => req);
+        if (!isPasswordValid) {
+            setShowError('Password requirements not met! Please check the guidelines.');
+            setTimeout(() => setShowError(''), 4000);
+            return;
+        }
+
         try {
             await axios.post('/api/users', userFormData);
             setShowSuccess('User added successfully!');
@@ -303,97 +336,6 @@ const AdminPage = () => {
                 </div>
             </div>
         </div>
-    );
-
-    const FormModal = ({ show, onClose, onSubmit, title, isEdit }) => (
-        <AnimatePresence>
-            {show && (
-                <>
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={onClose}
-                        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', zIndex: 1001 }}
-                    />
-                    <div
-                        style={{ position: 'fixed', top: 0, left: '280px', right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1002, pointerEvents: 'none', padding: '20px' }}
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            style={{ 
-                                pointerEvents: 'auto',
-                                width: '100%', 
-                                maxWidth: '750px', 
-                                maxHeight: '90vh', 
-                                overflowY: 'auto', 
-                                background: 'white', 
-                                borderRadius: '24px', 
-                                padding: '2.5rem', 
-                                border: '1px solid #f1f5f9', 
-                                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)' 
-                            }}
-                        >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>{title}</h2>
-                            <X onClick={onClose} style={{ cursor: 'pointer', color: 'var(--text-main)' }} />
-                        </div>
-                        <form onSubmit={onSubmit}>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Name (English)</label>
-                                <input required value={formData.name.en} onChange={(e) => handleInputChange('name', 'en', e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Sinhala</label>
-                                    <input required value={formData.name.si} onChange={(e) => handleInputChange('name', 'si', e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Tamil</label>
-                                    <input required value={formData.name.ta} onChange={(e) => handleInputChange('name', 'ta', e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
-                                </div>
-                            </div>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Description (English)</label>
-                                <textarea value={formData.description.en} onChange={(e) => handleInputChange('description', 'en', e.target.value)} rows="2" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)', resize: 'none' }} />
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Price (LKR)</label>
-                                    <input required type="number" value={formData.price} onChange={(e) => handleInputChange('price', null, e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Category</label>
-                                    <select value={formData.category} onChange={(e) => handleInputChange('category', null, e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
-                                        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                    </select>
-                                </div>
-                            </div>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Image URL</label>
-                                <input type="text" value={formData.image} onChange={(e) => handleInputChange('image', null, e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
-                            </div>
-                            <div style={{ display: 'flex', gap: '2rem', marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-main)', fontWeight: 600 }}>
-                                    <input type="checkbox" checked={formData.isVeg} onChange={(e) => handleInputChange('isVeg', null, e.target.checked)} />
-                                    Vegetarian
-                                </label>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-main)', fontWeight: 600 }}>
-                                    <input type="checkbox" checked={formData.availability} onChange={(e) => handleInputChange('availability', null, e.target.checked)} />
-                                    Available
-                                </label>
-                            </div>
-                            <button type="submit" className="btn-premium" style={{ width: '100%', padding: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
-                                <Save size={20} /> {isEdit ? 'Update Item' : 'Add Item'}
-                            </button>
-                        </form>
-                    </motion.div>
-                </div>
-                </>
-            )}
-        </AnimatePresence>
     );
 
     const StockFormModal = ({ show, onClose, title }) => (
@@ -534,13 +476,13 @@ const AdminPage = () => {
                                 <input required value={userFormData.name} onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. John Doe" />
                             </div>
                             <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Student/Staff ID</label>
-                                <input required value={userFormData.studentId} onChange={(e) => setUserFormData({ ...userFormData, studentId: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. IT2100000" />
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Student/Staff ID (Username)</label>
+                                <input required value={userFormData.username} onChange={(e) => setUserFormData({ ...userFormData, username: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. IT2100000" />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Password</label>
-                                    <input required type="password" value={userFormData.password} onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="********" />
+                                    <input required type="password" value={userFormData.password} onChange={(e) => { setUserFormData({ ...userFormData, password: e.target.value }); validatePassword(e.target.value); }} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="********" />
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Role</label>
@@ -549,6 +491,42 @@ const AdminPage = () => {
                                         <option value="staff">Staff</option>
                                         <option value="admin">Admin</option>
                                     </select>
+                                </div>
+                            </div>
+                            <div style={{ 
+                                background: '#f8fafc', 
+                                padding: '1rem', 
+                                borderRadius: '12px', 
+                                marginBottom: '1.5rem',
+                                fontSize: '0.75rem',
+                                border: '1px solid #e2e8f0'
+                            }}>
+                                <p style={{ fontWeight: 700, margin: '0 0 0.5rem 0', color: 'var(--text-secondary)' }}>Password Requirements:</p>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                    {[
+                                        { key: 'length', text: '8+ Characters' },
+                                        { key: 'uppercase', text: 'Uppercase Letter' },
+                                        { key: 'lowercase', text: 'Lowercase Letter' },
+                                        { key: 'number', text: 'At least one Number' },
+                                        { key: 'special', text: 'Special Character' }
+                                    ].map(req => (
+                                        <div key={req.key} style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            gap: '6px',
+                                            color: passwordRequirements[req.key] ? '#10b981' : '#fca5a5',
+                                            fontWeight: passwordRequirements[req.key] ? 700 : 500,
+                                            transition: 'all 0.3s ease'
+                                        }}>
+                                            <div style={{ 
+                                                width: '6px', 
+                                                height: '6px', 
+                                                borderRadius: '50%', 
+                                                background: passwordRequirements[req.key] ? '#10b981' : '#fca5a5' 
+                                            }} />
+                                            {req.text}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                             <button type="submit" className="btn-premium" style={{ width: '100%', padding: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
@@ -563,55 +541,7 @@ const AdminPage = () => {
     );
 
 
-    const renderMenuManager = () => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Manage Menu <span style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: 500 }}>({menuItems.length} items)</span></h3>
-                <button onClick={() => { resetForm(); setShowAddModal(true); }} className="btn-premium" style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Plus size={20} /> Add New Item
-                </button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
-                {menuItems.filter(item => (item.name?.en?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (item.category?.toLowerCase() || '').includes(globalSearch.toLowerCase())).map(item => (
-                    <div key={item._id} style={{ padding: '24px', borderRadius: '24px', display: 'flex', gap: '20px', alignItems: 'center', background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
-                        <div style={{ position: 'relative' }}>
-                            {item.image ? (
-                                <img src={item.image} alt={item.name.en} style={{ width: '90px', height: '90px', borderRadius: '16px', objectFit: 'cover' }} />
-                            ) : (
-                                <div style={{ width: '90px', height: '90px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Utensils size={32} color="rgba(255,255,255,0.1)" />
-                                </div>
-                            )}
-                            <div style={{ position: 'absolute', top: '-5px', right: '-5px', padding: '4px 8px', borderRadius: '6px', background: item.availability ? '#10b981' : '#ef4444', fontSize: '0.6rem', fontWeight: 900, color: 'white' }}>
-                                {item.availability ? 'LIVE' : 'OFF'}
-                            </div>
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <h4 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: '4px' }}>{item.name.en}</h4>
-                            <div style={{ color: 'var(--primary)', fontWeight: 700, marginBottom: '8px' }}>LKR {item.price}</div>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <span style={{ fontSize: '0.7rem', padding: '4px 10px', borderRadius: '6px', background: item.isVeg ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: item.isVeg ? '#10b981' : '#ef4444', fontWeight: 700 }}>
-                                    {item.isVeg ? 'VEG' : 'NON-VEG'}
-                                </span>
-                                <span style={{ fontSize: '0.7rem', padding: '4px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', color: '#94a3b8', fontWeight: 700 }}>
-                                    {item.category}
-                                </span>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <button onClick={() => openEditModal(item)} className="glass" style={{ width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                                <Edit2 size={18} />
-                            </button>
-                            <button onClick={() => handleDeleteItem(item._id)} className="glass" style={{ width: '40px', height: '40px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                                <Trash2 size={18} />
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+    // Menu management is now handled in MenuManagement.jsx
 
     const renderOrderManager = () => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -646,13 +576,13 @@ const AdminPage = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {orders.filter(order => (order._id?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (order.studentId?.toLowerCase() || '').includes(globalSearch.toLowerCase())).map(order => (
+                        {orders.filter(order => (order._id?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (order.username?.toLowerCase() || '').includes(globalSearch.toLowerCase())).map(order => (
                             <tr key={order._id} style={{ background: '#f8fafc', borderBottom: '4px solid white' }}>
                                 <td style={{ padding: '20px 16px', borderTopLeftRadius: '16px', borderBottomLeftRadius: '16px' }}>
                                     <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--primary)' }}>#{order.queuePosition}</div>
                                 </td>
                                 <td style={{ padding: '20px 16px' }}>
-                                    <div style={{ fontWeight: 700 }}>{order.studentId}</div>
+                                    <div style={{ fontWeight: 700 }}>{order.username}</div>
                                     <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Placed at {new Date(order.createdAt).toLocaleTimeString()}</div>
                                 </td>
                                 <td style={{ padding: '20px 16px' }}>
@@ -746,9 +676,9 @@ const AdminPage = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {users.filter(user => (user.name?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (user.studentId?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (user.role?.toLowerCase() || '').includes(globalSearch.toLowerCase())).map((user) => (
+                            {users.filter(user => (user.name?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (user.username?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (user.role?.toLowerCase() || '').includes(globalSearch.toLowerCase())).map((user) => (
                                 <tr key={user._id} style={{ background: '#f8fafc', borderRadius: '12px' }}>
-                                    <td style={{ padding: '16px', fontWeight: 700, color: 'var(--text-main)' }}>{user.studentId}</td>
+                                    <td style={{ padding: '16px', fontWeight: 700, color: 'var(--text-main)' }}>{user.username}</td>
                                     <td style={{ padding: '16px' }}>{user.name}</td>
                                     <td style={{ padding: '16px' }}>
                                         <select
@@ -936,530 +866,213 @@ const AdminPage = () => {
         );
     };
 
-    const renderMessagesManager = () => {
-        const unreadCount = contactMessages.filter(m => !m.isRead).length;
-        return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
-                        Contact Messages{' '}
-                        <span style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: 500 }}>
-                            ({contactMessages.length} total)
-                        </span>
-                        {unreadCount > 0 && (
-                            <span style={{ marginLeft: '12px', padding: '4px 12px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: '99px', fontSize: '0.85rem', fontWeight: 700 }}>
-                                {unreadCount} unread
-                            </span>
-                        )}
-                    </h3>
-                    <button disabled={isRefreshing} onClick={fetchContactMessages} className="glass" style={{ padding: '10px 20px', borderRadius: '12px', fontWeight: 600, cursor: isRefreshing ? 'wait' : 'pointer', color: 'var(--text-main)', border: '1px solid var(--glass-border)', opacity: isRefreshing ? 0.7 : 1 }}>
-                        {isRefreshing ? 'Refreshing...' : 'Refresh'}
-                    </button>
-                </div>
+        // Removed renderMessagesManager as it sits in FeedbackManagement.jsx now
 
-                {contactMessages.length === 0 ? (
-                    <div className="glass" style={{ padding: '60px', textAlign: 'center', borderRadius: '24px' }}>
-                        <MessageSquare size={48} style={{ color: 'var(--text-secondary)', opacity: 0.3, marginBottom: '16px' }} />
-                        <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-secondary)' }}>No messages yet</h4>
-                        <p style={{ color: 'var(--text-secondary)' }}>Messages from the Contact page will appear here.</p>
+    const renderHub = () => (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '70vh', padding: '20px' }}>
+            <div className="admin-hub-grid" style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(3, 1fr)', 
+                gap: '30px', 
+                width: '100%', 
+                maxWidth: '1200px' 
+            }}>
+                
+                {/* Card 1: Inventory Management (Indigo) */}
+                <motion.div
+                    whileHover={{ y: -8, scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate('/ims')}
+                    style={{
+                        background: 'linear-gradient(135deg, #4b2e20 0%, #2f2119 100%)',
+                        padding: '40px',
+                        borderRadius: '32px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        boxShadow: '0 20px 40px rgba(47, 33, 25, 0.45)',
+                        color: '#f8efe7',
+                        cursor: 'pointer',
+                        minHeight: '240px',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(214,176,140,0.15)'
+                    }}
+                >
+                    <div style={{
+                        width: '70px', height: '70px',
+                        background: 'rgba(214,176,140,0.2)',
+                        backdropFilter: 'blur(10px)',
+                        borderRadius: '22px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: '20px',
+                        border: '1px solid rgba(214,176,140,0.3)'
+                    }}>
+                        <Package size={36} color="#d6b08c" strokeWidth={1.5} />
                     </div>
-                ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {contactMessages.filter(msg => (msg.name?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (msg.email?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (msg.message?.toLowerCase() || '').includes(globalSearch.toLowerCase())).map(msg => (
-                            <div key={msg._id} className="glass" style={{
-                                padding: '24px 28px',
-                                borderRadius: '20px',
-                                background: msg.isRead ? 'var(--bg-card)' : 'rgba(239,68,68,0.04)',
-                                border: msg.isRead ? '1px solid var(--glass-border)' : '1px solid rgba(239,68,68,0.2)',
-                                display: 'flex',
-                                gap: '20px',
-                                alignItems: 'flex-start'
-                            }}>
-                                {/* Avatar */}
-                                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.2rem', color: 'var(--text-main)', flexShrink: 0 }}>
-                                    {msg.name.charAt(0).toUpperCase()}
-                                </div>
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px', lineHeight: 1.1, letterSpacing: '-0.5px', color: '#f8efe7' }}>Inventory<br/>Control</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 500, color: 'rgba(248,239,231,0.75)' }}>Manage complete stock & supply chain</div>
+                    </div>
+                    <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', opacity: 0.08 }}>
+                        <Package size={140} color="#d6b08c" />
+                    </div>
+                </motion.div>
 
-                                {/* Content */}
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                                        <div>
-                                            <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>{msg.name}</span>
-                                            <span style={{ marginLeft: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{msg.email}</span>
-                                            {!msg.isRead && (
-                                                <span style={{ marginLeft: '10px', padding: '2px 10px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: '99px', fontSize: '0.72rem', fontWeight: 800 }}>NEW</span>
-                                            )}
-                                        </div>
-                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                            {new Date(msg.createdAt).toLocaleString()}
-                                        </span>
-                                    </div>
-                                    <p style={{ color: 'var(--text-main)', lineHeight: 1.6, margin: '0 0 12px 0' }}>{msg.message}</p>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        {!msg.isRead && (
-                                            <button
-                                                onClick={() => handleMarkAsRead(msg._id)}
-                                                style={{ padding: '6px 16px', borderRadius: '8px', background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
-                                            >
-                                                ✓ Mark as Read
-                                            </button>
-                                        )}
-                                        {msg.isRead && (
-                                            <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 600 }}>✓ Read</span>
-                                        )}
-                                        <button
-                                            onClick={() => handleDeleteContactMessage(msg._id)}
-                                            style={{ padding: '6px 12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                        >
-                                            <Trash2 size={14} /> Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                {/* Card 2: Order Management — Medium Coffee + Highlight */}
+                <motion.div
+                    whileHover={{ y: -8, scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate('/orders?tab=orders')}
+                    style={{
+                        background: 'linear-gradient(135deg, #6f4e37 0%, #4b2e20 100%)',
+                        padding: '40px',
+                        borderRadius: '32px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        boxShadow: '0 20px 40px rgba(111, 78, 55, 0.4)',
+                        color: '#f8efe7',
+                        cursor: 'pointer',
+                        minHeight: '240px',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(214,176,140,0.15)'
+                    }}
+                >
+                    <div style={{
+                        width: '70px', height: '70px',
+                        background: 'rgba(214,176,140,0.2)',
+                        backdropFilter: 'blur(10px)',
+                        borderRadius: '22px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: '20px',
+                        border: '1px solid rgba(214,176,140,0.3)'
+                    }}>
+                        <ClipboardList size={36} color="#d6b08c" strokeWidth={1.5} />
                     </div>
-                )}
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px', lineHeight: 1.1, letterSpacing: '-0.5px', color: '#f8efe7' }}>Order<br/>Management</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 500, color: 'rgba(248,239,231,0.75)' }}>{stats.totalOrders || 0} active orders in queue</div>
+                    </div>
+                    <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', opacity: 0.08 }}>
+                        <ClipboardList size={140} color="#d6b08c" />
+                    </div>
+                </motion.div>
+
+                {/* Card 3: Feedback Management (Emerald) */}
+                <motion.div
+                    whileHover={{ y: -8, scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate('/feedback-admin')}
+                    style={{
+                        background: 'linear-gradient(135deg, #8b6b57 0%, #6f4e37 100%)',
+                        padding: '40px',
+                        borderRadius: '32px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        boxShadow: '0 20px 40px rgba(139, 107, 87, 0.4)',
+                        color: '#f8efe7',
+                        cursor: 'pointer',
+                        minHeight: '240px',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(214,176,140,0.15)'
+                    }}
+                >
+                    <div style={{
+                        width: '70px', height: '70px',
+                        background: 'rgba(214,176,140,0.2)',
+                        backdropFilter: 'blur(10px)',
+                        borderRadius: '22px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: '20px',
+                        border: '1px solid rgba(214,176,140,0.3)'
+                    }}>
+                        <MessageSquare size={36} color="#d6b08c" strokeWidth={1.5} />
+                    </div>
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px', lineHeight: 1.1, letterSpacing: '-0.5px', color: '#f8efe7' }}>Customer<br/>Feedback</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 500, color: 'rgba(248,239,231,0.75)' }}>Check user reviews & suggestions</div>
+                    </div>
+                    <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', opacity: 0.08 }}>
+                        <MessageSquare size={140} color="#d6b08c" />
+                    </div>
+                </motion.div>
+
+                {/* Card 4: Sales Management — Warm Highlight / Latte */}
+                <motion.div
+                    whileHover={{ y: -8, scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate('/sales')}
+                    style={{
+                        background: 'linear-gradient(135deg, #d6b08c 0%, #b8895a 100%)',
+                        padding: '40px',
+                        borderRadius: '32px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        boxShadow: '0 20px 40px rgba(214, 176, 140, 0.4)',
+                        color: '#2f2119',
+                        cursor: 'pointer',
+                        minHeight: '240px',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(255,255,255,0.3)'
+                    }}
+                >
+                    <div style={{
+                        width: '70px', height: '70px',
+                        background: 'rgba(47,33,25,0.15)',
+                        backdropFilter: 'blur(10px)',
+                        borderRadius: '22px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: '20px',
+                        border: '1px solid rgba(47,33,25,0.2)'
+                    }}>
+                        <BarChart3 size={36} color="#2f2119" strokeWidth={1.5} />
+                    </div>
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px', lineHeight: 1.1, letterSpacing: '-0.5px', color: '#2f2119' }}>Sales<br/>Analytics</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 500, color: 'rgba(47,33,25,0.7)' }}>Deep dive into revenue reports</div>
+                    </div>
+                    <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', opacity: 0.1 }}>
+                        <BarChart3 size={140} color="#2f2119" />
+                    </div>
+                </motion.div>
+
             </div>
-        );
-    };
+        </div>
+    );
 
-    const renderDashboard = () => {
-        // Calculate Top Customers dynamically
-        const topCustomers = Object.values(orders.reduce((acc, order) => {
-            const studentId = order.studentId;
-            if (!acc[studentId]) {
-                const user = users.find(u => u.studentId === studentId || u._id === studentId);
-                acc[studentId] = {
-                    name: user?.name || 'Customer',
-                    role: user?.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'Student',
-                    totalSpend: 0
-                };
-            }
-            acc[studentId].totalSpend += order.totalAmount || 0;
-            return acc;
-        }, {}))
-        .sort((a, b) => b.totalSpend - a.totalSpend)
-        .slice(0, 4);
 
-        return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-                {/* Stats Row */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '25px' }}>
-                    
-                    {/* Card 1: Orders (Orange) */}
-                    <motion.div
-                        whileHover={{ y: -5 }}
-                        style={{
-                            background: 'linear-gradient(135deg, #ff9f43 0%, #ff8000 100%)',
-                            padding: '30px',
-                            borderRadius: '24px',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            boxShadow: '0 15px 30px rgba(255, 153, 102, 0.3)',
-                            color: 'white'
-                        }}
-                    >
-                        <div>
-                            <div style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '5px', lineHeight: 1 }}>{stats.totalOrders || 0}</div>
-                            <div style={{ fontSize: '1rem', fontWeight: 500, opacity: 0.9 }}>Total Orders</div>
-                        </div>
-                        <div style={{
-                            width: '60px', height: '60px',
-                            background: 'rgba(255,255,255,0.2)',
-                            borderRadius: '50%',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                            <ShoppingBag size={28} color="white" />
-                        </div>
-                    </motion.div>
-
-                    {/* Card 2: Revenue (Purple) */}
-                    <motion.div
-                        whileHover={{ y: -5 }}
-                        style={{
-                            background: 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)',
-                            padding: '30px',
-                            borderRadius: '24px',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            boxShadow: '0 15px 30px rgba(168, 85, 247, 0.3)',
-                            color: 'white'
-                        }}
-                    >
-                        <div>
-                            <div style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '5px', lineHeight: 1 }}>{stats.totalRevenue || 0}</div>
-                            <div style={{ fontSize: '1rem', fontWeight: 500, opacity: 0.9 }}>Total Revenue</div>
-                        </div>
-                        <div style={{
-                            width: '60px', height: '60px',
-                            background: 'rgba(255,255,255,0.2)',
-                            borderRadius: '50%',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                            <DollarSign size={28} color="white" />
-                        </div>
-                    </motion.div>
-
-                    {/* Card 3: Users (Cyan) */}
-                    <motion.div
-                        whileHover={{ y: -5 }}
-                        style={{
-                            background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-                            padding: '30px',
-                            borderRadius: '24px',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            boxShadow: '0 15px 30px rgba(6, 182, 212, 0.3)',
-                            color: 'white'
-                        }}
-                    >
-                        <div>
-                            <div style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '5px', lineHeight: 1 }}>{users.length || 0}</div>
-                            <div style={{ fontSize: '1rem', fontWeight: 500, opacity: 0.9 }}>Active Users</div>
-                        </div>
-                        <div style={{
-                            width: '60px', height: '60px',
-                            background: 'rgba(255,255,255,0.2)',
-                            borderRadius: '50%',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                            <UsersIcon size={28} color="white" />
-                        </div>
-                    </motion.div>
-                </div>
-
-                {/* AI Assistant Insight Section (Replacing Charts) */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '30px', marginBottom: '30px' }}>
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="glass"
-                        style={{
-                            padding: '40px',
-                            background: 'linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%)',
-                            borderRadius: '32px',
-                            border: '1px solid rgba(139, 92, 246, 0.15)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '30px',
-                            boxShadow: '0 20px 50px rgba(139, 92, 246, 0.08)',
-                            overflow: 'hidden'
-                        }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                <div style={{ 
-                                    width: '64px', height: '64px', 
-                                    background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-                                    borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    boxShadow: '0 10px 20px rgba(139, 92, 246, 0.3)'
-                                }}>
-                                    <Sparkles size={32} color="white" />
-                                </div>
-                                <div>
-                                    <h3 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 900, color: '#1e293b' }}>UniCafé AI Analytics</h3>
-                                    <p style={{ margin: '5px 0 0', color: '#64748b', fontWeight: 500 }}>Intelligent insights & operations assistant</p>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                                <div style={{ position: 'relative' }}>
-                                    <input 
-                                        type="date" 
-                                        value={selectedReportDate}
-                                        onChange={(e) => {
-                                            setSelectedReportDate(e.target.value);
-                                            setShowDailyReport(true);
-                                        }}
-                                        style={{
-                                            padding: '8px 15px',
-                                            borderRadius: '12px',
-                                            border: '1px solid rgba(139, 92, 246, 0.2)',
-                                            background: 'white',
-                                            fontSize: '0.85rem',
-                                            fontWeight: 600,
-                                            color: '#1e293b',
-                                            outline: 'none',
-                                            cursor: 'pointer',
-                                            boxShadow: '0 4px 10px rgba(0,0,0,0.03)'
-                                        }}
-                                    />
-                                </div>
-                                <span style={{ padding: '8px 20px', borderRadius: '12px', background: '#ecfdf5', color: '#059669', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} />
-                                    AI System Online
-                                </span>
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '40px', alignItems: 'center' }}>
-                            {/* AI Insights (Left side) */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', marginBottom: '10px' }}>Daily Smart Highlights</h4>
-                                
-                                <div style={{ background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', gap: '15px', alignItems: 'center' }}>
-                                    <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'rgba(249, 115, 22, 0.1)', color: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <TrendingUp size={20} />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>Spike Alert: Iced Beverages</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Ordering volume for drinks is up 32% compared to last Friday.</div>
-                                    </div>
-                                </div>
-
-                                <div style={{ background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', gap: '15px', alignItems: 'center' }}>
-                                    <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Clock size={20} />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>Peak Hour Prediction</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Expect a 25% increase in traffic between 1:00 PM - 2:30 PM.</div>
-                                    </div>
-                                </div>
-
-                                <div style={{ background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', gap: '15px', alignItems: 'center' }}>
-                                    <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Package size={20} />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>Inventory Check-in</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>"Chicken Breast" stock is low. Consider ordering for next week.</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Chat Interface (Right side) */}
-                            <div style={{ background: 'rgba(255,255,255,0.6)', borderRadius: '28px', border: '1px solid #e2e8f0', padding: '30px', height: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <div style={{ flex: 1, maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                    <div style={{ alignSelf: 'flex-start', background: '#f8fafc', padding: '12px 18px', borderRadius: '18px 18px 18px 0', fontSize: '0.9rem', border: '1px solid #f1f5f9', boxSizing: 'border-box' }}>
-                                        Hello Admin! I've analyzed today's data. Everything looks stable, but I recommend a small promotion for "Snacks" to boost afternoon sales.
-                                    </div>
-                                    <div style={{ alignSelf: 'flex-start', background: '#f8fafc', padding: '12px 18px', borderRadius: '18px 18px 18px 0', fontSize: '0.9rem', border: '1px solid #f1f5f9', boxSizing: 'border-box' }}>
-                                        How else can I help you optimize the cafe today?
-                                    </div>
-                                </div>
-                                <div style={{ position: 'relative' }}>
-                                    <Zap size={18} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#8b5cf6' }} />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Ask AI for revenue forecast, stock help or trends..." 
-                                        style={{
-                                            width: '100%',
-                                            padding: '16px 60px 16px 50px',
-                                            borderRadius: '20px',
-                                            border: '1px solid #cbd5e1',
-                                            background: 'white',
-                                            fontSize: '0.95rem',
-                                            fontWeight: 500,
-                                            outline: 'none',
-                                            transition: 'all 0.3s',
-                                            boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
-                                        }}
-                                    />
-                                    <div style={{ 
-                                        position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', 
-                                        width: '44px', height: '44px', borderRadius: '16px', 
-                                        background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                                        boxShadow: '0 4px 10px rgba(139, 92, 246, 0.3)'
-                                    }}>
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
-
-                {/* Middle Charts Area (Restored) */}
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '30px', marginBottom: '30px' }}>
-                    {/* Revenue Trends (Area Chart) */}
-                    <div className="glass" style={{ padding: '30px', background: 'white', borderRadius: '24px', border: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                            <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Revenue & Orders</h4>
-                            <div style={{ display: 'flex', gap: '10px' }}>
-                                <span style={{ padding: '6px 16px', borderRadius: '99px', border: '1px solid #e2e8f0', fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>Revenue</span>
-                                <span style={{ padding: '6px 16px', borderRadius: '99px', border: '1px solid #06b6d4', fontSize: '0.75rem', fontWeight: 700, color: '#06b6d4' }}>Orders</span>
-                            </div>
-                        </div>
-                        <div style={{ flex: 1, minHeight: '300px' }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={[
-                                    { name: 'Mon', revenue: 30, orders: 20 },
-                                    { name: 'Tue', revenue: 50, orders: 40 },
-                                    { name: 'Wed', revenue: 40, orders: 35 },
-                                    { name: 'Thu', revenue: 70, orders: 50 },
-                                    { name: 'Fri', revenue: 60, orders: 45 },
-                                    { name: 'Sat', revenue: 85, orders: 60 },
-                                    { name: 'Sun', revenue: 90, orders: 68 },
-                                ]}>
-                                    <defs>
-                                        <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#ff9f43" stopOpacity={0.2} />
-                                            <stop offset="95%" stopColor="#ff9f43" stopOpacity={0} />
-                                        </linearGradient>
-                                        <linearGradient id="colorOrd" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.2} />
-                                            <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} />
-                                    <Area type="monotone" dataKey="revenue" stroke="#ff9f43" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
-                                    <Area type="monotone" dataKey="orders" stroke="#06b6d4" strokeWidth={3} fillOpacity={1} fill="url(#colorOrd)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    {/* Order Distribution (Donut Chart) */}
-                    <div className="glass" style={{ padding: '30px', background: 'white', borderRadius: '24px', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                            <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Sales by Category</h4>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 20px', fontSize: '1rem', fontWeight: 800, color: '#1f2937' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}><span>60%</span><span style={{color:'#94a3b8', fontWeight:600, fontSize: '0.75rem'}}>Meals</span></div>
-                            <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}><span>35%</span><span style={{color:'#94a3b8', fontWeight:600, fontSize: '0.75rem'}}>Drinks</span></div>
-                        </div>
-                        <div style={{ flex: 1, minHeight: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={[
-                                            { name: 'Meals', value: 60 },
-                                            { name: 'Drinks', value: 35 },
-                                            { name: 'Snacks', value: 5 }
-                                        ]}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={70}
-                                        outerRadius={105}
-                                        paddingAngle={4}
-                                        dataKey="value"
-                                        stroke="none"
-                                        cornerRadius={6}
-                                    >
-                                        <Cell fill="#ff9f43" />
-                                        <Cell fill="#06b6d4" />
-                                        <Cell fill="#e2e8f0" />
-                                    </Pie>
-                                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginTop: '10px' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{width:10, height:10, borderRadius:'50%', background:'#ff9f43'}}/> Meals 60%</span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{width:10, height:10, borderRadius:'50%', background:'#06b6d4'}}/> Drinks 35%</span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{width:10, height:10, borderRadius:'50%', background:'#e2e8f0'}}/> Snacks 5%</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Bottom Stats Area */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '30px' }}>
-                    {/* Popular Items */}
-                    <div className="glass" style={{ padding: '30px', background: 'white', borderRadius: '24px', border: '1px solid #f0f0f0' }}>
-                        <h4 style={{ margin: '0 0 30px', fontSize: '1.2rem', fontWeight: 800 }}>Popular Items</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-                            {[
-                                { name: 'Iced Latte', percent: 85, color: '#ff9f43' },
-                                { name: 'Chicken Burger', percent: 70, color: '#a855f7' },
-                                { name: 'Club Sandwich', percent: 60, color: '#06b6d4' },
-                                { name: 'Chocolate Muffins', percent: 45, color: '#64748b' }
-                            ].map((item, i) => (
-                                <div key={i}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: 700, marginBottom: '10px' }}>
-                                        <span>{item.name}</span>
-                                        <span style={{ color: '#94a3b8' }}>{item.percent}%</span>
-                                    </div>
-                                    <div style={{ width: '100%', height: '8px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden' }}>
-                                        <div style={{ width: `${item.percent}%`, height: '100%', background: item.color, borderRadius: '99px' }} />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Recent High Value Orders */}
-                    <div className="glass" style={{ padding: '30px', background: 'white', borderRadius: '24px', border: '1px solid #f0f0f0' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-                            <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Recent Top Customers</h4>
-                            <button style={{ background: 'none', border: 'none', color: '#ff9f43', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}>View All</button>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                            {topCustomers.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8', fontWeight: 600 }}>No order data available</div>
-                            ) : topCustomers.map((user, i) => (
-                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', borderRadius: '16px', border: '1px solid #f8fafc', background: '#fafafa', transition: 'all 0.2s', cursor: 'pointer' }} onMouseOver={(e) => e.currentTarget.style.background = '#f1f5f9'} onMouseOut={(e) => e.currentTarget.style.background = '#fafafa'}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} alt="avatar" style={{ width: '45px', height: '45px', borderRadius: '12px', background: '#e2e8f0' }} />
-                                        <div>
-                                            <div style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b' }}>{user.name}</div>
-                                            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8' }}>{user.role}</div>
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                        <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>LKR {user.totalSpend.toLocaleString()}</span>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#ff9f43' }}>Total Value</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    };
+        // Removed renderAnalytics as it sits in SalesManagement.jsx now
 
     return (
         <div style={{
             display: 'flex',
+            flexDirection: 'column',
             minHeight: '100vh',
-            background: '#f8fafc',
-            color: '#111827'
+            background: 'var(--bg-page)',
+            color: 'var(--text-main)',
+            fontFamily: "'Inter', sans-serif"
         }}>
-            <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-
+            {/* Global Header is rendered by App.jsx */}
+            
+            <main style={{
+                flex: 1,
+                padding: '40px',
+                position: 'relative',
+                scrollBehavior: 'smooth'
+            }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 {/* Main Content Area */}
-                <div style={{ position: 'relative', padding: '40px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', background: 'white', padding: '15px 30px', borderRadius: '30px', boxShadow: '0 5px 20px rgba(0,0,0,0.03)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                <AlignLeft size={24} style={{ color: '#1f2937', cursor: 'pointer' }} />
-                                <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#1f2937', margin: 0, letterSpacing: '-0.5px' }}>
-                                    {activeTab === 'dashboard' ? 'Dashboard' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace('-', ' ')}
-                                </h1>
-                            </div>
-                            
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '35px' }}>
-                                <div style={{ position: 'relative' }}>
-                                    <input type="text" value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} placeholder="Search something here..." style={{ padding: '14px 20px 14px 45px', borderRadius: '30px', border: 'none', background: '#f8fafc', color: '#1f2937', width: '320px', fontSize: '0.95rem', outline: 'none', fontWeight: 500 }} />
-                                    <Search size={18} style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
-                                    <div style={{ position: 'relative', cursor: 'pointer' }}>
-                                        <MessageSquare size={24} style={{ color: '#64748b' }} />
-                                        <div style={{ position: 'absolute', top: '-5px', right: '-5px', width: '18px', height: '18px', background: '#ea580c', borderRadius: '50%', color: 'white', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', border: '2px solid white' }}>18</div>
-                                    </div>
-                                    <div style={{ position: 'relative', cursor: 'pointer' }}>
-                                        <Bell size={24} style={{ color: '#64748b' }} />
-                                        <div style={{ position: 'absolute', top: '-5px', right: '-5px', width: '18px', height: '18px', background: '#ea580c', borderRadius: '50%', color: 'white', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', border: '2px solid white' }}>52</div>
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1f2937' }}>Admin User</div>
-                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8' }}>Super Admin</div>
-                                    </div>
-                                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=Admin`} alt="profile" style={{ width: '45px', height: '45px', borderRadius: '50%', background: '#e2e8f0', objectFit: 'cover' }} />
-                                </div>
-                            </div>
-                        </div>
-
+                <div style={{ position: 'relative', padding: '20px' }}>
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={activeTab}
@@ -1468,11 +1081,7 @@ const AdminPage = () => {
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.2 }}
                         >
-                            {activeTab === 'dashboard' && renderDashboard()}
-                            {activeTab === 'menu' && renderMenuManager()}
-                            {activeTab === 'orders' && renderOrderManager()}
-                            {activeTab === 'feedback' && <FeedbackPage />}
-                            {activeTab === 'users' && renderUserManager()}
+                            {activeTab === 'dashboard' && renderHub()}
 
                             {/* Daily Sales Report Modal */}
                             <AnimatePresence>
@@ -1565,8 +1174,6 @@ const AdminPage = () => {
             <AIAssistant />
 
             {/* Modals and Toasts */}
-            <FormModal show={showAddModal} onClose={() => setShowAddModal(false)} onSubmit={handleAddItem} title="Add New Menu Item" isEdit={false} />
-            <FormModal show={showEditModal} onClose={() => { setShowEditModal(false); setEditingItem(null); resetForm(); }} onSubmit={handleEditItem} title="Edit Menu Item" isEdit={true} />
             <StockFormModal show={showStockModal} onClose={() => setShowStockModal(false)} title="Add/Edit Stock Item" />
             <UserFormModal />
 
@@ -1574,11 +1181,29 @@ const AdminPage = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 50 }}
                     animate={{ opacity: 1, y: 0 }}
-                    style={{ position: 'fixed', bottom: '40px', right: '40px', background: '#10b981', padding: '16px 25px', borderRadius: '16px', color: 'white', fontWeight: 700, zIndex: 3000, boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)' }}
+                    style={{ position: 'fixed', bottom: '20px', right: '20px', background: '#10b981', padding: '16px 25px', borderRadius: '16px', color: 'white', fontWeight: 700, zIndex: 3000, boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)' }}
                 >
-                    {showSuccess}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <ThumbsUp size={18} />
+                        {showSuccess}
+                    </div>
                 </motion.div>
             )}
+
+            {showError && (
+                <motion.div
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    style={{ position: 'fixed', bottom: '20px', right: '20px', background: '#ef4444', padding: '16px 25px', borderRadius: '16px', color: 'white', fontWeight: 700, zIndex: 3000, boxShadow: '0 10px 30px rgba(239, 68, 68, 0.3)' }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <AlertCircle size={18} />
+                        {showError}
+                    </div>
+                </motion.div>
+            )}
+            </main>
         </div>
     );
 };

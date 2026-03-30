@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import {
     Star,
     Camera,
@@ -18,13 +19,45 @@ import {
 } from 'lucide-react';
 
 const FeedbackPage = () => {
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const orderId = queryParams.get('orderId');
+
     const [rating, setRating] = useState(0);
     const [hover, setHover] = useState(0);
     const [quickRating, setQuickRating] = useState(null);
-    const [complaintType, setComplaintType] = useState('General');
+    const [category, setCategory] = useState('Food');
+    const [comment, setComment] = useState('');
     const [isAnonymous, setIsAnonymous] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [complaintText, setComplaintText] = useState('');
+    const [hasOrders, setHasOrders] = useState(true); // Default to true to avoid flicker
+    const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [successType, setSuccessType] = useState('Feedback');
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const checkOrders = async () => {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                try {
+                    const response = await axios.get(`/api/orders/${user.username}`);
+                    setHasOrders(response.data.length > 0);
+                } catch (error) {
+                    console.error('Error checking orders:', error);
+                }
+            } else {
+                setHasOrders(false);
+            }
+            setIsLoadingOrders(false);
+        };
+        checkOrders();
+    }, []);
 
     const emojis = [
         { icon: Heart, label: 'Love', color: '#ef4444' },
@@ -40,29 +73,117 @@ const FeedbackPage = () => {
         { name: 'Chicken Curry Rice', rating: 4.5, reviews: 156, image: '🍗' }
     ];
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        setSubmitted(true);
-        setTimeout(() => {
-            setSubmitted(false);
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setSelectedFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        if (e) e.preventDefault();
+        setError('');
+
+        const userStr = localStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : null;
+        const username = user ? user.username : 'Unknown User';
+
+        try {
+            // If no rating but has content, treat as Contact Message
+            if (rating === 0 && !quickRating && comment.trim()) {
+                await axios.post('/api/contact', {
+                    name: isAnonymous ? `Anonymous (ID: ${username})` : username,
+                    email: user?.email || `${username}@unicafe.com`,
+                    message: `[FEEDBACK FALLBACK] ${comment}`,
+                });
+                
+                setSuccessType('Feedback');
+                setShowSuccessModal(true);
+                setComment('');
+                setTimeout(() => setShowSuccessModal(false), 5000);
+                return;
+            }
+
+            if (rating === 0 && !quickRating) {
+                setError('Please provide a star rating or select a mood.');
+                return;
+            }
+
+            setIsUploading(true);
+            let finalImageUrl = '';
+
+            // Upload image first if selected
+            if (selectedFile) {
+                const formData = new FormData();
+                formData.append('image', selectedFile);
+                const uploadRes = await axios.post('/api/upload', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                finalImageUrl = uploadRes.data.imageUrl;
+            }
+
+            let sentiment = 'Neutral';
+            if (quickRating === 'Love' || quickRating === 'Happy') sentiment = 'Positive';
+            else if (quickRating === 'Sad' || quickRating === 'Angry') sentiment = 'Negative';
+
+            await axios.post('/api/feedback', {
+                username,
+                rating,
+                sentiment,
+                orderId,
+                category,
+                comment,
+                imageUrl: finalImageUrl
+            });
+
+            setSuccessType('Feedback');
+            setShowSuccessModal(true);
             setRating(0);
+            setComment('');
             setQuickRating(null);
-        }, 3000);
+            setSelectedFile(null);
+            setImagePreview(null);
+            
+            setError('');
+            setTimeout(() => setShowSuccessModal(false), 5000); // Close after 5 seconds
+        } catch (err) {
+            console.error('Error submitting feedback:', err);
+            setError(err.response?.data?.error || err.response?.data?.message || 'Failed to submit feedback. Please try again.');
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const handleComplaintSubmit = async () => {
-        if (!complaintText.trim()) return;
+        if (!complaintText.trim()) {
+            setError('Please enter your complaint before sending.');
+            return;
+        }
+        setError('');
+        
+        const userStr = localStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : null;
+        const username = user ? user.username : 'Unknown';
+
         try {
             await axios.post('/api/contact', {
-                name: isAnonymous ? 'Anonymous Student' : 'Student Feedback',
-                email: isAnonymous ? 'anonymous@unicafe.com' : 'student@unicafe.com',
+                name: isAnonymous ? `Anonymous (ID: ${username})` : username,
+                email: user?.email || `${username}@unicafe.com`,
                 message: complaintText,
             });
             setComplaintText('');
-            setSubmitted(true);
-            setTimeout(() => setSubmitted(false), 3000);
-        } catch (error) {
-            console.error('Error submitting complaint:', error);
+            setSuccessType('Complaint');
+            setShowSuccessModal(true);
+            setTimeout(() => setShowSuccessModal(false), 5000);
+            setError('');
+        } catch (err) {
+            console.error('Error submitting complaint:', err);
+            setError('Failed to send complaint. Please try again.');
         }
     };
 
@@ -79,6 +200,33 @@ const FeedbackPage = () => {
                 <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>幫助我們提升 UniCafé 的服務品質</p>
             </motion.div>
 
+            <AnimatePresence>
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        style={{
+                            maxWidth: '600px',
+                            margin: '-40px auto 40px',
+                            padding: '16px 24px',
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            borderRadius: '16px',
+                            color: '#ef4444',
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px'
+                        }}
+                    >
+                        <AlertCircle size={20} />
+                        <span style={{ flex: 1 }}>{error}</span>
+                        <button onClick={() => setError('')} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.5rem', display: 'flex', alignItems: 'center' }}>&times;</button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '40px' }}>
                 {/* Left Side: Rating Form */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
@@ -90,70 +238,138 @@ const FeedbackPage = () => {
                             <Star style={{ color: 'var(--primary)' }} /> Rate Your Last Meal
                         </h3>
 
-                        <div style={{ marginBottom: '32px' }}>
-                            <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <Star
-                                        key={star}
-                                        size={32}
-                                        onClick={() => setRating(star)}
-                                        onMouseEnter={() => setHover(star)}
-                                        onMouseLeave={() => setHover(0)}
+                        {!hasOrders && !isLoadingOrders ? (
+                            <div style={{ padding: '20px', borderRadius: '16px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', marginBottom: '24px' }}>
+                                <p style={{ color: '#ef4444', fontSize: '0.95rem', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <AlertCircle size={18} /> Feedback Restricted
+                                </p>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '8px', lineHeight: 1.5 }}>
+                                    Only students who have placed at least one order can submit food ratings. 
+                                    Please place an order first to share your experience!
+                                </p>
+                            </div>
+                        ) : (
+                            <>
+                                <div style={{ marginBottom: '32px' }}>
+                                    <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <Star
+                                                key={star}
+                                                size={32}
+                                                onClick={() => setRating(star)}
+                                                onMouseEnter={() => setHover(star)}
+                                                onMouseLeave={() => setHover(0)}
+                                                style={{
+                                                    cursor: 'pointer',
+                                                    fill: (hover || rating) >= star ? 'var(--primary)' : 'transparent',
+                                                    color: (hover || rating) >= star ? 'var(--primary)' : 'var(--text-secondary)',
+                                                    transition: 'transform 0.1s'
+                                                }}
+                                                className="star-hover"
+                                            />
+                                        ))}
+                                    </div>
+                                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                                        {rating > 0 ? `You rated this ${rating} stars` : 'Select a rating'}
+                                    </p>
+                                </div>
+
+                                <div style={{ marginBottom: '32px' }}>
+                                    <label style={{ display: 'block', marginBottom: '16px', fontWeight: 700, color: 'var(--text-main)', fontSize: '1rem' }}>Feedback Category</label>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                                        {['Food', 'Service', 'Delivery'].map((cat) => (
+                                            <button
+                                                key={cat}
+                                                onClick={() => setCategory(cat)}
+                                                style={{
+                                                    padding: '12px',
+                                                    borderRadius: '16px',
+                                                    border: category === cat ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
+                                                    background: category === cat ? 'rgba(110, 89, 255, 0.1)' : 'transparent',
+                                                    color: category === cat ? 'var(--primary)' : 'var(--text-secondary)',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                {cat}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div style={{ marginBottom: '32px' }}>
+                                    <label style={{ display: 'block', marginBottom: '16px', fontWeight: 700, color: 'var(--text-main)', fontSize: '1rem' }}>Quick Mood</label>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        {emojis.map((e, idx) => (
+                                            <motion.button
+                                                key={idx}
+                                                whileHover={{ scale: 1.2 }}
+                                                whileTap={{ scale: 0.9 }}
+                                                onClick={() => setQuickRating(e.label)}
+                                                style={{
+                                                    background: quickRating === e.label ? `${e.color}15` : 'transparent',
+                                                    border: quickRating === e.label ? `2px solid ${e.color}` : '1px solid var(--glass-border)',
+                                                    padding: '12px',
+                                                    borderRadius: '16px',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    width: '60px'
+                                                }}
+                                            >
+                                                <e.icon size={24} style={{ color: e.color }} />
+                                            </motion.button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div style={{ marginBottom: '32px' }}>
+                                    <label style={{ display: 'block', marginBottom: '12px', fontWeight: 700, color: 'var(--text-main)', fontSize: '1rem' }}>Additional Comments</label>
+                                    <textarea
+                                        value={comment}
+                                        onChange={(e) => setComment(e.target.value)}
+                                        placeholder="e.g. Food was cold or Service was fast..."
+                                        className="glass"
                                         style={{
-                                            cursor: 'pointer',
-                                            fill: (hover || rating) >= star ? 'var(--primary)' : 'transparent',
-                                            color: (hover || rating) >= star ? 'var(--primary)' : 'var(--text-secondary)',
-                                            transition: 'transform 0.1s'
+                                            width: '100%',
+                                            minHeight: '120px',
+                                            padding: '16px',
+                                            borderRadius: '20px',
+                                            background: 'var(--bg-page)',
+                                            color: 'var(--text-main)',
+                                            border: '1px solid var(--glass-border)',
+                                            resize: 'vertical',
+                                            fontSize: '0.95rem'
                                         }}
-                                        className="star-hover"
                                     />
-                                ))}
-                            </div>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                                {rating > 0 ? `You rated this ${rating} stars` : 'Select a rating'}
-                            </p>
-                        </div>
+                                </div>
 
-                        <div style={{ marginBottom: '32px' }}>
-                            <label style={{ display: 'block', marginBottom: '16px', fontWeight: 700, color: 'var(--text-main)' }}>Quick Mood</label>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                {emojis.map((e, idx) => (
-                                    <motion.button
-                                        key={idx}
-                                        whileHover={{ scale: 1.2 }}
-                                        whileTap={{ scale: 0.9 }}
-                                        onClick={() => setQuickRating(e.label)}
-                                        style={{
-                                            background: quickRating === e.label ? `${e.color}15` : 'transparent',
-                                            border: quickRating === e.label ? `2px solid ${e.color}` : '1px solid var(--glass-border)',
-                                            padding: '12px',
-                                            borderRadius: '16px',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            width: '60px'
-                                        }}
-                                    >
-                                        <e.icon size={24} style={{ color: e.color }} />
-                                    </motion.button>
-                                ))}
-                            </div>
-                        </div>
+                                <div style={{ marginBottom: '32px' }}>
+                                    <label style={{ display: 'block', marginBottom: '12px', fontWeight: 700, color: 'var(--text-main)' }}>Upload Photo</label>
+                                    <label className="glass" style={{ height: '140px', border: '2px dashed var(--glass-border)', borderRadius: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', position: 'relative', overflow: 'hidden', margin: 0 }}>
+                                        <input type="file" accept="image/*" onChange={handleFileChange} style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 10 }} />
+                                        {imagePreview ? (
+                                            <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <>
+                                                <Camera size={32} style={{ marginBottom: '8px' }} />
+                                                <span style={{ fontSize: '0.85rem' }}>Click to take or upload a photo</span>
+                                            </>
+                                        )}
+                                    </label>
+                                    {imagePreview && (
+                                        <button onClick={() => {setSelectedFile(null); setImagePreview(null);}} style={{ marginTop: '8px', background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 700 }}>Remove Photo</button>
+                                    )}
+                                </div>
 
-                        <div style={{ marginBottom: '32px' }}>
-                            <label style={{ display: 'block', marginBottom: '12px', fontWeight: 700, color: 'var(--text-main)' }}>Upload Photo</label>
-                            <label className="glass" style={{ height: '120px', border: '2px dashed var(--glass-border)', borderRadius: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)', position: 'relative', overflow: 'hidden', margin: 0 }}>
-                                <input type="file" accept="image/*" capture="environment" onChange={(e) => console.log(e.target.files)} style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
-                                <Camera size={32} style={{ marginBottom: '8px', zIndex: 1 }} />
-                                <span style={{ fontSize: '0.85rem', zIndex: 1, pointerEvents: 'none' }}>Drag or click to take a photo</span>
-                            </label>
-                        </div>
-
-                        <button onClick={handleSubmit} className="btn-premium" style={{ width: '100%', padding: '16px' }}>
-                            <Send size={18} style={{ marginRight: '8px' }} /> Submit Review
-                        </button>
+                                <button onClick={handleSubmit} disabled={isUploading} className="btn-premium" style={{ width: '100%', padding: '16px', cursor: isUploading ? 'wait' : 'pointer', opacity: isUploading ? 0.7 : 1 }}>
+                                    <Send size={18} style={{ marginRight: '8px' }} /> {isUploading ? 'Uploading...' : 'Submit Review'}
+                                </button>
+                            </>
+                        )}
                     </motion.div>
 
                     {/* Anonymous Box */}
@@ -223,15 +439,82 @@ const FeedbackPage = () => {
             </div>
 
             <AnimatePresence>
-                {submitted && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        style={{ position: 'fixed', bottom: '40px', right: '40px', background: '#10b981', color: 'white', padding: '20px 40px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, zIndex: 1000, boxShadow: '0 20px 40px rgba(16, 185, 129, 0.4)' }}
-                    >
-                        <CheckCircle /> Thank you for your feedback!
-                    </motion.div>
+                {showSuccessModal && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100vw',
+                        height: '100vh',
+                        background: 'rgba(0, 0, 0, 0.5)',
+                        backdropFilter: 'blur(8px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 2000
+                    }}>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                            style={{
+                                background: 'white',
+                                padding: '48px',
+                                borderRadius: '32px',
+                                textAlign: 'center',
+                                maxWidth: '480px',
+                                margin: '20px',
+                                boxShadow: '0 30px 60px rgba(0, 0, 0, 0.3)',
+                                position: 'relative'
+                            }}
+                        >
+                            <div style={{
+                                width: '80px',
+                                height: '80px',
+                                borderRadius: '50%',
+                                background: '#10b981',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 24px',
+                                boxShadow: '0 10px 20px rgba(16, 185, 129, 0.3)'
+                            }}>
+                                <CheckCircle size={40} color="white" />
+                            </div>
+                            
+                            <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '16px', color: '#111827' }}>
+                                Submission Successful!
+                            </h2>
+                            
+                            <p style={{ color: '#4b5563', fontSize: '1.1rem', lineHeight: 1.6, marginBottom: '32px' }}>
+                                {successType === 'Feedback' 
+                                    ? "Thank you for your valuable feedback! Our team will review it to improve your UniCafé experience."
+                                    : "We've received your concern. Rest assured, our management team reviews all messages for continuous improvement."
+                                }
+                            </p>
+                            
+                            <button
+                                onClick={() => setShowSuccessModal(false)}
+                                style={{
+                                    width: '100%',
+                                    padding: '16px',
+                                    borderRadius: '16px',
+                                    background: '#111827',
+                                    color: 'white',
+                                    border: 'none',
+                                    fontWeight: 700,
+                                    fontSize: '1rem',
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.2s',
+                                    boxShadow: '0 10px 20px rgba(0, 0, 0, 0.1)'
+                                }}
+                                onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+                                onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+                            >
+                                Continue
+                            </button>
+                        </motion.div>
+                    </div>
                 )}
             </AnimatePresence>
         </div>

@@ -1,0 +1,80 @@
+[
+  {
+    "_id": "69ac0586b733ba32396174cd",
+    "name": "amoda koumadee",
+    "role": "student",
+    "username": "IT23693722"
+  },
+  {
+    "_id": "69ac4e4b67599cc6abe05a1e",
+    "name": "Chani",
+    "role": "student",
+    "username": "IT23721815"
+  },
+  {
+    "_id": "69acfca11b9f76b4fa807d2f",
+    "name": "System Admin",
+    "role": "admin",
+    "username": "admin01"
+  },
+  {
+    "_id": "69ae2c024b6b0de9f37c65de",
+    "name": "Super Admin",
+    "role": "admin",
+    "username": "superadmin"
+  },
+  {
+    "_id": "69aee0fb496236335adf96a5",
+    "name": "liza",
+    "role": "student",
+    "username": "IT000000"
+  },
+  {
+    "_id": "69bceb4ad4aeef4f384667cc",
+    "name": "CHANIKA KONARA",
+    "role": "student",
+    "username": "IT23721800"
+  },
+  {
+    "_id": "69c0b5ad459516ac1472cb14",
+    "name": "Inventory Manager",
+    "role": "inventory",
+    "username": "ims_admin"
+  },
+  {
+    "_id": "69c4d81043e1ccf6f3a9426b",
+    "name": "elsa",
+    "role": "student",
+    "username": "IT10203040"
+  },
+  {
+    "_id": "69c77a8de1fed7f59f850440",
+    "name": "Asha Wijesingha",
+    "username": "IT23539245",
+    "role": "student"
+  },
+  {
+    "_id": "69c77edc5a59ede2aeee6415",
+    "name": "admin",
+    "username": "Adminnew",
+    "role": "staff"
+  },
+  {
+    "_id": "69c790c7bbcff8e81196697f",
+    "name": "Kumari",
+    "username": "kumari",
+    "role": "staff"
+  },
+  {
+    "_id": "69c82223789ecea071688d68",
+    "name": "Kaumi Ashika",
+    "username": "BS23456987",
+    "role": "student"
+  },
+  {
+    "_id": "69c89d1d4aba799f37305ce3",
+    "name": "ak",
+    "username": "john",
+    "role": "student"
+  }
+]

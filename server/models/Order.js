@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const OrderSchema = new mongoose.Schema({
-    studentId: String,
+    username: String,
     items: [{
         name: String,
         quantity: Number,
@@ -10,7 +10,7 @@ const OrderSchema = new mongoose.Schema({
     totalAmount: Number,
     status: {
         type: String,
-        enum: ['pending', 'preparing', 'ready', 'picked-up'],
+        enum: ['pending', 'preparing', 'process', 'cookd', 'picup', 'picked-up'],
         default: 'pending'
     },
     pickupTime: Date,

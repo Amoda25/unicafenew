@@ -8,8 +8,8 @@ const Footer = () => {
             <div className="footer-content">
                 <div className="footer-info">
                     <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                        <Coffee style={{ color: 'var(--text-main)' }} size={24} />
-                        <h3 style={{ fontWeight: 800, color: 'var(--text-main)' }}>UniCafé</h3>
+                        <Coffee style={{ color: '#1F2937' }} size={24} />
+                        <h3 style={{ fontWeight: 800, color: '#1F2937' }}>UniCafé</h3>
                     </div>
                     <p style={{ color: '#1F2937', fontWeight: 500, lineHeight: 1.6 }}>
                         Revolutionizing university dining with real-time analytics and predictive technology.

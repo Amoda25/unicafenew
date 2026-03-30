@@ -1,20 +1,24 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, MapPin, Star, Utensils, Heart, ShoppingBag, Coffee, Pizza, Navigation } from 'lucide-react';
+import { MapPin, Star, Utensils, Heart, ShoppingBag, Coffee, Pizza, Navigation, ArrowRight } from 'lucide-react';
 import heroBurger from '../assets/hero_burger.png';
 import stringHoppers from '../assets/string_hoppers.jpg';
+import milkshake from '../assets/milkshake.png';
+import sandwichImg from '../assets/sandwich.png';
+import pastaImg from '../assets/pasta.png';
 
 const HomePage = () => {
-    const [searchVal, setSearchVal] = useState('');
+
 
     const categories = [
         { name: 'Pizza', count: '14', img: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=800&auto=format&fit=crop' },
         { name: 'Broast', count: '4', img: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=800&auto=format&fit=crop' },
         { name: 'Chicken', count: '5', img: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?w=800&auto=format&fit=crop' },
         { name: 'Burgers', count: '19', img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&auto=format&fit=crop' },
-        { name: 'Shakes', count: '22', img: 'https://images.unsplash.com/photo-1572490122747-3968b75bb811?w=800&auto=format&fit=crop' },
-        { name: 'Sandwiches', count: '6', img: 'https://images.unsplash.com/photo-1619860860774-1e28f73431af?w=800&auto=format&fit=crop' },
-        { name: 'Pasta', count: '10', img: 'https://images.unsplash.com/photo-1621996311239-5a507ceb2ea3?w=800&auto=format&fit=crop' },
+        { name: 'Shakes', count: '22', img: milkshake },
+        { name: 'Sandwiches', count: '6', img: sandwichImg },
+        { name: 'Pasta', count: '10', img: pastaImg },
         { name: 'Desserts', count: '15', img: 'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=800&auto=format&fit=crop' }
     ];
 
@@ -56,7 +60,7 @@ const HomePage = () => {
                             border: '1px solid rgba(239, 68, 68, 0.2)',
                             borderRadius: '50px',
                             padding: '8px 16px',
-                            color: '#FFB800',
+                            color: 'var(--primary)',
                             fontSize: '0.9rem',
                             fontWeight: '600',
                             marginBottom: '1.5rem'
@@ -85,48 +89,20 @@ const HomePage = () => {
                             Enjoy delicious, freshly prepared meals that fuel your studies and satisfy your cravings. Your ultimate destination for multi-cuisine dining right on campus.
                         </p>
 
-                        {/* Search Bar */}
-                        <div style={{
-                            background: 'white',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '8px',
-                            width: '100%',
-                            maxWidth: '500px',
-                            marginBottom: '3rem'
-                        }}>
-                            <input 
-                                type="text" 
-                                placeholder="Search Keywords (Recipe, Name Here...)" 
-                                value={searchVal}
-                                onChange={(e) => setSearchVal(e.target.value)}
-                                style={{
-                                    flex: 1,
-                                    border: 'none',
-                                    outline: 'none',
-                                    padding: '10px 15px',
-                                    fontSize: '1rem',
-                                    color: '#333'
-                                }}
-                            />
-                            <button style={{
-                                background: '#FFB800',
-                                border: 'none',
-                                borderRadius: '6px',
-                                width: '45px',
-                                height: '45px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                transition: 'opacity 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.target.style.opacity = 0.8}
-                            onMouseLeave={(e) => e.target.style.opacity = 1}
-                            >
-                                <Search size={20} color="#000" />
-                            </button>
+                        {/* Order Now Button */}
+                        <div style={{ marginBottom: '3rem' }}>
+                            <Link to="/order" className="btn-premium" style={{ 
+                                textDecoration: 'none', 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '0.8rem',
+                                padding: '1rem 2.5rem',
+                                fontSize: '1.1rem',
+                                boxShadow: '0 10px 25px rgba(255, 199, 44, 0.4)'
+                            }}>
+                                Order Now
+                                <ArrowRight size={20} />
+                            </Link>
                         </div>
 
                         {/* Popular Restaurant Small Icons */}
@@ -182,13 +158,13 @@ const HomePage = () => {
             {/* TOP FOODS CATEGORIES */}
             <section style={{ maxWidth: '1200px', margin: '4rem auto', padding: '0 20px', textAlign: 'center' }}>
                 <div style={{ marginBottom: '4rem' }}>
-                    <div style={{ color: '#FFB800', fontSize: '0.9rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>
+                    <div style={{ color: 'var(--primary)', fontSize: '0.9rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>
                         TOP FOODS
                     </div>
                     <h2 style={{ color: '#1F2937', fontSize: '2.5rem', fontWeight: 900, marginBottom: '15px' }}>
                         Our Categories
                     </h2>
-                    <div style={{ width: '40px', height: '3px', background: '#FFB800', margin: '0 auto' }}></div>
+                    <div style={{ width: '40px', height: '3px', background: 'var(--primary)', margin: '0 auto' }}></div>
                 </div>
 
                 <div style={{
@@ -237,13 +213,13 @@ const HomePage = () => {
             {/* CAMPUS FAVORITES */}
             <section style={{ maxWidth: '1200px', margin: '6rem auto 2rem', padding: '0 20px', textAlign: 'center' }}>
                 <div style={{ marginBottom: '4rem' }}>
-                    <div style={{ color: '#FFB800', fontSize: '0.9rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>
+                    <div style={{ color: 'var(--primary)', fontSize: '0.9rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>
                         CAMPUS HIGHLIGHTS
                     </div>
                     <h2 style={{ color: '#1F2937', fontSize: '2.5rem', fontWeight: 900, marginBottom: '15px' }}>
                         Student Favorites
                     </h2>
-                    <div style={{ width: '40px', height: '3px', background: '#FFB800', margin: '0 auto' }}></div>
+                    <div style={{ width: '40px', height: '3px', background: 'var(--primary)', margin: '0 auto' }}></div>
                 </div>
 
                 <div style={{
@@ -273,7 +249,7 @@ const HomePage = () => {
                                     position: 'absolute',
                                     top: '15px',
                                     right: '15px',
-                                    background: '#FFB800',
+                                    background: 'var(--primary)',
                                     borderRadius: '50px',
                                     padding: '6px 12px',
                                     fontWeight: 'bold',

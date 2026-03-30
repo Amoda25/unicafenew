@@ -5,7 +5,7 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    studentId: {
+    username: {
         type: String,
         required: true,
         unique: true
@@ -16,7 +16,7 @@ const UserSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['student', 'admin', 'inventory'],
+        enum: ['student', 'admin', 'inventory', 'staff'],
         default: 'student'
     },
     createdAt: {

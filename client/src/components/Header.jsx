@@ -10,7 +10,7 @@ const Header = () => {
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        localStorage.removeItem('studentId');
+        localStorage.removeItem('username');
         navigate('/login');
         window.location.reload();
     };
@@ -18,13 +18,13 @@ const Header = () => {
         <header>
             <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <img src={logo} alt="UniCafé Logo" style={{ height: '35px', width: '35px', objectFit: 'cover', borderRadius: '50%' }} />
-                <h2 style={{ fontWeight: 800, letterSpacing: '-1px', color: 'white', margin: 0, fontSize: '1.3rem' }}>Uni<span style={{ color: '#FFB800' }}>Café</span></h2>
+                <h2 style={{ fontWeight: 800, letterSpacing: '-1px', color: 'white', margin: 0, fontSize: '1.3rem' }}>Uni<span style={{ color: 'var(--primary)' }}>Café</span></h2>
             </div>
             <nav style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
                 <ul>
                     <li><Link to="/">Home</Link></li>
-                    {user && (user.role === 'admin' || user.role === 'inventory') && (
-                        <li><Link to={user.role === 'admin' ? "/admin" : "/ims"}>Dashboard</Link></li>
+                    {user && (user.role === 'admin' || user.role === 'inventory' || user.role === 'staff') && (
+                        <li><Link to={(user.role === 'admin' || user.role === 'staff') ? "/admin" : "/ims"}>Dashboard</Link></li>
                     )}
                     <li><Link to="/about">About</Link></li>
                     <li><Link to="/contact">Contact</Link></li>
@@ -34,15 +34,15 @@ const Header = () => {
                 </ul>
             </nav>
             <div className="header-actions" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                {user && user.role === 'admin' ? (
+                {user && (user.role === 'admin' || user.role === 'staff') ? (
                     <>
                         <div style={{ position: 'relative', cursor: 'pointer', color: '#D6D0C1' }}>
                             <MessageSquare size={20} />
-                            <div style={{ position: 'absolute', top: -8, right: -8, width: '16px', height: '16px', background: '#FFB800', borderRadius: '50%', border: '2px solid #ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white', fontWeight: 800 }}>5</div>
+                            <div style={{ position: 'absolute', top: -8, right: -8, width: '16px', height: '16px', background: 'var(--primary)', borderRadius: '50%', border: '2px solid var(--primary-red)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white', fontWeight: 800 }}>5</div>
                         </div>
                         <div style={{ position: 'relative', cursor: 'pointer', color: '#D6D0C1' }}>
                             <Bell size={20} />
-                            <div style={{ position: 'absolute', top: -8, right: -8, width: '16px', height: '16px', background: '#FFB800', borderRadius: '50%', border: '2px solid #ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white', fontWeight: 800 }}>3</div>
+                            <div style={{ position: 'absolute', top: -8, right: -8, width: '16px', height: '16px', background: 'var(--primary)', borderRadius: '50%', border: '2px solid var(--primary-red)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white', fontWeight: 800 }}>3</div>
                         </div>
                     </>
                 ) : (
@@ -55,21 +55,21 @@ const Header = () => {
                 )}
                 {user ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <Link to={user.role === 'admin' ? "/admin" : user.role === 'inventory' ? "/ims" : "/profile"} style={{ textDecoration: 'none', color: '#D6D0C1', fontWeight: 600 }}>
+                        <Link to={(user.role === 'admin' || user.role === 'staff') ? "/admin" : user.role === 'inventory' ? "/ims" : "/profile"} style={{ textDecoration: 'none', color: '#D6D0C1', fontWeight: 600 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-main)', fontWeight: 800 }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#D6D0C1', fontWeight: 800 }}>
                                     {user.name.charAt(0)}
                                 </div>
                                 <span>{user.name}</span>
                             </div>
                         </Link>
-                        <button onClick={handleLogout} style={{ padding: '0.5rem 1.25rem', fontSize: '0.9rem', cursor: 'pointer', color: '#1F2937', background: '#FFB800', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>
+                        <button onClick={handleLogout} style={{ padding: '0.5rem 1.25rem', fontSize: '0.9rem', cursor: 'pointer', color: 'var(--primary-black)', background: 'var(--primary)', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>
                             Logout
                         </button>
                     </div>
                 ) : (
                     <Link to="/login" style={{ textDecoration: 'none' }}>
-                        <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#FFB800', color: 'black', border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--primary)', color: 'var(--primary-black)', border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
                             <User size={18} /> Login
                         </button>
                     </Link>

@@ -1,24 +1,64 @@
 :root {
-  --primary: #FFB800;
-  /* Yellow */
-  --primary-hover: #F59E0B;
-  /* Darker Yellow */
-  --secondary: #FACC15;
-  /* Yellow */
-  --bg-page: #F8F9FA;
-  /* Off-White */
-  --bg-card: rgba(255, 255, 255, 0.9);
-  --text-main: #1F2937;
-  /* Dark Gray */
-  --text-secondary: #4B5563;
-  /* Medium Gray */
-  --glass: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(255, 184, 0, 0.2);
-  /* Soft Yellow Border */
-  --accent: #FEF08A;
-  /* Light Yellow Accent */
+  /* =========================================
+     ☕ COFFEE COLOR PALETTE
+     ========================================= */
+
+  /* 🟤 PRIMARY — Dark & Medium Coffee Browns */
+  --coffee-dark:      #4b2e20;   /* Dark Coffee Brown  → headings, navbar, buttons */
+  --coffee-medium:    #6f4e37;   /* Medium Coffee Brown → primary accent           */
+  --coffee-darker:    #2f2119;   /* Dark Background Brown → sidebar, header bg     */
+
+  /* 🟫 SECONDARY — Soft & Muted Browns */
+  --coffee-soft:      #8b6b57;   /* Soft Brown  → secondary labels                */
+  --coffee-muted:     #7b6255;   /* Muted Brown → paragraph text                  */
+  --coffee-light-txt: #5b4336;   /* Light Coffee Text → secondary info             */
+
+  /* 🟡 CREAM / LATTE (⭐ VERY IMPORTANT) */
+  --latte-bg:         #f6f1eb;   /* Main Background (Latte) ← MOST USED           */
+  --latte-card:       #f8efe7;   /* Card Light background                          */
+  --latte-border:     #eadfd4;   /* Border Light                                   */
+  --latte-highlight:  #d6b08c;   /* Warm Highlight → hover accents, underlines     */
+
+  /* ⚪ GLASS / OVERLAY */
+  --glass-white:      rgba(255, 255, 255, 0.10);  /* Glass overlay               */
+  --blur-dark:        #2f1e17;                    /* Hero blur overlay dark      */
+  --soft-white:       rgba(255, 255, 255, 0.70);  /* Soft white overlay          */
+
+  /* 🔴 STATUS COLORS */
+  --status-expired:   #b85042;   /* Expired / danger                              */
+  --status-low:       #b7791f;   /* Low stock / warning                           */
+  --status-safe:      #6f4e37;   /* Safe / ok (reuse medium coffee)               */
+
+  /* =========================================
+     ROLE MAPPING (used throughout components)
+     ========================================= */
+  --primary:          var(--coffee-medium);
+  --primary-hover:    var(--coffee-dark);
+  --secondary:        var(--latte-highlight);
+  --accent:           var(--latte-highlight);
+
+  /* Legacy aliases — backward compatibility */
+  --primary-red:      var(--coffee-dark);
+  --primary-yellow:   var(--latte-highlight);
+  --primary-black:    var(--coffee-darker);
+
+  /* === Backgrounds === */
+  --bg-page:          var(--latte-bg);
+  --bg-card:          var(--latte-card);
+
+  /* === Text === */
+  --text-main:        var(--coffee-dark);
+  --text-secondary:   var(--coffee-muted);
+
+  /* === Glass / Borders === */
+  --glass:            var(--soft-white);
+  --glass-border:     var(--latte-border);
 }
 
+
+/* ─────────────────────────────────────────
+   RESET & BASE
+───────────────────────────────────────── */
 * {
   margin: 0;
   padding: 0;
@@ -27,47 +67,69 @@
 }
 
 body {
-  background-color: var(--bg-page);
-  color: var(--text-main);
+  background-color: var(--latte-bg);
+  color: var(--coffee-dark);
   overflow-x: hidden;
 }
 
+
+/* ─────────────────────────────────────────
+   GLASS CARD
+───────────────────────────────────────── */
 .glass {
-  background: var(--bg-card);
+  background: var(--soft-white);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--latte-border);
   border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 6px -1px rgba(75, 46, 32, 0.08),
+              0 2px 4px -1px rgba(75, 46, 32, 0.04);
 }
 
+
+/* ─────────────────────────────────────────
+   GRADIENT TEXT
+───────────────────────────────────────── */
 .gradient-text {
-  background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%);
+  background: linear-gradient(135deg, var(--coffee-darker) 0%, var(--coffee-medium) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
+
+/* ─────────────────────────────────────────
+   PREMIUM BUTTON
+───────────────────────────────────────── */
 .btn-premium {
-  padding: 0.75rem 1.5rem;
-  border-radius: 99px;
-  background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
-  color: white;
+  padding: 0.72rem 1.8rem;
+  border-radius: 5px;
+  background: var(--coffee-medium);
+  color: var(--latte-bg);
   font-weight: 700;
-  border: none;
+  border: 2px solid var(--coffee-medium);
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  box-shadow: 0 3px 10px rgba(75, 46, 32, 0.25);
 }
 
 .btn-premium:hover {
+  background: var(--coffee-dark);
+  border-color: var(--coffee-dark);
+  color: #fff;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
-  filter: brightness(1.1);
+  box-shadow: 0 6px 18px rgba(47, 33, 25, 0.35);
 }
 
+
+/* ─────────────────────────────────────────
+   HEADER / NAVBAR
+───────────────────────────────────────── */
 header {
-  height: 55px;
+  height: 65px;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -75,10 +137,9 @@ header {
   align-items: center;
   justify-content: space-between;
   padding: 0 5%;
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.85) 0%, rgba(234, 88, 12, 0.85) 100%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--coffee-darker);
+  border-bottom: 3px solid var(--latte-highlight);
+  box-shadow: 0 2px 20px rgba(47, 33, 25, 0.5);
 }
 
 nav ul {
@@ -88,25 +149,30 @@ nav ul {
 }
 
 nav a {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--latte-card);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: 0.04em;
   transition: all 0.3s ease;
 }
 
 nav a:hover {
-  color: #FFB800;
+  color: var(--latte-highlight);
 }
 
+
+/* ─────────────────────────────────────────
+   INPUTS
+───────────────────────────────────────── */
 .glass-input {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--latte-border);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 8px;
-  color: var(--text-main);
+  color: var(--coffee-dark);
   font-size: 1rem;
   outline: none;
   font-weight: 500;
@@ -114,8 +180,8 @@ nav a:hover {
 }
 
 .glass-input::placeholder {
-  color: var(--text-secondary);
-  opacity: 0.6;
+  color: var(--coffee-muted);
+  opacity: 0.7;
 }
 
 .glass-input-dark {
@@ -127,27 +193,46 @@ nav a:hover {
 }
 
 .glass-input:focus {
-  background: rgba(255, 255, 255, 0.4);
-  border-color: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15), 0 0 10px rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.75);
+  border-color: var(--latte-highlight);
+  box-shadow: 0 0 0 3px rgba(214, 176, 140, 0.25);
+  transform: translateY(-1px);
 }
 
-/* Override browser autofill styles for glass inputs */
+/* Autofill override */
 .glass-input:-webkit-autofill,
 .glass-input:-webkit-autofill:hover,
 .glass-input:-webkit-autofill:focus,
 .glass-input:-webkit-autofill:active {
-  -webkit-text-fill-color: white !important;
+  -webkit-text-fill-color: var(--coffee-dark) !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
+
+/* ─────────────────────────────────────────
+   FOOTER
+───────────────────────────────────────── */
 footer {
   padding: 4rem 5% 2rem;
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.85) 0%, rgba(234, 88, 12, 0.85) 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--coffee-darker) 0%, var(--coffee-dark) 100%);
+  color: var(--latte-card);
   margin-top: 50px;
-  border-top: 2px solid #FFB800;
+  border-top: 3px solid var(--latte-highlight);
+}
+
+footer h1, footer h2, footer h3, footer h4,
+footer p, footer span, footer a, footer li {
+  color: var(--latte-card) !important;
+  opacity: 1 !important;
+}
+
+footer a {
+  text-decoration: none;
+}
+
+footer a:hover {
+  color: var(--latte-highlight) !important;
+  text-decoration: underline;
 }
 
 .footer-content {
@@ -157,6 +242,10 @@ footer {
   margin-bottom: 3rem;
 }
 
+
+/* ─────────────────────────────────────────
+   HERO SECTION
+───────────────────────────────────────── */
 .hero {
   min-height: 80vh;
   display: flex;
@@ -165,19 +254,89 @@ footer {
   justify-content: center;
   text-align: center;
   padding: 0 5%;
-  background: radial-gradient(circle at top, rgba(239, 68, 68, 0.1) 0%, transparent 70%);
+  background: radial-gradient(
+    circle at top,
+    rgba(214, 176, 140, 0.18) 0%,
+    rgba(111, 78, 55, 0.06) 50%,
+    transparent 70%
+  );
 }
 
 .hero h1 {
   font-size: 4rem;
   margin-bottom: 1.5rem;
   line-height: 1.1;
-  color: var(--text-main);
+  color: var(--coffee-dark);
 }
 
 .hero p {
   font-size: 1.25rem;
-  color: var(--text-secondary);
+  color: var(--coffee-muted);
   max-width: 700px;
   margin-bottom: 2.5rem;
+}
+
+
+/* ─────────────────────────────────────────
+   SIDEBAR (Admin / Dashboard)
+───────────────────────────────────────── */
+.sidebar-modern {
+  background: linear-gradient(180deg, var(--coffee-darker) 0%, var(--coffee-dark) 100%) !important;
+  box-shadow: 6px 0 24px rgba(47, 33, 25, 0.3);
+}
+
+.sidebar-nav-item-modern {
+  width: calc(100% - 20px) !important;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 16px 30px;
+  border: none !important;
+  background: transparent !important;
+  color: rgba(248, 239, 231, 0.8);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+  position: relative;
+  border-radius: 0 30px 30px 0 !important;
+}
+
+.sidebar-nav-item-modern:hover {
+  color: var(--latte-highlight);
+  background: rgba(214, 176, 140, 0.08) !important;
+}
+
+.sidebar-nav-item-modern.active {
+  background: var(--latte-highlight) !important;
+  color: var(--coffee-darker) !important;
+  font-weight: 700;
+  z-index: 10;
+}
+
+
+/* ─────────────────────────────────────────
+   ADMIN HUB GRID
+───────────────────────────────────────── */
+.admin-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 30px;
+}
+
+@media (max-width: 768px) {
+  .admin-hub-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* ─────────────────────────────────────────
+   ANIMATIONS
+───────────────────────────────────────── */
+@keyframes pulse {
+  0%   { transform: scale(1);   opacity: 1;   }
+  50%  { transform: scale(1.3); opacity: 0.5; }
+  100% { transform: scale(1);   opacity: 1;   }
 }

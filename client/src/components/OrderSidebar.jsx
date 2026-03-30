@@ -3,51 +3,55 @@ import {
     LayoutDashboard,
     Utensils,
     ClipboardList,
-    BarChart3,
-    Settings,
-    LogOut,
-    Package,
-    MessageSquare,
-    Users,
     Home,
     Calendar,
+    MessageSquare,
     Info,
     Mail,
-    Search
+    Settings,
+    LogOut
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/unicafe_logo_orange.png';
+import logo from '../assets/unicafe_logo_orange.png'; // Assuming it's the same path
 
-const AdminSidebar = ({ activeTab, setActiveTab }) => {
+const OrderSidebar = ({ activeTab, setActiveTab }) => {
     const navigate = useNavigate();
 
     const menuGroups = [
         {
-            title: 'CORE DASHBOARD',
+            title: 'CORE SERVICES',
             items: [
-                { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
+                { id: 'dashboard', name: 'Dashboard Overview', icon: LayoutDashboard }
             ]
         },
         {
-            title: 'MANAGEMENT',
+            title: 'ORDER SYSTEM',
             items: [
-                { id: 'menu', name: 'Menu Items', icon: Utensils },
-                { id: 'orders', name: 'Orders & Queue', icon: ClipboardList },
-                { id: 'users', name: 'User Access', icon: Users },
-                { id: 'messages', name: 'Messages', icon: MessageSquare },
+                { id: 'orders', name: 'Orders & Queue', icon: ClipboardList, path: '/orders?tab=orders' },
+                { id: 'menu', name: 'Menu Management', icon: Utensils, path: '/menu-admin' },
+                { id: 'calendar', name: 'Calendar', icon: Calendar, path: '/orders?tab=calendar' }
             ]
         },
         {
             title: 'SITE PAGES',
             items: [
                 { id: 'home', name: 'Home Page', icon: Home, path: '/' },
-                { id: 'calendar', name: 'Calendar', icon: Calendar, path: '/calendar' },
                 { id: 'feedback', name: 'Feedback', icon: MessageSquare, path: '/feedback' },
                 { id: 'about', name: 'About Us', icon: Info, path: '/about' },
-                { id: 'contact', name: 'Contact', icon: Mail, path: '/contact' },
+                { id: 'contact', name: 'Contact', icon: Mail, path: '/contact' }
             ]
         }
     ];
+
+    const handleItemClick = (item) => {
+        if (item.path) {
+            navigate(item.path);
+        } else if (item.id === 'menu') {
+            navigate('/menu-admin');
+        } else {
+            setActiveTab(item.id);
+        }
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -56,24 +60,15 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
         window.location.reload();
     };
 
-    const handleItemClick = (item) => {
-        if (item.path) {
-            navigate(item.path);
-        } else {
-            setActiveTab(item.id);
-        }
-    };
-
     return (
-        <aside className="admin-sidebar" style={{
+        <aside className="admin-sidebar sidebar-modern" style={{
             width: '280px',
-            height: '100vh',
-            background: 'linear-gradient(180deg, rgba(234, 88, 12, 1) 0%, rgba(194, 65, 12, 1) 100%)',
+            height: 'calc(100vh - 50px)',
             color: '#ffffff',
             display: 'flex',
             flexDirection: 'column',
             position: 'sticky',
-            top: 0,
+            top: '50px',
             left: 0,
             overflowY: 'auto',
             borderRight: 'none',
@@ -82,7 +77,9 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
             {/* Logo Area */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '30px 20px', paddingBottom: '10px' }}>
                 <img src={logo} alt="UniCafé Logo" style={{ height: '40px', width: '40px', objectFit: 'cover', borderRadius: '50%', boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }} />
-                <h2 style={{ fontWeight: 800, letterSpacing: '-1px', color: 'white', margin: 0 }}>Uni<span style={{ color: '#FFB800' }}>Café</span></h2>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'white', letterSpacing: '-0.5px' }}>
+                    UniCafe<span style={{ color: 'var(--primary)' }}>ORDERS</span>
+                </h2>
             </div>
 
             {/* Navigation Groups */}
@@ -104,34 +101,25 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
                                 <button
                                     key={item.id}
                                     onClick={() => handleItemClick(item)}
+                                    className={`sidebar-nav-item-modern ${activeTab === item.id ? 'active' : ''}`}
                                     style={{
-                                        width: 'calc(100% - 20px)',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '15px',
-                                        padding: '16px 30px',
-                                        borderRadius: '0 30px 30px 0',
+                                        gap: '12px',
+                                        padding: '12px 20px',
+                                        borderRadius: '12px',
+                                        background: activeTab === item.id ? 'rgba(255, 199, 44, 0.15)' : 'transparent',
+                                        color: activeTab === item.id ? 'var(--primary)' : 'rgba(255,255,255,0.7)',
                                         border: 'none',
-                                        background: activeTab === item.id ? '#ffffff' : 'transparent',
-                                        color: activeTab === item.id ? '#ea580c' : 'rgba(255,255,255,0.7)',
                                         cursor: 'pointer',
-                                        fontSize: '0.95rem',
-                                        fontWeight: activeTab === item.id ? 700 : 500,
-                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        width: '100%',
                                         textAlign: 'left',
-                                        position: 'relative'
-                                    }}
-                                    onMouseOver={(e) => {
-                                        if (activeTab !== item.id) e.currentTarget.style.color = 'white';
-                                    }}
-                                    onMouseOut={(e) => {
-                                        if (activeTab !== item.id) e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+                                        fontWeight: activeTab === item.id ? 700 : 500,
+                                        transition: 'all 0.2s ease',
+                                        marginBottom: '4px'
                                     }}
                                 >
-                                    <item.icon size={20} style={{
-                                        color: activeTab === item.id ? '#ea580c' : 'inherit',
-                                        transition: 'color 0.3s ease'
-                                    }} />
+                                    <item.icon size={20} />
                                     <span>{item.name}</span>
                                 </button>
                             ))}
@@ -169,4 +157,4 @@ const AdminSidebar = ({ activeTab, setActiveTab }) => {
     );
 };
 
-export default AdminSidebar;
+export default OrderSidebar;

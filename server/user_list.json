@@ -1,0 +1,116 @@
+[
+  {
+    "name": "Test User Final",
+    "username": "ST00001",
+    "role": "student",
+    "isBcrypt": true
+  },
+  {
+    "name": "Chanika Konara",
+    "username": "IT23721814",
+    "role": "student",
+    "isBcrypt": true
+  },
+  {
+    "name": "amoda koumadee",
+    "username": "IT23693722",
+    "role": "student",
+    "isBcrypt": true
+  },
+  {
+    "name": "Chani",
+    "username": "IT23721815",
+    "role": "student",
+    "isBcrypt": true
+  },
+  {
+    "name": "System Admin",
+    "username": "admin01",
+    "role": "admin",
+    "isBcrypt": true
+  },
+  {
+    "name": "Super Admin",
+    "username": "superadmin",
+    "role": "admin",
+    "isBcrypt": true
+  },
+  {
+    "name": "liza",
+    "username": "IT000000",
+    "role": "student",
+    "isBcrypt": true
+  },
+  {
+    "name": "Test User",
+    "username": "ST12345",
+    "role": "student",
+    "isBcrypt": true
+  },
+  {
+    "name": "Test User 2",
+    "username": "ST88888",
+    "role": "student",
+    "isBcrypt": true
+  },
+  {
+    "name": "Test User",
+    "username": "ST99999",
+    "role": "student",
+    "isBcrypt": true
+  },
+  {
+    "name": "New User",
+    "username": "ST55555",
+    "role": "student",
+    "isBcrypt": true
+  },
+  {
+    "name": "Verified User",
+    "username": "VERIFIED_002",
+    "role": "student",
+    "isBcrypt": true
+  },
+  {
+    "name": "CHANIKA KONARA",
+    "username": "IT23721800",
+    "role": "student",
+    "isBcrypt": true
+  },
+  {
+    "name": "Inventory Manager",
+    "username": "ims_admin",
+    "role": "inventory",
+    "isBcrypt": true
+  },
+  {
+    "name": "elsa",
+    "username": "IT10203040",
+    "role": "student",
+    "isBcrypt": true
+  },
+  {
+    "name": "Asha Wijesingha",
+    "username": "IT23539245",
+    "role": "student",
+    "isBcrypt": true
+  },
+  {
+    "name": "admin",
+    "username": "Adminnew",
+    "role": "staff",
+    "isBcrypt": true
+  },
+  {
+    "name": "Kumari",
+    "username": "kumari",
+    "role": "staff",
+    "isBcrypt": true
+  },
+  {
+    "name": "Test Admin",
+    "username": "admin",
+    "role": "staff",
+    "isBcrypt": true
+  }
+]

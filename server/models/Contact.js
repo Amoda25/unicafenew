@@ -17,6 +17,19 @@ const ContactSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    adminReply: {
+        type: String,
+        default: ''
+    },
+    status: {
+        type: String,
+        enum: ['Pending', 'Resolved', 'In Review'],
+        default: 'Pending'
+    },
+    isPriority: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
         type: Date,
         default: Date.now

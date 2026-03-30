@@ -23,7 +23,7 @@ const InventorySidebar = ({ activeTab, setActiveTab }) => {
         {
             title: 'SUBSYSTEMS',
             items: [
-                { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
+                { id: 'dashboard', name: 'Dashboard Overview', icon: LayoutDashboard },
                 { id: 'inventory', name: 'Inventory', icon: Package },
                 { id: 'suppliers', name: 'Suppliers', icon: Users },
                 { id: 'reports', name: 'Reports', icon: FileText }
@@ -57,15 +57,14 @@ const InventorySidebar = ({ activeTab, setActiveTab }) => {
     };
 
     return (
-        <aside className="admin-sidebar" style={{
+        <aside className="admin-sidebar sidebar-modern" style={{
             width: '280px',
-            height: '100vh',
-            background: 'linear-gradient(180deg, rgba(234, 88, 12, 1) 0%, rgba(194, 65, 12, 1) 100%)',
+            height: 'calc(100vh - 50px)',
             color: '#ffffff',
             display: 'flex',
             flexDirection: 'column',
             position: 'sticky',
-            top: 0,
+            top: '50px',
             left: 0,
             overflowY: 'auto',
             borderRight: 'none',
@@ -98,34 +97,25 @@ const InventorySidebar = ({ activeTab, setActiveTab }) => {
                                 <button
                                     key={item.id}
                                     onClick={() => handleItemClick(item)}
+                                    className={`sidebar-nav-item-modern ${activeTab === item.id ? 'active' : ''}`}
                                     style={{
-                                        width: 'calc(100% - 20px)',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '15px',
-                                        padding: '16px 30px',
-                                        borderRadius: '0 30px 30px 0',
+                                        gap: '12px',
+                                        padding: '12px 20px',
+                                        borderRadius: '12px',
+                                        background: activeTab === item.id ? 'rgba(255, 184, 0, 0.15)' : 'transparent',
+                                        color: activeTab === item.id ? '#FFB800' : 'rgba(255,255,255,0.7)',
                                         border: 'none',
-                                        background: activeTab === item.id ? '#ffffff' : 'transparent',
-                                        color: activeTab === item.id ? '#ea580c' : 'rgba(255,255,255,0.7)',
                                         cursor: 'pointer',
-                                        fontSize: '0.95rem',
-                                        fontWeight: activeTab === item.id ? 700 : 500,
-                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        width: '100%',
                                         textAlign: 'left',
-                                        position: 'relative'
-                                    }}
-                                    onMouseOver={(e) => {
-                                        if (activeTab !== item.id) e.currentTarget.style.color = 'white';
-                                    }}
-                                    onMouseOut={(e) => {
-                                        if (activeTab !== item.id) e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+                                        fontWeight: activeTab === item.id ? 700 : 500,
+                                        transition: 'all 0.2s ease',
+                                        marginBottom: '4px'
                                     }}
                                 >
-                                    <item.icon size={20} style={{
-                                        color: activeTab === item.id ? '#ea580c' : 'inherit',
-                                        transition: 'color 0.3s ease'
-                                    }} />
+                                    <item.icon size={20} />
                                     <span>{item.name}</span>
                                 </button>
                             ))}
