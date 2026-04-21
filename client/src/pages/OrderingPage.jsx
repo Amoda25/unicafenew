@@ -87,9 +87,12 @@ const OrderingPage = () => {
     // Sync Search from URL
     useEffect(() => {
         const query = searchParams.get('q');
+        const categoryParam = searchParams.get('category');
         if (query) {
             setSearchQuery(query);
             setActiveCategory('All');
+        } else if (categoryParam) {
+            setActiveCategory(categoryParam);
         }
     }, [searchParams]);
 
@@ -143,6 +146,7 @@ const OrderingPage = () => {
 
     const categories = [
         { name: 'All', icon: '🍱', displayName: 'All' },
+        { name: 'Special Menu', icon: '🌟', displayName: 'Special Menu' },
         { name: 'Breakfast', icon: '🍳', displayName: 'Breakfast' },
         { name: 'Lunch', icon: '🍛', displayName: 'Lunch' },
         { name: 'Dinner', icon: '🍲', displayName: 'Dinner' },
