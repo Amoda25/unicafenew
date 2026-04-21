@@ -6,7 +6,7 @@ import autoTable from 'jspdf-autotable';
 import logo from '../assets/unicafe_logo_vintage.png';
 import RestockModal from './RestockModal';
 
-const InventoryView = () => {
+const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
     const [activeCategory, setActiveCategory] = useState('All');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -67,6 +67,13 @@ const InventoryView = () => {
         fetchSuppliers();
         fetchWasteLogs();
     }, []);
+
+    // Reset category if redirected from dashboard with a filter
+    useEffect(() => {
+        if (inventoryFilter === 'expired') {
+            setActiveCategory('All');
+        }
+    }, [inventoryFilter]);
 
     const fetchWasteLogs = async () => {
         setIsWasteLoading(true);
@@ -239,7 +246,12 @@ const InventoryView = () => {
         const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
         const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                              (item.supplier && item.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
-        return matchesCategory && matchesSearch;
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const matchesExpired = inventoryFilter === 'expired' ? (item.expiry && new Date(item.expiry) < today) : true;
+        
+        return matchesCategory && matchesSearch && matchesExpired;
     });
 
     const generateInventoryReport = (reportType = 'Stock Summary Report') => {
@@ -522,6 +534,33 @@ const InventoryView = () => {
                 </div>
             </div>
 
+            {/* Filter Awareness Banner */}
+            {inventoryFilter === 'expired' && (
+                <div style={{ 
+                    background: '#fff1f2', border: '1px solid #ffe4e6', 
+                    padding: '16px 24px', borderRadius: '12px', display: 'flex', 
+                    justifyContent: 'space-between', alignItems: 'center',
+                    animation: 'fadeIn 0.3s ease-out'
+                }}>
+                    <div>
+                        <h4 style={{ color: '#e11d48', margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 800 }}>Showing expired items from Dashboard</h4>
+                        <p style={{ color: '#fb7185', margin: 0, fontSize: '0.85rem', fontWeight: 600 }}>You can directly dispose expired items from here.</p>
+                    </div>
+                    <button 
+                        onClick={() => setInventoryFilter(null)}
+                        style={{ 
+                            background: 'white', border: '1px solid #fecdd3', padding: '8px 16px', 
+                            borderRadius: '8px', color: '#e11d48', fontWeight: 700, cursor: 'pointer',
+                            transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(225, 29, 72, 0.05)'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = '#fff1f2'}
+                        onMouseOut={e => e.currentTarget.style.background = 'white'}
+                    >
+                        Clear Filter
+                    </button>
+                </div>
+            )}
+
             {/* Category Filter Pills */}
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 {categories.map(cat => (
@@ -650,15 +689,21 @@ const InventoryView = () => {
                                                 {isExpired && (
                                                     <button 
                                                         onClick={() => { setItemToDispose(item); setIsDisposeModalOpen(true); }}
-                                                        style={{ 
+                                                         style={{ 
                                                             display: 'flex', alignItems: 'center', gap: '6px',
                                                             background: '#9f1239', color: 'white', border: 'none', 
-                                                            padding: '6px 14px', borderRadius: '8px', fontSize: '0.75rem', 
-                                                            fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(159,18,57,0.2)',
+                                                            padding: '8px 18px', borderRadius: '12px', fontSize: '0.85rem', 
+                                                            fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(159,18,57,0.25)',
                                                             transition: 'all 0.2s'
                                                         }}
-                                                        onMouseOver={e=>e.currentTarget.style.background='#881337'}
-                                                        onMouseOut={e=>e.currentTarget.style.background='#9f1239'}
+                                                        onMouseOver={e=> {
+                                                            e.currentTarget.style.background='#881337';
+                                                            e.currentTarget.style.transform='scale(1.05)';
+                                                        }}
+                                                        onMouseOut={e=> {
+                                                            e.currentTarget.style.background='#9f1239';
+                                                            e.currentTarget.style.transform='scale(1)';
+                                                        }}
                                                     >
                                                         <Trash2 size={14} />
                                                         Dispose
