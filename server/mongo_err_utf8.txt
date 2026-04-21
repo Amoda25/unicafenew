@@ -1,0 +1,34 @@
+﻿Γùç injected env (3) from .env // tip: Γùê encrypted .env [www.dotenvx.com]
+Testing connection to: mongodb+srv:****@cluster-2.a4ydqil.mongodb.net/university-cafeteria?appName=Cluster-2
+node : ERROR: Failed to 
+connect to MongoDB
+At line:1 char:1
++ node test_mongo.js > 
+mongo_err.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (E  
+  RROR: Failed to conne   
+ ct to MongoDB:String)    
+ [], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+Error: querySrv 
+ECONNREFUSED _mongodb._tcp
+.cluster-2.a4ydqil.mongodb
+.net
+    at 
+QueryReqWrap.onresolve 
+[as oncomplete] (node:inte
+rnal/dns/promises:294:17) 
+{
+  errno: undefined,
+  code: 'ECONNREFUSED',
+  syscall: 'querySrv',
+  hostname: '_mongodb._tcp
+.cluster-2.a4ydqil.mongodb
+.net'
+}

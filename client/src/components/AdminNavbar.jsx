@@ -9,7 +9,7 @@ import {
     LogOut
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/unicafe_logo_orange.png'; // Fallback if no specific logo available
+import logo from '../assets/unicafe_logo_vintage.png';
 
 const AdminNavbar = ({ activeTab, setActiveTab }) => {
     const navigate = useNavigate();
@@ -41,9 +41,9 @@ const AdminNavbar = ({ activeTab, setActiveTab }) => {
     return (
         <nav style={{
             width: '100%',
-            height: '80px',
-            background: 'linear-gradient(90deg, rgba(234, 88, 12, 1) 0%, rgba(194, 65, 12, 1) 100%)',
-            color: '#ffffff',
+            height: '70px',
+            background: '#ffffff',
+            color: 'var(--coffee-dark)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -51,14 +51,15 @@ const AdminNavbar = ({ activeTab, setActiveTab }) => {
             position: 'sticky',
             top: 0,
             zIndex: 100,
-            boxShadow: '0 4px 20px rgba(234, 88, 12, 0.3)',
-            boxSizing: 'border-box'
+            boxShadow: '0 4px 12px rgba(59, 31, 14, 0.04)',
+            boxSizing: 'border-box',
+            borderBottom: '1px solid var(--latte-border)'
         }}>
             {/* Logo Area */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <img src={logo} alt="UniCafé Logo" style={{ height: '45px', width: '45px', objectFit: 'cover', borderRadius: '50%', boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }} />
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'white', letterSpacing: '-0.5px' }}>
-                    UniCafe<span style={{ color: '#FFB800' }}>ADMIN</span>
+                <img src={logo} alt="UniCafé Logo" style={{ height: '48px', objectFit: 'contain' }} />
+                <h2 style={{ fontSize: '1.3rem', fontWeight: 900, margin: 0, color: 'var(--coffee-dark)', letterSpacing: '-0.5px' }}>
+                    UniCafe<span style={{ color: 'var(--latte-highlight)' }}>ADMIN</span>
                 </h2>
             </div>
 
@@ -72,35 +73,35 @@ const AdminNavbar = ({ activeTab, setActiveTab }) => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            padding: '10px 18px',
-                            borderRadius: '12px',
+                            padding: '10px 20px',
+                            borderRadius: '50px',
                             border: 'none',
-                            background: activeTab === item.id ? 'rgba(255,255,255,1)' : 'transparent',
-                            color: activeTab === item.id ? '#ea580c' : 'rgba(255,255,255,0.8)',
+                            background: activeTab === item.id ? 'var(--coffee-dark)' : 'transparent',
+                            color: activeTab === item.id ? '#ffffff' : 'var(--coffee-muted)',
                             cursor: 'pointer',
-                            fontSize: '0.95rem',
-                            fontWeight: activeTab === item.id ? 700 : 600,
-                            transition: 'all 0.3s ease',
+                            fontSize: '0.9rem',
+                            fontWeight: 700,
+                            transition: 'all 0.2s ease',
                         }}
                         onMouseOver={(e) => {
                             if (activeTab !== item.id) {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                                e.currentTarget.style.color = '#ffffff';
+                                e.currentTarget.style.background = 'rgba(59, 31, 14, 0.05)';
+                                e.currentTarget.style.color = 'var(--coffee-dark)';
                             }
                         }}
                         onMouseOut={(e) => {
                             if (activeTab !== item.id) {
                                 e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.color = 'rgba(255,255,255,0.8)';
+                                e.currentTarget.style.color = 'var(--coffee-muted)';
                             }
                         }}
                     >
-                        <item.icon size={18} style={{ color: activeTab === item.id ? '#ea580c' : 'inherit' }} />
+                        <item.icon size={18} />
                         <span>{item.name}</span>
                     </button>
                 ))}
 
-                <div style={{ width: '1px', height: '30px', background: 'rgba(255,255,255,0.2)', margin: '0 15px' }} />
+                <div style={{ width: '1px', height: '30px', background: 'var(--latte-border)', margin: '0 15px' }} />
 
                 <button
                     onClick={handleLogout}
@@ -108,22 +109,25 @@ const AdminNavbar = ({ activeTab, setActiveTab }) => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        padding: '10px 20px',
-                        borderRadius: '12px',
-                        border: '1px solid rgba(255,255,255,0.3)',
-                        background: 'rgba(255,255,255,0.1)',
-                        color: 'white',
+                        padding: '10px 22px',
+                        borderRadius: '50px',
+                        border: '1px solid var(--latte-border)',
+                        background: '#faf7f2',
+                        color: 'var(--coffee-dark)',
                         cursor: 'pointer',
-                        fontWeight: 600,
+                        fontWeight: 700,
+                        fontSize: '0.9rem',
                         transition: 'all 0.2s ease'
                     }}
                     onMouseOver={(e) => {
                         e.currentTarget.style.background = '#ef4444';
+                        e.currentTarget.style.color = '#fff';
                         e.currentTarget.style.borderColor = '#ef4444';
                     }}
                     onMouseOut={(e) => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
+                        e.currentTarget.style.background = '#faf7f2';
+                        e.currentTarget.style.color = 'var(--coffee-dark)';
+                        e.currentTarget.style.borderColor = 'var(--latte-border)';
                     }}
                 >
                     <LogOut size={18} />

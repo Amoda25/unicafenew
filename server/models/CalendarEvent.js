@@ -7,7 +7,7 @@ const CalendarEventSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['closing', 'event'],
+        enum: ['closing', 'event', 'admin_note'],
         required: true
     },
     title: {

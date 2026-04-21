@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Package, Clock, CheckCircle, RefreshCcw, AlertCircle, MessageSquare, Timer, Flame, ShoppingBag } from 'lucide-react';
+import { User, Package, Clock, CheckCircle, RefreshCcw, AlertCircle, MessageSquare, Timer, Flame, ShoppingBag, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -46,6 +46,17 @@ const ProfilePage = () => {
         }
     }, [user, navigate]);
 
+    const handleCancelOrder = async (orderId) => {
+        if (window.confirm("Are you sure you want to cancel this order?")) {
+            try {
+                await axios.delete(`/api/orders/${orderId}`);
+                setOrders(orders.filter(o => o._id !== orderId));
+            } catch (err) {
+                alert(err.response?.data?.error || "Failed to cancel order");
+            }
+        }
+    };
+
     const mockOrders = [
         {
             _id: 'm1',
@@ -69,7 +80,8 @@ const ProfilePage = () => {
             case 'preparing': return { color: '#ea580c', bg: '#ffedd5', icon: <Timer size={16} className="animate-pulse" />, label: 'Preparing' };
             case 'process': return { color: '#f59e0b', bg: '#fff7ed', icon: <RefreshCcw size={16} className="animate-spin" />, label: 'Processing' };
             case 'cookd': return { color: '#ec4899', bg: '#fdf2f8', icon: <Flame size={16} />, label: 'Cooked' };
-            case 'picup': return { color: '#10b981', bg: '#d1fae5', icon: <ShoppingBag size={16} className="animate-bounce" />, label: 'Ready for Pickup' };
+            case 'ready': return { color: '#10b981', bg: '#d1fae5', icon: <ShoppingBag size={16} className="animate-bounce" />, label: 'Ready for Pickup' };
+
             case 'picked-up': return { color: '#475569', bg: '#f1f5f9', icon: <Package size={16} />, label: 'Completed' };
             default: return { color: '#b91c1c', bg: '#fee2e2', icon: <AlertCircle size={16} />, label: 'Cancelled' };
         }
@@ -199,6 +211,16 @@ const ProfilePage = () => {
                                     >
                                         View Details
                                     </button>
+                                    {order.status === 'pending' && (
+                                        <button 
+                                            onClick={() => handleCancelOrder(order._id)}
+                                            title="Cancel Order"
+                                            className="glass" 
+                                            style={{ padding: '0.55rem', cursor: 'pointer', borderColor: '#fee2e2', color: '#dc2626', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    )}
                                 </div>
                             </motion.div>
                         );

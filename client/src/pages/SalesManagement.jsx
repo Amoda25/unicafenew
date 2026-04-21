@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Save, TrendingUp, Clock, Package, Zap, BarChart3, Users as UsersIcon,
@@ -13,19 +13,52 @@ import axios from 'axios';
 import SalesSidebar from '../components/SalesSidebar';
 
 const SalesManagement = () => {
+    const getInitialGoal = () => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const savedGoalData = localStorage.getItem('dailySalesGoal');
+        if (savedGoalData) {
+            try {
+                const { date, goal } = JSON.parse(savedGoalData);
+                if (date === todayStr) {
+                    return goal;
+                }
+            } catch (e) {}
+        }
+        return 0;
+    };
+
+    const initialGoal = getInitialGoal();
     const [activeTab, setActiveTab] = useState('dashboard');
-    const [salesGoal, setSalesGoal] = useState(50000); // Default Target
-    const [goalInput, setGoalInput] = useState('50000');
+    const [salesGoal, setSalesGoal] = useState(initialGoal); 
+    const [goalInput, setGoalInput] = useState(initialGoal > 0 ? initialGoal.toString() : '');
     const [goalError, setGoalError] = useState('');
     const [orders, setOrders] = useState([]);
     const [users, setUsers] = useState([]);
     const [globalSearch, setGlobalSearch] = useState('');
     const [showDailyReport, setShowDailyReport] = useState(false);
     const [selectedReportDate, setSelectedReportDate] = useState(new Date().toISOString().split('T')[0]);
+    const [inventory, setInventory] = useState([]);
     const [showUserModal, setShowUserModal] = useState(false);
     const [showSuccess, setShowSuccess] = useState('');
     const [showError, setShowError] = useState('');
-    
+
+    const [aiMessages, setAiMessages] = useState([{
+        sender: 'ai',
+        text: "Hello Sales Admin! I've analyzed today's data. Everything looks stable, but I recommend a small promotion for 'Snacks' to boost afternoon sales."
+    }]);
+    const [aiInput, setAiInput] = useState('');
+    const chatContainerRef = useRef(null);
+
+    // Auto-scroll to bottom of chat
+    useEffect(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTo({
+                top: chatContainerRef.current.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+    }, [aiMessages]);
+
     const [userFormData, setUserFormData] = useState({
         name: '',
         studentId: '',
@@ -53,9 +86,11 @@ const SalesManagement = () => {
     useEffect(() => {
         fetchOrders();
         fetchUsers();
+        fetchInventory();
 
         const intervalId = setInterval(() => {
             fetchOrders();
+            fetchInventory();
         }, 5000);
 
         return () => clearInterval(intervalId);
@@ -76,6 +111,15 @@ const SalesManagement = () => {
             setUsers(response.data);
         } catch (err) {
             console.error('Error fetching users:', err);
+        }
+    };
+
+    const fetchInventory = async () => {
+        try {
+            const response = await axios.get('/api/inventory');
+            setInventory(response.data);
+        } catch (err) {
+            console.error('Error fetching inventory:', err);
         }
     };
 
@@ -148,18 +192,453 @@ const SalesManagement = () => {
             setGoalError('Please enter a valid target amount (e.g., 50000)');
             return;
         }
+        const todayStr = new Date().toISOString().split('T')[0];
+        localStorage.setItem('dailySalesGoal', JSON.stringify({ date: todayStr, goal: num }));
+
         setSalesGoal(num);
         setGoalError('');
         setShowSuccess('Sales target updated!');
         setTimeout(() => setShowSuccess(''), 3000);
     };
 
+    const handleSendAiMessage = (overrideInput = null) => {
+        const inputToUse = overrideInput || aiInput;
+        if (!inputToUse || !inputToUse.trim()) return;
+
+        const newMessages = [...aiMessages, { sender: 'admin', text: inputToUse }];
+        setAiMessages(newMessages);
+
+        const lowerInput = inputToUse.toLowerCase();
+        let reply = "I'm not sure what you mean. Try asking about today's sales, top items, busy times, or stock levels!";
+
+        // --- Date helpers ---
+        const todayD = new Date();
+        const todayStr = todayD.toISOString().split('T')[0];
+
+        const yestD = new Date(todayD);
+        yestD.setDate(yestD.getDate() - 1);
+        const yestStr = yestD.toISOString().split('T')[0];
+
+        const weekAgo = new Date(todayD);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+
+        // --- Order filters ---
+        const todayOrders = orders.filter(o => new Date(o.createdAt).toISOString().split('T')[0] === todayStr);
+        const yestOrders = orders.filter(o => new Date(o.createdAt).toISOString().split('T')[0] === yestStr);
+        const weekOrders = orders.filter(o => new Date(o.createdAt) >= weekAgo);
+
+        const todayRevenue = todayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+        const yestRevenue = yestOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+        const weekRevenue = weekOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+        // --- Data Aggregation ---
+        const itemCounts = {};
+        const itemRevenue = {};
+        const todayItemCounts = {};
+        const categoryCounts = {};
+        const hourCounts = {};
+        let morningSales = 0;
+        let afternoonSales = 0;
+        let eveningSales = 0;
+
+        orders.forEach(order => {
+            const isToday = new Date(order.createdAt).toISOString().split('T')[0] === todayStr;
+            const h = new Date(order.createdAt).getHours();
+            const orderTotal = order.totalAmount || 0;
+
+            hourCounts[h] = (hourCounts[h] || 0) + 1;
+            if (h < 12) morningSales += orderTotal;
+            else if (h < 17) afternoonSales += orderTotal;
+            else eveningSales += orderTotal;
+
+            order.items?.forEach(item => {
+                const name = item.name?.en || item.name;
+                const cat = item.category || 'Meals';
+                const qty = item.quantity || 1;
+                const price = item.price || 0;
+
+                itemCounts[name] = (itemCounts[name] || 0) + qty;
+                itemRevenue[name] = (itemRevenue[name] || 0) + (price * qty);
+                categoryCounts[cat] = (categoryCounts[cat] || 0) + qty;
+                if (isToday) todayItemCounts[name] = (todayItemCounts[name] || 0) + qty;
+            });
+        });
+
+        const sortedItems = Object.entries(itemCounts).sort((a, b) => b[1] - a[1]);
+        const sortedByRevenue = Object.entries(itemRevenue).sort((a, b) => b[1] - a[1]);
+        const sortedTodayItems = Object.entries(todayItemCounts).sort((a, b) => b[1] - a[1]);
+        const sortedCats = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
+        const sortedHours = Object.entries(hourCounts).sort((a, b) => b[1] - a[1]);
+
+        // --- Day of Week Trend ---
+        const dayOfWeekSales = { 'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0, 'Sun': 0 };
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        orders.forEach(o => {
+            const day = dayNames[new Date(o.createdAt).getDay()];
+            dayOfWeekSales[day] += (o.totalAmount || 0);
+        });
+        const bestDay = Object.entries(dayOfWeekSales).sort((a, b) => b[1] - a[1])[0];
+
+        const formatHour = (hStr) => {
+            if (hStr === undefined || hStr === null) return 'N/A';
+            const num = parseInt(hStr);
+            const ampm = num >= 12 ? 'PM' : 'AM';
+            const adjusted = num % 12 || 12;
+            return `${adjusted}:00 ${ampm} – ${adjusted}:59 ${ampm}`;
+        };
+
+        const diffPct = (a, b) => b === 0 ? null : Math.round(((a - b) / b) * 100);
+
+        const cleanInput = lowerInput.replace(/[^\w\s\u0d80-\u0dff]/gi, '');
+        const matchIntent = (patterns) => patterns.some(p => new RegExp(p, 'i').test(cleanInput));
+
+        // ─── INTENT MATCHING ──────────────────────────────────────────────────────
+
+        // 1. Weekly Revenue Summary
+        if (matchIntent(['this week', 'weekly', 'week total', 'last 7', '7 days', 'sathiya'])) {
+            reply = `This week's total revenue is LKR ${weekRevenue.toLocaleString()} across ${weekOrders.length} orders. 📅`;
+
+            // 2. Today vs Yesterday Comparison / Trend
+        } else if (matchIntent(['compare', 'yesterday', 'vs yesterday', 'today vs yesterday', 'iye saha', 'iye ada', 'iye', 'trend', 'going up', 'going down', 'is it up', 'is it down', 'are sales'])) {
+            const diff = todayRevenue - yestRevenue;
+            const pct = diffPct(todayRevenue, yestRevenue);
+            const arrow = diff >= 0 ? '📈 Up' : '📉 Down';
+            const pctText = pct !== null ? ` (${Math.abs(pct)}%)` : '';
+            reply = `Today: LKR ${todayRevenue.toLocaleString()} | Yesterday: LKR ${yestRevenue.toLocaleString()}. ${arrow} by LKR ${Math.abs(diff).toLocaleString()}${pctText}.`;
+
+            // 3. Number of Orders
+        } else if (matchIntent(['how many orders', 'orders today', 'order count', 'orders count', 'orders kiyada', 'ada orders', 'gaana', 'gaana kiyada', 'order gaana', 'number of orders'])) {
+            reply = `You have received **${todayOrders.length}** orders today. 🛒\n(Weekly average: ~${Math.round(weekOrders.length / 7)} orders/day)`;
+
+            // 4. Total Earnings / Revenue Today
+        } else if (matchIntent(['today sales', 'today revenue', 'revenue today', 'sales today', 'today.*sales', 'today.*revenue', 'sales.*today', 'revenue.*today', 'how much.*earn', 'earn.*today', 'sales kohomada', 'ada sales', 'ada revenue', 'sales keeyada', 'ada salli', 'ada income', 'how much did we', 'total.*today', 'what.*sales'])) {
+            const tip = todayRevenue < salesGoal * 0.5 && new Date().getHours() > 14
+                ? '\n⚠️ Sales are below 50% of your daily goal — consider a flash promo!'
+                : '';
+            reply = `Today's total revenue is **LKR ${todayRevenue.toLocaleString()}** across ${todayOrders.length} orders.${tip} 💰`;
+
+            // 4b. Sales Summary / Overview
+        } else if (matchIntent(['sales summary', 'summary', 'overview', 'ada wistara', 'today summary'])) {
+            const topItem = sortedTodayItems[0];
+            const progress = salesGoal > 0 ? Math.round((todayRevenue / salesGoal) * 100) : 0;
+            reply = `📊 **Today's Sales Summary:**\n\n` +
+                    `• Total Revenue: LKR ${todayRevenue.toLocaleString()}\n` +
+                    `• Orders Count: ${todayOrders.length}\n` +
+                    `• Bestseller: ${topItem ? `"${topItem[0]}"` : 'None yet'}\n` +
+                    `• Goal Progress: ${progress}% of LKR ${salesGoal.toLocaleString()}\n\n` +
+                    `Anything else you'd like to dive into?`;
+
+            // 5. Promotion / Slow-moving items
+        } else if (matchIntent(['promote', 'promotion', 'slow moving', 'sell more of', 'aduma vikunena', 'promote karanna', 'what should i promote', 'bundle'])) {
+            const worstItems = sortedItems.slice(-3).map(i => i[0]);
+            const topItem = sortedItems[0]?.[0] || 'your bestseller';
+            reply = worstItems.length
+                ? `💡 Try bundling slow sellers like "${worstItems[0]}" or "${worstItems[1] || worstItems[0]}" with "${topItem}" to increase their visibility!`
+                : 'Not enough data to suggest promotions yet.';
+
+            // 6. Discounts
+        } else if (matchIntent(['discount', 'offer', 'flash sale', 'adukaranawada', 'adukarannam'])) {
+            const currentHour = new Date().getHours();
+            const isQuiet = currentHour < 11 || (currentHour >= 14 && currentHour < 17);
+            reply = isQuiet
+                ? `✅ Yes! It's a slow hour right now. A 10–15% flash discount on drinks could boost sales quickly.`
+                : `⏳ Not right now — it's peak time! Let organic demand do its work. Try discounts after 2 PM.`;
+
+            // 7. Improvement Tips / Suggestions
+        } else if (matchIntent(['improve', 'tips', 'advice', 'suggest', 'how to increase', 'salli wadi', 'sales wadi karanna', 'increase sales', 'improvement', 'recommendation'])) {
+            const worstItems = sortedItems.slice(-2).map(i => i[0]).join(' and ');
+            const quietestHour = sortedHours.length > 0 ? sortedHours[sortedHours.length - 1][0] : null;
+            const topCat = sortedCats[0]?.[0] || 'Meals';
+            reply = `Here are 3 tips:\n1️⃣ Run flash deals during your quietest hour (${formatHour(quietestHour)}).\n2️⃣ Bundle slow items like "${worstItems}" with bestsellers.\n3️⃣ Focus marketing on "${topCat}" — your top category!`;
+
+            // 8. Least Selling Items / Low Performers
+        } else if (matchIntent(['least selling', 'least popular', 'worst', 'aduma', 'lowest selling', 'not selling', 'poor performer', 'least items', 'low performers'])) {
+            const leastItems = sortedItems.slice(-3).map((i, idx) => `${idx + 1}) ${i[0]} (${i[1]} sold)`).join('\n');
+            reply = `Least selling items:\n${leastItems || 'No data yet.'}\n💡 Consider a bundle deal to move these!`;
+
+            // 9. Today's Best Seller
+        } else if (matchIntent(['best.*today', 'top.*today', 'most.*today', 'today.*best', 'today.*top', 'ada hondatama', 'ada.*top', 'ada wadiyenma'])) {
+            const topItem = sortedTodayItems[0];
+            reply = topItem
+                ? `Today's top item: "${topItem[0]}" with ${topItem[1]} units sold. 🔥 Keep the stock ready!`
+                : 'No sales recorded for today yet.';
+
+            // 10. Top Selling Items (Overall, by Revenue)
+        } else if (matchIntent(['performing best', 'best item', 'best items', 'top item', 'most selling', 'popular item', 'mokakda', 'hodama', 'hondama', 'wadiyenma', 'illuwm', 'top sales', 'revenue.*item', 'which item'])) {
+            if (sortedByRevenue.length > 0) {
+                const top3 = sortedByRevenue.slice(0, 3).map((item, idx) => {
+                    const count = itemCounts[item[0]] || 0;
+                    return `${idx + 1}) ${item[0]} (${count} sold, LKR ${item[1].toLocaleString()})`;
+                }).join('\n');
+                reply = `🏆 Top performing products:\n${top3}\nThese are your highest revenue earners!`;
+            } else {
+                reply = 'No item data available yet. Place some orders first!';
+            }
+
+            // 11. Sales by Category
+        } else if (matchIntent(['category', 'categories', 'top category', 'type', 'varga', 'which category'])) {
+            const topCat = sortedCats[0];
+            const top3 = sortedCats.slice(0, 3).map(c => `${c[0]} (${c[1]})`).join(', ');
+            reply = `Top categories: ${top3 || 'N/A'}. 📊 "${topCat?.[0]}" leads your menu!`;
+
+            // 12. Time Breakdown
+        } else if (matchIntent(['sales by time', 'time.*breakdown', 'time of day', 'dawasata sales', 'morning.*afternoon', 'evening.*sales'])) {
+            const total = morningSales + afternoonSales + eveningSales || 1;
+            const mPct = Math.round((morningSales / total) * 100);
+            const aPct = Math.round((afternoonSales / total) * 100);
+            const ePct = Math.round((eveningSales / total) * 100);
+            reply = `Sales split:\n☀️ Morning ${mPct}%\n🌤️ Afternoon ${aPct}%\n🌙 Evening ${ePct}%`;
+
+            // 13. Quietest / Slow Time
+        } else if (matchIntent(['lowest sales', 'least busy', 'quietest', 'slow time', 'quiet hour', 'slow hours', 'adhuma sales', 'quiet time'])) {
+            const lowestHour = sortedHours.length > 0 ? sortedHours[sortedHours.length - 1][0] : null;
+            reply = `🕒 **Slow Hours:**\nYour quietest period is usually around **${formatHour(lowestHour)}**. 💡 This is a great time to run flash deals or "Happy Hour" promos to bring in more customers!`;
+
+            // 14. Peak / Busiest Time
+        } else if (matchIntent(['busiest', 'peak time', 'rush hour', 'busy time', 'peak ordering', 'lunch time', 'busy hours', 'wediya salli', 'busyma', 'peak hours'])) {
+            const peakHour = sortedHours.length > 0 ? sortedHours[0][0] : null;
+            const peakCount = sortedHours.length > 0 ? sortedHours[0][1] : 0;
+            reply = `🔥 **Peak Time Insights:**\nYour busiest hour is **${formatHour(peakHour)}** with around ${peakCount} orders. \n⚡ **Tip:** Ensure extra staff are available and high-demand items are pre-prepped during this window to avoid delays!`;
+
+            // 14b. Time Analysis Summary
+        } else if (matchIntent(['time analysis', 'analysis by time', 'time report', 'hours report'])) {
+            const total = morningSales + afternoonSales + eveningSales || 1;
+            const mPct = Math.round((morningSales / total) * 100);
+            const aPct = Math.round((afternoonSales / total) * 100);
+            const ePct = Math.round((eveningSales / total) * 100);
+            const peakHour = sortedHours.length > 0 ? sortedHours[0][0] : null;
+            const slowHour = sortedHours.length > 0 ? sortedHours[sortedHours.length - 1][0] : null;
+            
+            reply = `⏰ **Complete Time Analysis:**\n\n` +
+                    `• **Morning (6AM-12PM):** ${mPct}% of sales\n` +
+                    `• **Afternoon (12PM-5PM):** ${aPct}% of sales\n` +
+                    `• **Evening (5PM-10PM):** ${ePct}% of sales\n\n` +
+                    `🚀 **Busiest Hour:** ${formatHour(peakHour)}\n` +
+                    `😴 **Quietest Hour:** ${formatHour(slowHour)}`;
+
+            // 15. Inventory / Stock Alerts
+        } else if (matchIntent(['stock', 'inventory', 'low stock', 'restock', 'ingredients', 'supply', 'stok', 'stokaya'])) {
+            const lowItems = inventory.filter(i => i.qty <= i.minStockThreshold);
+            if (lowItems.length > 0) {
+                const names = lowItems.slice(0, 3).map(i => `"${i.name}" (${i.qty} ${i.unit})`).join(', ');
+                reply = `⚠️ Low stock alert! ${names}${lowItems.length > 3 ? ` and ${lowItems.length - 3} more items` : ''} need restocking soon.`;
+            } else {
+                reply = `✅ All inventory levels look good right now! No urgent restocking needed.`;
+            }
+
+            // 16. Customer Behavior / Top Spenders
+        } else if (matchIntent(['customer', 'top customer', 'who orders', 'spender', 'frequent', 'loyal'])) {
+            const customerSpend = {};
+            orders.forEach(o => {
+                const id = o.username || o.studentId || 'Unknown';
+                customerSpend[id] = (customerSpend[id] || 0) + (o.totalAmount || 0);
+            });
+            const topCustomers = Object.entries(customerSpend).sort((a, b) => b[1] - a[1]).slice(0, 3);
+            if (topCustomers.length > 0) {
+                const list = topCustomers.map((c, i) => `${i + 1}) ${c[0]}: LKR ${c[1].toLocaleString()}`).join('\n');
+                reply = `👥 Top spenders:\n${list}\nConsider a loyalty reward for them!`;
+            } else {
+                reply = 'No customer order data found yet.';
+            }
+
+            // 17. Trends Breakdown (Best Day, Trend)
+        } else if (matchIntent(['sales trend', 'weekly trend', 'popular trends', 'best day', 'hondama dawasa', 'trend eka'])) {
+            const diff = todayRevenue - yestRevenue;
+            const arrow = diff >= 0 ? '📈 upwards' : '📉 slightly downwards';
+            reply = `Trend Analysis:\n1️⃣ This week's trend is ${arrow} with LKR ${weekRevenue.toLocaleString()} in total sales.\n2️⃣ Highest performing day of the week is usually **${bestDay[0]}**.\n3️⃣ Top categories like "${sortedCats[0]?.[0]}" are driving the most growth!`;
+
+        // 18. Customer Preferences
+        } else if (matchIntent(['customer preferences', 'what do they like', 'preferences', 'most liked', 'popular meal', 'wadipurama kamathi'])) {
+            const topItem = sortedItems[0];
+            reply = topItem 
+                ? `Customer Insights: Customers definitely prefer **"${topItem[0]}"** over everything else, with ${topItem[1]} total orders! 🌟`
+                : 'I need more order data to determine customer preferences.';
+
+        // 19. General Revenue / Sales (catch-all)
+        } else if (matchIntent(['revenue', 'sales', 'income', 'total', 'earnings', 'how.*doing', 'performance', 'keeyada', 'salli', 'sales today', 'revenue today', 'orders today'])) {
+            const diff = todayRevenue - yestRevenue;
+            const arrow = diff >= 0 ? '📈' : '📉';
+            const progressText = salesGoal > 0 ? ` We are at ${Math.round((todayRevenue / salesGoal) * 100)}% of our goal!` : '';
+            reply = `Today's Pulse: ${arrow} LKR ${todayRevenue.toLocaleString()} Revenue | 🛒 ${todayOrders.length} Orders.${progressText}`;
+        }
+
+        setTimeout(() => {
+            setAiMessages(prev => [...prev, { sender: 'ai', text: reply }]);
+        }, 500);
+
+        setAiInput('');
+    };
+
+    const handleDownloadReport = () => {
+        const dayOrders = orders.filter(o => new Date(o.createdAt).toISOString().split('T')[0] === selectedReportDate);
+        if (dayOrders.length === 0) {
+            alert('No data to download for this date.');
+            return;
+        }
+
+        let csvContent = "data:text/csv;charset=utf-8,";
+        
+        // CSV Header for Summary
+        csvContent += "Report Date,Total Revenue(LKR),Total Orders\n";
+        
+        const dayRevenue = dayOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+        csvContent += `${selectedReportDate},${dayRevenue},${dayOrders.length}\n\n`;
+
+        // Itemized breakdown
+        csvContent += "Item Name,Quantity Sold,Total Value(LKR)\n";
+        const dayItemCounts = {};
+        dayOrders.forEach(o => o.items?.forEach(i => {
+            const name = i.name?.en || i.name;
+            const priceStr = String(i.price || 0).replace(/,/g, '');
+            const price = parseFloat(priceStr);
+            const qty = i.quantity || 1;
+            
+            if (!dayItemCounts[name]) {
+                dayItemCounts[name] = { qty: 0, revenue: 0 };
+            }
+            dayItemCounts[name].qty += qty;
+            dayItemCounts[name].revenue += price * qty;
+        }));
+
+        const sortedItems = Object.entries(dayItemCounts).sort((a, b) => b[1].qty - a[1].qty);
+        sortedItems.forEach(([name, data]) => {
+            // escape quotes in name just in case
+            const safeName = `"${name.replace(/"/g, '""')}"`;
+            csvContent += `${safeName},${data.qty},${data.revenue}\n`;
+        });
+
+        // Create link and download
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Sales_Report_${selectedReportDate}.csv`);
+        document.body.appendChild(link); // Required for FF
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleDownloadPDF = () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const dateStr = new Date(selectedReportDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        const dayOrders = orders.filter(o => new Date(o.createdAt).toISOString().split('T')[0] === selectedReportDate);
+        const dayRevenue = dayOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+
+        // Header
+        doc.setFontSize(22);
+        doc.setTextColor(30, 41, 59);
+        doc.text("UniCafe Daily Sales Report", 14, 22);
+        
+        doc.setFontSize(12);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Date: ${dateStr}`, 14, 32);
+
+        // Summary Cards (Simulator)
+        doc.setDrawColor(241, 245, 249);
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(14, 40, 182, 30, 3, 3, 'FD');
+        
+        doc.setFontSize(10);
+        doc.setTextColor(148, 163, 184);
+        doc.text("TOTAL REVENUE", 20, 50);
+        doc.text("TOTAL ORDERS", 80, 50);
+        doc.text("AVG. ORDER VALUE", 140, 50);
+
+        doc.setFontSize(14);
+        doc.setTextColor(15, 23, 42);
+        doc.text(`LKR ${dayRevenue.toLocaleString()}`, 20, 60);
+        doc.text(`${dayOrders.length}`, 80, 60);
+        const avg = dayOrders.length > 0 ? Math.round(dayRevenue / dayOrders.length) : 0;
+        doc.text(`LKR ${avg.toLocaleString()}`, 140, 60);
+
+        // Itemized Table
+        const dayItemCounts = {};
+        dayOrders.forEach(o => o.items?.forEach(i => {
+            const name = i.name?.en || i.name;
+            const price = parseFloat(String(i.price || 0).replace(/,/g, ''));
+            const qty = i.quantity || 1;
+            if (!dayItemCounts[name]) dayItemCounts[name] = { qty: 0, revenue: 0 };
+            dayItemCounts[name].qty += qty;
+            dayItemCounts[name].revenue += price * qty;
+        }));
+
+        const tableData = Object.entries(dayItemCounts)
+            .sort((a, b) => b[1].qty - a[1].qty)
+            .map(([name, data]) => [name, data.qty, `LKR ${data.revenue.toLocaleString()}`]);
+
+        doc.autoTable({
+            startY: 80,
+            head: [['Item Name', 'Quantity Sold', 'Total Revenue']],
+            body: tableData,
+            theme: 'striped',
+            headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            margin: { top: 80 }
+        });
+
+        doc.save(`UniCafe_Sales_Report_${selectedReportDate}.pdf`);
+    };
+
     const renderDashboardOverview = () => {
         const todayStr = new Date().toISOString().split('T')[0];
         const todayOrders = orders.filter(o => new Date(o.createdAt).toISOString().split('T')[0] === todayStr);
         const todayRevenue = todayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
-        const progressPercent = Math.min(Math.round((todayRevenue / salesGoal) * 100), 100);
+        const progressPercent = salesGoal > 0 ? Math.min(Math.round((todayRevenue / salesGoal) * 100), 100) : 0;
         const remainingToGoal = Math.max(salesGoal - todayRevenue, 0);
+
+        // Calculate Real-time Peak Hour Today
+        const hourCounts = {};
+        todayOrders.forEach(o => {
+            const h = new Date(o.createdAt).getHours();
+            hourCounts[h] = (hourCounts[h] || 0) + 1;
+        });
+        const peakHourEntry = Object.entries(hourCounts).sort((a,b) => b[1] - a[1])[0];
+        let peakHourText = 'N/A';
+        if (peakHourEntry) {
+             const h = parseInt(peakHourEntry[0]);
+             const ampm = h >= 12 ? 'PM' : 'AM';
+             const adjusted = h % 12 || 12;
+             peakHourText = `${adjusted}:00 ${ampm}`;
+        }
+
+        // Calculate Real-time Hot Seller Today
+        const todayItemCounts = {};
+        todayOrders.forEach(o => {
+            o.items?.forEach(item => {
+                const name = item.name?.en || item.name;
+                const qty = item.quantity || 1;
+                todayItemCounts[name] = (todayItemCounts[name] || 0) + qty;
+            });
+        });
+        const hotSellerEntry = Object.entries(todayItemCounts).sort((a,b) => b[1] - a[1])[0];
+        const hotSellerName = hotSellerEntry ? hotSellerEntry[0] : 'N/A';
+
+        // Calculate Real-time AI Prediction
+        const currentHour = new Date().getHours();
+        const yestD = new Date();
+        yestD.setDate(yestD.getDate() - 1);
+        const yestStr = yestD.toISOString().split('T')[0];
+        const yestOrdersUpToNow = orders.filter(o => {
+            const d = new Date(o.createdAt);
+            return d.toISOString().split('T')[0] === yestStr && d.getHours() <= currentHour;
+        });
+        const yestRevenueUpToNow = yestOrdersUpToNow.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+        
+        let aiPrediction = "Stable Growth";
+        if (todayRevenue === 0 && todayOrders.length === 0) {
+            aiPrediction = "Awaiting Data";
+        } else if (todayRevenue > yestRevenueUpToNow * 1.2) {
+            aiPrediction = "High Growth 🚀";
+        } else if (yestRevenueUpToNow > 0 && todayRevenue < yestRevenueUpToNow * 0.8) {
+            aiPrediction = "Slowing Down 📉";
+        } else if (todayRevenue > yestRevenueUpToNow) {
+            aiPrediction = "Growing 📈";
+        } else if (todayRevenue < yestRevenueUpToNow) {
+            aiPrediction = "Slightly Down 📉";
+        } else {
+            aiPrediction = "Stable Growth 📊";
+        }
 
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -174,9 +653,11 @@ const SalesManagement = () => {
                     }}>
                         <div style={{ position: 'relative', zIndex: 1 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                                <div>
+                                <div style={{ marginBottom: '30px', flex: 1 }}>
                                     <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '5px' }}>Daily Sales Performance</h2>
-                                    <p style={{ color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>Tracking your LKR {salesGoal.toLocaleString()} target</p>
+                                    <p style={{ color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>
+                                        {salesGoal > 0 ? `Tracking your LKR ${salesGoal.toLocaleString()} target` : 'Set your daily revenue target below to start tracking'}
+                                    </p>
                                 </div>
                                 <div style={{ width: '60px', height: '60px', borderRadius: '18px', background: 'rgba(255,184,0,0.2)', color: '#FFB800', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Award size={32} />
@@ -187,11 +668,11 @@ const SalesManagement = () => {
                                 <div style={{ position: 'relative', width: '150px', height: '150px' }}>
                                     <svg width="150" height="150" viewBox="0 0 100 100">
                                         <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="10" />
-                                        <circle cx="50" cy="50" r="45" fill="none" stroke="#FFB800" strokeWidth="10" 
-                                            strokeDasharray={`${progressPercent * 2.82} 282`} 
-                                            transform="rotate(-90 50 50)" 
+                                        <circle cx="50" cy="50" r="45" fill="none" stroke="#FFB800" strokeWidth="10"
+                                            strokeDasharray={`${progressPercent * 2.82} 282`}
+                                            transform="rotate(-90 50 50)"
                                             strokeLinecap="round"
-                                            style={{ transition: 'stroke-dasharray 1s ease-out' }} 
+                                            style={{ transition: 'stroke-dasharray 1s ease-out' }}
                                         />
                                         <text x="50" y="55" textAnchor="middle" fill="white" fontSize="18" fontWeight="800">{progressPercent}%</text>
                                     </svg>
@@ -208,8 +689,8 @@ const SalesManagement = () => {
                                         </div>
                                         <div>
                                             <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>Gap to Goal</div>
-                                            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: remainingToGoal === 0 ? '#10b981' : '#f87171' }}>
-                                                {remainingToGoal === 0 ? 'Goal Met!' : `LKR ${remainingToGoal.toLocaleString()}`}
+                                            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: salesGoal === 0 ? '#94a3b8' : remainingToGoal === 0 ? '#10b981' : '#f87171' }}>
+                                                {salesGoal === 0 ? 'Not Set' : remainingToGoal === 0 ? 'Goal Met!' : `LKR ${remainingToGoal.toLocaleString()}`}
                                             </div>
                                         </div>
                                     </div>
@@ -223,7 +704,7 @@ const SalesManagement = () => {
                     </div>
 
                     {/* Goal Settings Form */}
-                    <div className="glass" style={{ padding: '30px', background: 'white', display: 'flex', flexDirection: 'column' }}>
+                    <div className="glass" style={{ padding: '30px', background: 'var(--latte-card)', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
                             <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(99,102,241,0.1)', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Target size={20} />
@@ -234,7 +715,7 @@ const SalesManagement = () => {
                         <form onSubmit={handleUpdateGoal} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#64748b', marginBottom: '8px' }}>DAILY REVENUE TARGET (LKR)</label>
-                                <input 
+                                <input
                                     type="text"
                                     value={goalInput}
                                     onChange={(e) => setGoalInput(e.target.value)}
@@ -252,47 +733,82 @@ const SalesManagement = () => {
                                 />
                                 {goalError && <p style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 700, marginTop: '8px' }}>{goalError}</p>}
                             </div>
-                            
+
                             <p style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.5 }}>
                                 Set a realistic goal for your canteen to help the AI better analyze peak hour spikes and inventory needs.
                             </p>
 
-                            <button type="submit" className="btn-premium" style={{ marginTop: 'auto', width: '100%', padding: '16px' }}>
-                                Save Target Parameters
-                            </button>
+                            <div style={{ marginTop: 'auto', display: 'flex', gap: '15px' }}>
+                                <button type="submit" className="btn-premium" style={{ flex: 1, padding: '16px' }}>
+                                    Save Target Parameters
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={() => {
+                                        setSalesGoal(0);
+                                        setGoalInput('');
+                                        localStorage.removeItem('dailySalesGoal');
+                                        setShowSuccess('Sales target reset!');
+                                        setTimeout(() => setShowSuccess(''), 3000);
+                                    }}
+                                    style={{
+                                        padding: '16px 24px',
+                                        borderRadius: '16px',
+                                        border: '2px solid #e2e8f0',
+                                        background: 'transparent',
+                                        color: '#64748b',
+                                        fontSize: '1rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                    onMouseOver={(e) => {
+                                        e.currentTarget.style.borderColor = '#ef4444';
+                                        e.currentTarget.style.color = '#ef4444';
+                                        e.currentTarget.style.background = '#fef2f2';
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.currentTarget.style.borderColor = '#e2e8f0';
+                                        e.currentTarget.style.color = '#64748b';
+                                        e.currentTarget.style.background = 'transparent';
+                                    }}
+                                >
+                                    Reset
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
 
                 {/* Dashboard Quick Stats */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '30px' }}>
-                    <div className="glass" style={{ padding: '25px', background: 'white', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div className="glass" style={{ padding: '25px', background: 'var(--latte-card)', display: 'flex', alignItems: 'center', gap: '20px' }}>
                         <div style={{ width: '50px', height: '50px', borderRadius: '15px', background: '#ecfdf5', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <ArrowUpRight size={24} />
                         </div>
                         <div>
                             <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 700 }}>PEAK HOUR TODAY</div>
-                            <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>12:30 PM</div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>{peakHourText}</div>
                         </div>
                     </div>
-                    <div className="glass" style={{ padding: '25px', background: 'white', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div className="glass" style={{ padding: '25px', background: 'var(--latte-card)', display: 'flex', alignItems: 'center', gap: '20px' }}>
                         <div style={{ width: '50px', height: '50px', borderRadius: '15px', background: '#fff7ed', color: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <Flame size={24} />
                         </div>
                         <div>
                             <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 700 }}>HOT SELLER</div>
                             <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>
-                                {analytics.popularItems[0]?.name || 'N/A'}
+                                {hotSellerName}
                             </div>
                         </div>
                     </div>
-                    <div className="glass" style={{ padding: '25px', background: 'white', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div className="glass" style={{ padding: '25px', background: 'var(--latte-card)', display: 'flex', alignItems: 'center', gap: '20px' }}>
                         <div style={{ width: '50px', height: '50px', borderRadius: '15px', background: '#eef2ff', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <Zap size={24} />
                         </div>
                         <div>
                             <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 700 }}>AI PREDICTION</div>
-                            <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>Stable Growth</div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>{aiPrediction}</div>
                         </div>
                     </div>
                 </div>
@@ -359,8 +875,8 @@ const SalesManagement = () => {
             .map(([name, count]) => ({
                 name,
                 percent: Math.round((count / totalUnits) * 100),
-                color: name.toLowerCase().includes('burger') ? '#ff9f43' : 
-                       name.toLowerCase().includes('latte') ? '#a855f7' : '#06b6d4'
+                color: name.toLowerCase().includes('burger') ? '#ff9f43' :
+                    name.toLowerCase().includes('latte') ? '#a855f7' : '#06b6d4'
             }));
 
         return { last7Days, pieData, popularItems };
@@ -369,21 +885,29 @@ const SalesManagement = () => {
     const analytics = getAnalyticsData();
 
     const renderAnalytics = () => {
-        const topCustomers = Object.values(orders.reduce((acc, order) => {
-            const studentId = order.studentId;
-            if (!acc[studentId]) {
-                const user = users.find(u => u.studentId === studentId || u._id === studentId);
-                acc[studentId] = {
-                    name: user?.name || 'Customer',
-                    role: user?.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'Student',
+        // Filter orders for the last 7 days to show "Recent" top customers
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const recentOrders = orders.filter(o => new Date(o.createdAt) >= sevenDaysAgo);
+
+        const topCustomers = Object.values(recentOrders.reduce((acc, order) => {
+            // Check multiple potential ID fields since different order types might use different keys
+            const identifier = order.studentId || order.username || order.userId || order.customerName || order._id || 'Unknown';
+            
+            if (!acc[identifier]) {
+                const user = users.find(u => u.studentId === identifier || u._id === identifier || u.name === identifier || u.username === identifier);
+                acc[identifier] = {
+                    name: user?.name || (identifier !== 'Unknown' ? identifier : 'Guest Customer'),
+                    studentId: user?.studentId || (identifier !== 'Unknown' && identifier.toLowerCase().startsWith('it') ? identifier : ''),
+                    role: user?.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'Customer',
                     totalSpend: 0
                 };
             }
-            acc[studentId].totalSpend += order.totalAmount || 0;
+            acc[identifier].totalSpend += order.totalAmount || 0;
             return acc;
         }, {}))
-        .sort((a, b) => b.totalSpend - a.totalSpend)
-        .slice(0, 4);
+            .sort((a, b) => b.totalSpend - a.totalSpend)
+            .slice(0, 4);
 
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
@@ -407,8 +931,8 @@ const SalesManagement = () => {
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                <div style={{ 
-                                    width: '64px', height: '64px', 
+                                <div style={{
+                                    width: '64px', height: '64px',
                                     background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
                                     borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     boxShadow: '0 10px 20px rgba(139, 92, 246, 0.3)'
@@ -422,18 +946,19 @@ const SalesManagement = () => {
                             </div>
                             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                                 <div style={{ position: 'relative' }}>
-                                    <input 
-                                        type="date" 
+                                    <input
+                                        type="date"
                                         value={selectedReportDate}
                                         onChange={(e) => {
                                             setSelectedReportDate(e.target.value);
                                             setShowDailyReport(true);
                                         }}
+                                        onClick={() => setShowDailyReport(true)}
                                         style={{
                                             padding: '8px 15px',
                                             borderRadius: '12px',
                                             border: '1px solid rgba(139, 92, 246, 0.2)',
-                                            background: 'white',
+                                            background: 'var(--latte-card)',
                                             fontSize: '0.85rem',
                                             fontWeight: 600,
                                             color: '#1e293b',
@@ -443,81 +968,127 @@ const SalesManagement = () => {
                                         }}
                                     />
                                 </div>
-                                <span style={{ padding: '8px 20px', borderRadius: '12px', background: '#ecfdf5', color: '#059669', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <motion.span 
+                                    whileHover={{ scale: 1.05, background: '#d1fae5' }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => setShowDailyReport(true)}
+                                    style={{ 
+                                        padding: '8px 20px', 
+                                        borderRadius: '12px', 
+                                        background: '#ecfdf5', 
+                                        color: '#059669', 
+                                        fontSize: '0.8rem', 
+                                        fontWeight: 700, 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '8px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
                                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} />
                                     AI Tracking On
-                                </span>
+                                </motion.span>
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '40px', alignItems: 'center' }}>
-                            {/* AI Insights (Left side) */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', marginBottom: '10px' }}>Daily Smart Highlights</h4>
-                                
-                                <div style={{ background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', gap: '15px', alignItems: 'center' }}>
-                                    <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'rgba(249, 115, 22, 0.1)', color: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <TrendingUp size={20} />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>Spike Alert: Iced Beverages</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Ordering volume for drinks is up 32% compared to last Friday.</div>
-                                    </div>
-                                </div>
-
-                                <div style={{ background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', gap: '15px', alignItems: 'center' }}>
-                                    <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Clock size={20} />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>Peak Hour Prediction</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Expect a 25% increase in traffic between 1:00 PM - 2:30 PM.</div>
-                                    </div>
-                                </div>
-
-                                <div style={{ background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', gap: '15px', alignItems: 'center' }}>
-                                    <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Package size={20} />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>Inventory Check-in</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>"Chicken Breast" stock is low. Consider ordering for next week.</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Chat Interface (Right side) */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '40px', alignItems: 'center' }}>
+                            {/* Chat Interface */}
                             <div style={{ background: 'rgba(255,255,255,0.6)', borderRadius: '28px', border: '1px solid #e2e8f0', padding: '30px', height: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <div style={{ flex: 1, maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                    <div style={{ alignSelf: 'flex-start', background: '#f8fafc', padding: '12px 18px', borderRadius: '18px 18px 18px 0', fontSize: '0.9rem', border: '1px solid #f1f5f9', boxSizing: 'border-box' }}>
-                                        Hello Sales Admin! I've analyzed today's data. Everything looks stable, but I recommend a small promotion for "Snacks" to boost afternoon sales.
-                                    </div>
+                                <div
+                                    ref={chatContainerRef}
+                                    style={{ flex: 1, maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}
+                                >
+                                    {aiMessages.map((msg, idx) => (
+                                        <div key={idx} style={{
+                                            alignSelf: msg.sender === 'ai' ? 'flex-start' : 'flex-end',
+                                            background: msg.sender === 'ai' ? '#f8fafc' : '#8b5cf6',
+                                            color: msg.sender === 'ai' ? '#1e293b' : 'white',
+                                            padding: '12px 18px',
+                                            borderRadius: msg.sender === 'ai' ? '18px 18px 18px 0' : '18px 18px 0 18px',
+                                            fontSize: '0.9rem',
+                                            border: msg.sender === 'ai' ? '1px solid #f1f5f9' : 'none',
+                                            boxSizing: 'border-box',
+                                            maxWidth: '90%',
+                                            whiteSpace: 'pre-line',
+                                            lineHeight: '1.5'
+                                        }}>
+                                            {msg.text}
+                                        </div>
+                                    ))}
                                 </div>
+                                {/* Quick Suggestion Chips */}
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '5px' }}>
+                                    {[
+                                        { label: "Today sales?", query: "Today sales?" },
+                                        { label: "Revenue today?", query: "Revenue today?" },
+                                        { label: "Orders count?", query: "Orders count?" },
+                                        { label: "Sales summary?", query: "Sales summary?" },
+                                        { label: "Top items?", query: "Best items?" },
+                                        { label: "Peak time?", query: "Peak time?" },
+                                        { label: "Low stock?", query: "Stock levels?" },
+                                        { label: "Improvement?", query: "Improve sales?" }
+                                    ].map((btn, i) => (
+                                        <motion.button
+                                            key={i}
+                                            whileHover={{ scale: 1.05, backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => {
+                                                setAiInput(btn.query);
+                                                // Trigger send after state update
+                                                setTimeout(() => {
+                                                    handleSendAiMessage(btn.query);
+                                                }, 0);
+                                            }}
+                                            style={{
+                                                padding: '6px 12px',
+                                                borderRadius: '10px',
+                                                background: 'rgba(139, 92, 246, 0.05)',
+                                                color: '#8b5cf6',
+                                                border: '1px solid rgba(139, 92, 246, 0.1)',
+                                                fontSize: '0.72rem',
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {btn.label}
+                                        </motion.button>
+                                    ))}
+                                </div>
+
                                 <div style={{ position: 'relative' }}>
                                     <Zap size={18} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#8b5cf6' }} />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Ask AI for revenue forecast..." 
+                                    <input
+                                        type="text"
+                                        value={aiInput}
+                                        onChange={(e) => setAiInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' ? handleSendAiMessage() : null}
+                                        placeholder="Ask AI for revenue forecast..."
                                         style={{
                                             width: '100%',
                                             padding: '16px 60px 16px 50px',
                                             borderRadius: '20px',
                                             border: '1px solid #cbd5e1',
-                                            background: 'white',
+                                            background: 'var(--latte-card)',
                                             fontSize: '0.95rem',
                                             fontWeight: 500,
                                             outline: 'none',
                                             transition: 'all 0.3s',
-                                            boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                            boxSizing: 'border-box'
                                         }}
                                     />
-                                    <div style={{ 
-                                        position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', 
-                                        width: '44px', height: '44px', borderRadius: '16px', 
-                                        background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                                    }}>
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                                    <div
+                                        onClick={() => handleSendAiMessage()}
+                                        style={{
+                                            position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
+                                            width: '44px', height: '44px', borderRadius: '16px',
+                                            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                        }}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>
                                     </div>
                                 </div>
                             </div>
@@ -526,7 +1097,7 @@ const SalesManagement = () => {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '30px', marginBottom: '30px' }}>
-                    <div className="glass" style={{ padding: '30px', background: 'white', borderRadius: '24px', border: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column' }}>
+                    <div className="glass" style={{ padding: '30px', background: 'var(--latte-card)', borderRadius: '24px', border: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
                             <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Revenue & Orders</h4>
                             <div style={{ display: 'flex', gap: '10px' }}>
@@ -558,13 +1129,13 @@ const SalesManagement = () => {
                         </div>
                     </div>
 
-                    <div className="glass" style={{ padding: '30px', background: 'white', borderRadius: '24px', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column' }}>
+                    <div className="glass" style={{ padding: '30px', background: 'var(--latte-card)', borderRadius: '24px', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                             <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Sales by Category</h4>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 20px', fontSize: '1rem', fontWeight: 800, color: '#1f2937' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}><span>60%</span><span style={{color:'#94a3b8', fontWeight:600, fontSize: '0.75rem'}}>Meals</span></div>
-                            <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}><span>35%</span><span style={{color:'#94a3b8', fontWeight:600, fontSize: '0.75rem'}}>Drinks</span></div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}><span>60%</span><span style={{ color: '#94a3b8', fontWeight: 600, fontSize: '0.75rem' }}>Meals</span></div>
+                            <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}><span>35%</span><span style={{ color: '#94a3b8', fontWeight: 600, fontSize: '0.75rem' }}>Drinks</span></div>
                         </div>
                         <div style={{ flex: 1, minHeight: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <ResponsiveContainer width="100%" height="100%">
@@ -579,15 +1150,15 @@ const SalesManagement = () => {
                             </ResponsiveContainer>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginTop: '10px' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{width:10, height:10, borderRadius:'50%', background:'#ff9f43'}}/> Meals 60%</span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{width:10, height:10, borderRadius:'50%', background:'#06b6d4'}}/> Drinks 35%</span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{width:10, height:10, borderRadius:'50%', background:'#e2e8f0'}}/> Snacks 5%</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff9f43' }} /> Meals 60%</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{ width: 10, height: 10, borderRadius: '50%', background: '#06b6d4' }} /> Drinks 35%</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{ width: 10, height: 10, borderRadius: '50%', background: '#e2e8f0' }} /> Snacks 5%</span>
                         </div>
                     </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '30px' }}>
-                    <div className="glass" style={{ padding: '30px', background: 'white', borderRadius: '24px', border: '1px solid #f0f0f0' }}>
+                    <div className="glass" style={{ padding: '30px', background: 'var(--latte-card)', borderRadius: '24px', border: '1px solid #f0f0f0' }}>
                         <h4 style={{ margin: '0 0 30px', fontSize: '1.2rem', fontWeight: 800 }}>Popular Items</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
                             {analytics.popularItems.length === 0 ? (
@@ -606,7 +1177,7 @@ const SalesManagement = () => {
                         </div>
                     </div>
 
-                    <div className="glass" style={{ padding: '30px', background: 'white', borderRadius: '24px', border: '1px solid #f0f0f0' }}>
+                    <div className="glass" style={{ padding: '30px', background: 'var(--latte-card)', borderRadius: '24px', border: '1px solid #f0f0f0' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
                             <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Recent Top Customers</h4>
                             <button style={{ background: 'none', border: 'none', color: '#ff9f43', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}>View All</button>
@@ -617,10 +1188,13 @@ const SalesManagement = () => {
                             ) : topCustomers.map((user, i) => (
                                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', borderRadius: '16px', border: '1px solid #f8fafc', background: '#fafafa', transition: 'all 0.2s', cursor: 'pointer' }} onMouseOver={(e) => e.currentTarget.style.background = '#f1f5f9'} onMouseOut={(e) => e.currentTarget.style.background = '#fafafa'}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} alt="avatar" style={{ width: '45px', height: '45px', borderRadius: '12px', background: '#e2e8f0' }} />
                                         <div>
                                             <div style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b' }}>{user.name}</div>
-                                            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8' }}>{user.role}</div>
+                                            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8' }}>
+                                                {user.studentId ? <span style={{ color: '#6366f1' }}>{user.studentId}</span> : ''}
+                                                {user.studentId ? ' • ' : ''}
+                                                {user.role}
+                                            </div>
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
@@ -645,12 +1219,12 @@ const SalesManagement = () => {
                 </button>
             </div>
 
-            <div style={{ padding: '32px', borderRadius: '24px', background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
+            <div style={{ padding: '32px', borderRadius: '24px', background: 'var(--latte-card)', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
                         <thead>
                             <tr style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 600 }}>
-                                <th style={{ padding: '16px', textAlign: 'left' }}>User ID</th>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Student IT Number</th>
                                 <th style={{ padding: '16px', textAlign: 'left' }}>Name</th>
                                 <th style={{ padding: '16px', textAlign: 'left' }}>Role</th>
                                 <th style={{ padding: '16px', textAlign: 'left' }}>Registered date</th>
@@ -658,9 +1232,9 @@ const SalesManagement = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {users.filter(user => (user.name?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (user.studentId?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (user.role?.toLowerCase() || '').includes(globalSearch.toLowerCase())).map((user) => (
+                            {users.filter(user => (user.name?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (user.username?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (user.role?.toLowerCase() || '').includes(globalSearch.toLowerCase())).map((user) => (
                                 <tr key={user._id} style={{ background: '#f8fafc', borderRadius: '12px' }}>
-                                    <td style={{ padding: '16px', fontWeight: 700, color: 'var(--text-main)' }}>{user.studentId}</td>
+                                    <td style={{ padding: '16px', fontWeight: 700, color: 'var(--text-main)' }}>{user.username}</td>
                                     <td style={{ padding: '16px' }}>{user.name}</td>
                                     <td style={{ padding: '16px' }}>
                                         <select
@@ -702,7 +1276,7 @@ const SalesManagement = () => {
     );
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', color: '#111827' }}>
+        <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-page)', color: '#111827' }}>
             <SalesSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ position: 'relative', padding: '20px' }}>
@@ -725,7 +1299,7 @@ const SalesManagement = () => {
             <AnimatePresence>
                 {showDailyReport && (
                     <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             onClick={() => setShowDailyReport(false)}
                             style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)' }}
@@ -747,9 +1321,15 @@ const SalesManagement = () => {
                                         <p style={{ margin: '5px 0 0', opacity: 0.7, fontWeight: 500 }}>{new Date(selectedReportDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setShowDailyReport(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', width: 44, height: 44, borderRadius: '15px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <X size={24} />
-                                </button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                    <button onClick={handleDownloadReport} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', color: 'white', fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s' }} onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+                                        <Download size={18} />
+                                        Download CSV
+                                    </button>
+                                    <button onClick={() => setShowDailyReport(false)} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', width: 44, height: 44, borderRadius: '15px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+                                        <X size={24} />
+                                    </button>
+                                </div>
                             </div>
 
                             <div style={{ padding: '40px' }}>
@@ -757,7 +1337,7 @@ const SalesManagement = () => {
                                     const dayOrders = orders.filter(o => new Date(o.createdAt).toISOString().split('T')[0] === selectedReportDate);
                                     const dayRevenue = dayOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
                                     const avgOrderVal = dayOrders.length > 0 ? Math.round(dayRevenue / dayOrders.length) : 0;
-                                    
+
                                     const dayItemCounts = {};
                                     dayOrders.forEach(o => o.items?.forEach(i => {
                                         const name = i.name?.en || i.name;
@@ -804,7 +1384,7 @@ const SalesManagement = () => {
                                 })()}
 
                                 <div style={{ marginTop: '40px', display: 'flex', gap: '15px' }}>
-                                    <button style={{ flex: 1, padding: '16px', borderRadius: '16px', background: '#ff9f43', color: 'white', border: 'none', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                                    <button onClick={handleDownloadPDF} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: '#ff9f43', color: 'white', border: 'none', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
                                         <Download size={18} /> Download Detailed PDF
                                     </button>
                                     <button onClick={() => setShowDailyReport(false)} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: '#f1f5f9', color: '#64748b', border: 'none', fontWeight: 800, cursor: 'pointer' }}>
@@ -816,6 +1396,7 @@ const SalesManagement = () => {
                     </div>
                 )}
             </AnimatePresence>
+
 
             <AnimatePresence>
                 {showUserModal && (
@@ -850,10 +1431,10 @@ const SalesManagement = () => {
                                             </select>
                                         </div>
                                     </div>
-                                    <div style={{ 
-                                        background: '#f8fafc', 
-                                        padding: '1rem', 
-                                        borderRadius: '12px', 
+                                    <div style={{
+                                        background: '#f8fafc',
+                                        padding: '1rem',
+                                        borderRadius: '12px',
                                         marginBottom: '1.5rem',
                                         fontSize: '0.75rem',
                                         border: '1px solid #e2e8f0'
@@ -867,19 +1448,19 @@ const SalesManagement = () => {
                                                 { key: 'number', text: 'At least one Number' },
                                                 { key: 'special', text: 'Special Character' }
                                             ].map(req => (
-                                                <div key={req.key} style={{ 
-                                                    display: 'flex', 
-                                                    alignItems: 'center', 
+                                                <div key={req.key} style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
                                                     gap: '6px',
                                                     color: passwordRequirements[req.key] ? '#10b981' : '#fca5a5',
                                                     fontWeight: passwordRequirements[req.key] ? 700 : 500,
                                                     transition: 'all 0.3s ease'
                                                 }}>
-                                                    <div style={{ 
-                                                        width: '6px', 
-                                                        height: '6px', 
-                                                        borderRadius: '50%', 
-                                                        background: passwordRequirements[req.key] ? '#10b981' : '#fca5a5' 
+                                                    <div style={{
+                                                        width: '6px',
+                                                        height: '6px',
+                                                        borderRadius: '50%',
+                                                        background: passwordRequirements[req.key] ? '#10b981' : '#fca5a5'
                                                     }} />
                                                     {req.text}
                                                 </div>

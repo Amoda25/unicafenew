@@ -97,8 +97,9 @@ const FeedbackPage = () => {
             // If no rating but has content, treat as Contact Message
             if (rating === 0 && !quickRating && comment.trim()) {
                 await axios.post('/api/contact', {
-                    name: isAnonymous ? `Anonymous (ID: ${username})` : username,
-                    email: user?.email || `${username}@unicafe.com`,
+                    name: 'Anonymous User',
+                    email: 'hidden@unicafe.com',
+                    isAnonymous: true,
                     message: `[FEEDBACK FALLBACK] ${comment}`,
                 });
                 
@@ -138,6 +139,7 @@ const FeedbackPage = () => {
                 orderId,
                 category,
                 comment,
+                isAnonymous,
                 imageUrl: finalImageUrl
             });
 
@@ -172,8 +174,9 @@ const FeedbackPage = () => {
 
         try {
             await axios.post('/api/contact', {
-                name: isAnonymous ? `Anonymous (ID: ${username})` : username,
-                email: user?.email || `${username}@unicafe.com`,
+                name: isAnonymous ? 'Anonymous User' : username,
+                email: isAnonymous ? 'hidden@unicafe.com' : (user?.email || `${username}@unicafe.com`),
+                isAnonymous: isAnonymous,
                 message: complaintText,
             });
             setComplaintText('');
@@ -197,7 +200,7 @@ const FeedbackPage = () => {
                 <h1 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '16px', color: 'var(--text-main)' }}>
                     Your <span className="gradient-text">Feedback</span> Matters
                 </h1>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>幫助我們提升 UniCafé 的服務品質</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Help us improve your UniCafé experience.</p>
             </motion.div>
 
             <AnimatePresence>

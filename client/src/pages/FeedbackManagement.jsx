@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Bell, MessageSquare, Trash2, Star, Send, CheckCircle, Clock, AlertCircle, X, Flag, TrendingUp, Users, Inbox } from 'lucide-react';
+import { Search, Bell, MessageSquare, Trash2, Star, Send, CheckCircle, Clock, AlertCircle, X, Flag, TrendingUp, Users, Inbox, Zap } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import FeedbackSidebar from '../components/FeedbackSidebar';
 
@@ -15,6 +15,8 @@ const FeedbackManagement = () => {
     const [ratingFilter, setRatingFilter] = useState('all'); 
     const [categoryFilter, setCategoryFilter] = useState('All'); 
     const [adminStatusFilter, setAdminStatusFilter] = useState('all'); // all, pending, responded
+    const [impactFilter, setImpactFilter] = useState('All'); // All, High, Medium, Low
+    
     
     // Reply states
     const [replyingId, setReplyingId] = useState(null);
@@ -34,29 +36,36 @@ const FeedbackManagement = () => {
     useEffect(() => {
         fetchContactMessages();
         fetchFeedbacks();
+
+        const pollInterval = setInterval(() => {
+            fetchContactMessages(true);
+            fetchFeedbacks(true);
+        }, 5000); // Real-time poll every 5 seconds
+
+        return () => clearInterval(pollInterval);
     }, []);
 
-    const fetchFeedbacks = async () => {
-        setIsRatingsRefreshing(true);
+    const fetchFeedbacks = async (silent = false) => {
+        if (!silent) setIsRatingsRefreshing(true);
         try {
             const response = await axios.get('/api/feedback');
             setFeedbacks(response.data);
         } catch (err) {
             console.error('Error fetching feedbacks:', err);
         } finally {
-            setTimeout(() => setIsRatingsRefreshing(false), 500);
+            if (!silent) setTimeout(() => setIsRatingsRefreshing(false), 500);
         }
     };
 
-    const fetchContactMessages = async () => {
-        setIsRefreshing(true);
+    const fetchContactMessages = async (silent = false) => {
+        if (!silent) setIsRefreshing(true);
         try {
             const response = await axios.get('/api/contact');
             setContactMessages(response.data);
         } catch (err) {
             console.error('Error fetching messages:', err);
         } finally {
-            setTimeout(() => setIsRefreshing(false), 500);
+            if (!silent) setTimeout(() => setIsRefreshing(false), 500);
         }
     };
 
@@ -185,7 +194,7 @@ const FeedbackManagement = () => {
                     minHeight: '120px', 
                     padding: '16px', 
                     borderRadius: '12px', 
-                    background: '#ffffff', 
+                    background: 'var(--latte-card)', 
                     border: `2px solid ${valError ? '#ef4444' : '#e2e8f0'}`, 
                     color: '#000000', 
                     outline: 'none', 
@@ -227,7 +236,7 @@ const FeedbackManagement = () => {
                             style={{ 
                                 padding: '10px 40px 10px 16px', 
                                 borderRadius: '10px', 
-                                background: '#ffffff', 
+                                background: 'var(--latte-card)', 
                                 color: '#000000', 
                                 border: '2px solid #e2e8f0', 
                                 fontSize: '0.85rem',
@@ -241,9 +250,9 @@ const FeedbackManagement = () => {
                             onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
                             onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                         >
-                            <option value="Pending" style={{ background: '#ffffff', color: '#000000' }}>⏳ Pending</option>
-                            <option value="In Review" style={{ background: '#ffffff', color: '#000000' }}>🔎 In Review</option>
-                            <option value="Resolved" style={{ background: '#ffffff', color: '#000000' }}>✅ Resolved</option>
+                            <option value="Pending" style={{ background: 'var(--latte-card)', color: '#000000' }}>⏳ Pending</option>
+                            <option value="In Review" style={{ background: 'var(--latte-card)', color: '#000000' }}>🔎 In Review</option>
+                            <option value="Resolved" style={{ background: 'var(--latte-card)', color: '#000000' }}>✅ Resolved</option>
                         </select>
                         <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }}>
                             <TrendingUp size={14} style={{ transform: 'rotate(90deg)' }} />
@@ -278,23 +287,43 @@ const FeedbackManagement = () => {
 
     const renderStatsOverview = () => (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr) 1.5fr', gap: '20px', marginBottom: '40px' }}>
-            <div className="glass" style={{ padding: '24px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass" style={{ padding: '24px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(110, 89, 255, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Star size={20} /></div>
-                    <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '2px' }}><TrendingUp size={12}/> Live</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }} className="pulse-dot"></div>
+                        <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Realtime</span>
+                    </div>
                 </div>
                 <div><div style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)' }}>{avgRating}</div><div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Avg Satisfaction</div></div>
-            </div>
+                <style>{`
+                    @keyframes pulse {
+                        0% { transform: scale(1); opacity: 1; }
+                        50% { transform: scale(1.5); opacity: 0.5; }
+                        100% { transform: scale(1); opacity: 1; }
+                    }
+                    .pulse-dot { animation: pulse 2s infinite ease-in-out; }
+                `}</style>
+            </motion.div>
             <div className="glass" style={{ padding: '24px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><AlertCircle size={20} /></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><AlertCircle size={20} /></div>
+                    <div className="pulse-dot" style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 8px #ef4444' }}></div>
+                </div>
                 <div><div style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)' }}>{pendingActions}</div><div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Pending Actions</div></div>
             </div>
             <div className="glass" style={{ padding: '24px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Inbox size={20} /></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Inbox size={20} /></div>
+                    <div className="pulse-dot" style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }}></div>
+                </div>
                 <div><div style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)' }}>{feedbacks.length + contactMessages.length}</div><div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Entries</div></div>
             </div>
             <div className="glass" style={{ padding: '24px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(148, 163, 184, 0.1)', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={20} /></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(148, 163, 184, 0.1)', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={20} /></div>
+                    <div className="pulse-dot" style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#94a3b8', boxShadow: '0 0 8px #94a3b8' }}></div>
+                </div>
                 <div><div style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)' }}>{totalUsers}</div><div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Unique Users</div></div>
             </div>
             <div className="glass" style={{ padding: '20px', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
@@ -331,7 +360,7 @@ const FeedbackManagement = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '20px' }}>
                     <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '14px', border: '1px solid var(--glass-border)' }}>
                         {['all', 'pending', 'responded'].map(f => (
-                            <button key={f} onClick={() => setAdminStatusFilter(f)} style={{ padding: '8px 20px', borderRadius: '10px', border: 'none', background: adminStatusFilter === f ? 'var(--primary)' : '#ffffff', color: '#000000', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>{f}</button>
+                            <button key={f} onClick={() => setAdminStatusFilter(f)} style={{ padding: '8px 20px', borderRadius: '10px', border: 'none', background: adminStatusFilter === f ? 'var(--primary)' : 'var(--latte-card)', color: '#000000', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>{f}</button>
                         ))}
                     </div>
                     <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
@@ -367,9 +396,27 @@ const FeedbackManagement = () => {
                                         <div style={{ flex: 1 }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                                                 <div>
-                                                    <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>{msg.name}</span>
-                                                    <span style={{ marginLeft: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{msg.email}</span>
+                                                    <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>{msg.isAnonymous || msg.name?.includes('Anonymous') ? 'Anonymous User' : msg.name}</span>
+                                                    {!(msg.isAnonymous || msg.name?.includes('Anonymous')) && (
+                                                        <span style={{ marginLeft: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{msg.email}</span>
+                                                    )}
                                                     <span style={{ marginLeft: '12px', padding: '2px 10px', background: status.bg, color: status.color, borderRadius: '99px', fontSize: '0.72rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>{status.icon} {msg.status || 'Pending'}</span>
+                                                    <span style={{ 
+                                                        marginLeft: '8px', 
+                                                        padding: '2px 10px', 
+                                                        background: msg.impactLevel === 'High' ? 'rgba(239, 68, 68, 0.15)' : (msg.impactLevel === 'Medium' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)'), 
+                                                        color: msg.impactLevel === 'High' ? '#ef4444' : (msg.impactLevel === 'Medium' ? '#f59e0b' : '#10b981'), 
+                                                        borderRadius: '99px', 
+                                                        fontSize: '0.72rem', 
+                                                        fontWeight: 900,
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        border: `1px solid ${msg.impactLevel === 'High' ? 'rgba(239, 68, 68, 0.3)' : 'transparent'}`
+                                                    }}>
+                                                        <Zap size={10} fill={msg.impactLevel === 'High' ? '#ef4444' : 'currentColor'} /> 
+                                                        {msg.impactScore || 0}%
+                                                    </span>
                                                     {msg.isPriority && <span style={{ marginLeft: '8px', color: '#ef4444', fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.05em' }}>★ PRIORITY</span>}
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -414,15 +461,63 @@ const FeedbackManagement = () => {
                     <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Student Feedback <span style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: 500 }}>({feedbacks.length} total)</span></h3>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
-                    <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '14px', border: '1px solid var(--glass-border)' }}>
-                        {['all', 'pending', 'responded'].map(f => (
-                            <button key={f} onClick={() => setAdminStatusFilter(f)} style={{ padding: '8px 20px', borderRadius: '10px', border: 'none', background: adminStatusFilter === f ? 'var(--primary)' : '#ffffff', color: '#000000', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>{f}</button>
-                        ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                        <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
+                            {['All', 'Food', 'Service', 'Delivery'].map(cat => {
+                                const count = cat === 'All' 
+                                    ? feedbacks.length 
+                                    : feedbacks.filter(f => (f.category || 'Food') === cat).length;
+                                return (
+                                    <button 
+                                        key={cat} 
+                                        onClick={() => setCategoryFilter(cat)} 
+                                        style={{ 
+                                            padding: '8px 20px', 
+                                            borderRadius: '12px', 
+                                            border: 'none', 
+                                            background: categoryFilter === cat ? 'var(--primary)' : 'transparent', 
+                                            color: categoryFilter === cat ? 'white' : 'var(--text-secondary)', 
+                                            fontSize: '0.85rem', 
+                                            fontWeight: 800, 
+                                            cursor: 'pointer', 
+                                            transition: 'all 0.2s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}
+                                    >
+                                        {cat}
+                                        <span style={{ 
+                                            padding: '2px 6px', 
+                                            borderRadius: '6px', 
+                                            background: categoryFilter === cat ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)', 
+                                            fontSize: '0.7rem' 
+                                        }}>{count}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '14px', border: '1px solid var(--glass-border)' }}>
+                            {['all', 'pending', 'responded'].map(f => (
+                                <button key={f} onClick={() => setAdminStatusFilter(f)} style={{ padding: '8px 20px', borderRadius: '10px', border: 'none', background: adminStatusFilter === f ? 'var(--primary)' : 'transparent', color: adminStatusFilter === f ? 'white' : 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.2s' }}>{f}</button>
+                            ))}
+                        </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                        <select value={ratingFilter} onChange={(e) => setRatingFilter(e.target.value)} style={{ padding: '8px 16px', borderRadius: '10px', background: 'var(--bg-card)', color: 'white', border: '1px solid var(--glass-border)', fontSize: '0.85rem' }}><option value="all">Rating: All</option><option value="good">Good (4-5)</option><option value="neutral">Neutral (3)</option><option value="bad">Bad (1-2)</option></select>
-                        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ padding: '8px 16px', borderRadius: '10px', background: 'var(--bg-card)', color: 'white', border: '1px solid var(--glass-border)', fontSize: '0.85rem' }}><option value="All">Dept: All</option><option value="Food">Food</option><option value="Service">Service</option><option value="Delivery">Delivery</option></select>
+
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        <select value={impactFilter} onChange={(e) => setImpactFilter(e.target.value)} style={{ padding: '8px 16px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', border: impactFilter === 'High' ? '1px solid #ef4444' : '1px solid var(--glass-border)', fontSize: '0.85rem', fontWeight: 700, outline: 'none' }}>
+                            <option value="All" style={{color: 'black'}}>All Impact</option>
+                            <option value="High" style={{color: '#ef4444'}}>🔥 High Impact</option>
+                            <option value="Medium" style={{color: '#f59e0b'}}>⚠️ Medium Impact</option>
+                            <option value="Low" style={{color: '#10b981'}}>🟢 Low Impact</option>
+                        </select>
+                        <select value={ratingFilter} onChange={(e) => setRatingFilter(e.target.value)} style={{ padding: '8px 16px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', border: '1px solid var(--glass-border)', fontSize: '0.85rem', outline: 'none' }}>
+                            <option value="all" style={{color: 'black'}}>Rating: All</option>
+                            <option value="good" style={{color: 'black'}}>Good (4-5)</option>
+                            <option value="neutral" style={{color: 'black'}}>Neutral (3)</option>
+                            <option value="bad" style={{color: 'black'}}>Bad (1-2)</option>
+                        </select>
                     </div>
                 </div>
 
@@ -436,8 +531,11 @@ const FeedbackManagement = () => {
                             if (adminStatusFilter === 'responded') return !!fb.adminReply;
                             return true;
                         })
+                        .filter(fb => impactFilter === 'All' || fb.impactLevel === impactFilter)
                         .sort((a, b) => {
                             if (a.isPriority !== b.isPriority) return b.isPriority ? 1 : -1;
+                            // Secondary sort by impact score
+                            if ((b.impactScore || 0) !== (a.impactScore || 0)) return (b.impactScore || 0) - (a.impactScore || 0);
                             return new Date(b.createdAt) - new Date(a.createdAt);
                         })
                         .map(fb => {
@@ -455,7 +553,9 @@ const FeedbackManagement = () => {
                                         <div style={{ flex: 1 }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                                                 <div>
-                                                    <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>User: {fb.username || fb.studentId}</span>
+                                                    <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>
+                                                        User: {fb.isAnonymous ? 'Anonymous User' : (fb.username || fb.studentId)}
+                                                    </span>
                                                     <span style={{ marginLeft: '10px', padding: '2px 10px', background: status.bg, color: status.color, borderRadius: '99px', fontSize: '0.72rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>{status.icon} {fb.status || 'Pending'}</span>
                                                     {fb.isPriority && <span style={{ marginLeft: '8px', color: '#ef4444', fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.05em' }}>★ PRIORITY</span>}
                                                 </div>
@@ -468,6 +568,22 @@ const FeedbackManagement = () => {
                                                 {[1, 2, 3, 4, 5].map((star) => (<Star key={star} size={14} style={{ fill: fb.rating >= star ? 'var(--primary)' : 'transparent', color: fb.rating >= star ? 'var(--primary)' : 'var(--text-secondary)' }} />))}
                                                 <span style={{ marginLeft: '8px', padding: '2px 10px', background: 'rgba(110, 89, 255, 0.1)', color: 'var(--primary)', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 800 }}>{fb.category || 'Food'}</span>
                                                 <span style={{ marginLeft: '8px', padding: '2px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: '99px', fontSize: '0.7rem', color: fb.sentiment === 'Positive' ? '#10b981' : (fb.sentiment === 'Negative' ? '#ef4444' : '#f59e0b'), fontWeight: 800 }}>{fb.sentiment}</span>
+                                                <span style={{ 
+                                                    marginLeft: '8px', 
+                                                    padding: '2px 10px', 
+                                                    background: fb.impactLevel === 'High' ? 'rgba(239, 68, 68, 0.15)' : (fb.impactLevel === 'Medium' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)'), 
+                                                    color: fb.impactLevel === 'High' ? '#ef4444' : (fb.impactLevel === 'Medium' ? '#f59e0b' : '#10b981'), 
+                                                    borderRadius: '99px', 
+                                                    fontSize: '0.7rem', 
+                                                    fontWeight: 900,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                    border: `1px solid ${fb.impactLevel === 'High' ? 'rgba(239, 68, 68, 0.3)' : 'transparent'}`
+                                                }}>
+                                                    <Zap size={10} fill={fb.impactLevel === 'High' ? '#ef4444' : 'currentColor'} /> 
+                                                    Impact: {fb.impactScore || 0}% ({fb.impactLevel || 'Low'})
+                                                </span>
                                             </div>
                                             {fb.comment && (<div style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', borderLeft: '3px solid var(--primary)', marginBottom: '20px' }}><p style={{ margin: 0, fontSize: '1rem', color: 'var(--text-main)', fontStyle: 'italic' }}>"{fb.comment}"</p></div>)}
                                             

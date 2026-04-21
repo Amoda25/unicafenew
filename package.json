@@ -4,7 +4,7 @@
   "scripts": {
     "client": "cd client && npm run dev",
     "server": "cd server && npm start",
-    "start": "npm run server & npm run client",
+    "start": "concurrently \"npm run server\" \"npm run client\"",
     "install:all": "npm install && cd client && npm install && cd ../server && npm install"
   },
   "devDependencies": {
