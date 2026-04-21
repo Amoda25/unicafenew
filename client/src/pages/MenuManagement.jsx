@@ -28,14 +28,14 @@ const FormModal = ({ show, onClose, onSubmit, title, isEdit, formData, handleInp
                         style={{ 
                             pointerEvents: 'auto',
                             width: '100%', 
-                            maxWidth: '600px', 
+                            maxWidth: '850px', 
                             maxHeight: '90vh', 
                             overflowY: 'auto', 
                             background: '#ffffff', 
-                            borderRadius: '35px', 
+                            borderRadius: '24px', 
                             padding: '0', 
                             border: '1px solid #ffffff', 
-                            boxShadow: '0 30px 60px -12px rgba(59, 31, 14, 0.25)',
+                            boxShadow: '0 40px 80px -12px rgba(59, 31, 14, 0.3)',
                             display: 'flex',
                             flexDirection: 'column'
                         }}
@@ -43,109 +43,192 @@ const FormModal = ({ show, onClose, onSubmit, title, isEdit, formData, handleInp
                     >
                         {/* Header */}
                         <div style={{ 
-                            padding: '30px 45px', 
-                            background: 'linear-gradient(135deg, #fdfaf7 0%, #fcf8f3 100%)',
-                            borderBottom: '1px solid #f1f0e8',
+                            padding: '24px 32px', 
+                            background: '#5C3A21',
                             display: 'flex', 
                             justifyContent: 'space-between', 
-                            alignItems: 'center',
+                            alignItems: 'flex-start',
                             position: 'sticky',
                             top: 0,
-                            zIndex: 20
+                            zIndex: 20,
+                            borderTopLeftRadius: '24px',
+                            borderTopRightRadius: '24px'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                <div style={{ 
-                                    width: '50px', 
-                                    height: '50px', 
-                                    borderRadius: '15px', 
-                                    background: 'var(--coffee-dark)', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center', 
-                                    color: 'white'
-                                }}>
-                                    {isEdit ? <Edit2 size={24} /> : <Plus size={24} />}
-                                </div>
-                                <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--coffee-dark)', margin: 0 }}>{title}</h2>
+                            <div>
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', margin: '0 0 8px 0' }}>{title}</h2>
+                                <p style={{ fontSize: '0.9rem', color: '#D4C4B7', margin: 0, fontWeight: 500 }}>Fill in the details to register a new menu item.</p>
                             </div>
-                            <button onClick={onClose} style={{ background: 'white', border: '1px solid #eee', width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer' }}>
-                                <X size={20} />
+                            <button type="button" onClick={onClose} style={{ background: 'rgba(255, 255, 255, 0.15)', border: 'none', width: '36px', height: '36px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)'} onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'}>
+                                <X size={18} />
                             </button>
                         </div>
 
-                        <form onSubmit={onSubmit} style={{ padding: '40px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+                        <form onSubmit={onSubmit} style={{ padding: '32px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                                 
-                                {/* 1. Name Section (English Only) */}
-                                <div style={{ background: '#fcfaf7', borderRadius: '24px', padding: '25px', border: '1px solid #f1f0e8' }}>
-                                    <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--coffee-dark)', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Globe size={18} /> ITEM NAME (ENGLISH)
-                                    </h3>
-                                    <input 
-                                        required 
-                                        value={formData.name.en} 
-                                        onChange={(e) => handleInputChange('name', 'en', e.target.value)} 
-                                        style={{ width: '100%', padding: '16px 20px', borderRadius: '16px', border: '2px solid #f1f0e8', fontSize: '1rem', fontWeight: 600 }} 
-                                        placeholder="e.g. Rice and Curry" 
-                                    />
+                                {/* 1. Name Section */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8C6B52', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>ITEM NAME (ENG) *</div>
+                                        <div style={{ position: 'relative' }}>
+                                            <Utensils size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#BCA38F' }} />
+                                            <input 
+                                                required 
+                                                value={formData.name.en} 
+                                                onChange={(e) => handleInputChange('name', 'en', e.target.value)} 
+                                                style={{ width: '100%', padding: '12px 16px 12px 48px', borderRadius: '12px', border: '1px solid #E8E0D8', outline: 'none', fontSize: '0.95rem', fontWeight: 600, color: '#3b1f0e', transition: 'border-color 0.2s' }} 
+                                                placeholder="e.g. Rice and Curry" 
+                                                onFocus={(e) => e.target.style.borderColor = '#8C6B52'}
+                                                onBlur={(e) => e.target.style.borderColor = '#E8E0D8'}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8C6B52', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>ITEM NAME (SIN)</div>
+                                        <div style={{ position: 'relative' }}>
+                                            <Utensils size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#BCA38F' }} />
+                                            <input 
+                                                value={formData.name.si} 
+                                                onChange={(e) => handleInputChange('name', 'si', e.target.value)} 
+                                                style={{ width: '100%', padding: '12px 16px 12px 48px', borderRadius: '12px', border: `1px solid ${validationErrors.si ? '#ef4444' : '#E8E0D8'}`, outline: 'none', fontSize: '0.95rem', fontWeight: 600, color: '#3b1f0e', transition: 'border-color 0.2s' }} 
+                                                placeholder="උදා: බත් සහ වෑංජන" 
+                                                onFocus={(e) => e.target.style.borderColor = validationErrors.si ? '#ef4444' : '#8C6B52'}
+                                                onBlur={(e) => e.target.style.borderColor = validationErrors.si ? '#ef4444' : '#E8E0D8'}
+                                            />
+                                        </div>
+                                        {validationErrors.si && <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '6px', fontWeight: 600 }}>{validationErrors.si}</p>}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8C6B52', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>ITEM NAME (TAM)</div>
+                                        <div style={{ position: 'relative' }}>
+                                            <Utensils size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#BCA38F' }} />
+                                            <input 
+                                                value={formData.name.ta} 
+                                                onChange={(e) => handleInputChange('name', 'ta', e.target.value)} 
+                                                style={{ width: '100%', padding: '12px 16px 12px 48px', borderRadius: '12px', border: `1px solid ${validationErrors.ta ? '#ef4444' : '#E8E0D8'}`, outline: 'none', fontSize: '0.95rem', fontWeight: 600, color: '#3b1f0e', transition: 'border-color 0.2s' }} 
+                                                placeholder="எ.கா. சோறு மற்றும் கறி" 
+                                                onFocus={(e) => e.target.style.borderColor = validationErrors.ta ? '#ef4444' : '#8C6B52'}
+                                                onBlur={(e) => e.target.style.borderColor = validationErrors.ta ? '#ef4444' : '#E8E0D8'}
+                                            />
+                                        </div>
+                                        {validationErrors.ta && <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '6px', fontWeight: 600 }}>{validationErrors.ta}</p>}
+                                    </div>
                                 </div>
 
-                                {/* 2. Description Section (English Only) */}
-                                <div style={{ background: '#fcfaf7', borderRadius: '24px', padding: '25px', border: `1px solid ${validationErrors.description ? '#ef4444' : '#f1f0e8'}` }}>
-                                    <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--coffee-dark)', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Info size={18} /> DESCRIPTION (ENGLISH)
-                                    </h3>
-                                    <textarea 
-                                        value={formData.description?.en || ''} 
-                                        onChange={(e) => handleInputChange('description', 'en', e.target.value)} 
-                                        style={{ width: '100%', padding: '16px 20px', borderRadius: '16px', border: `2px solid ${validationErrors.description ? '#ef4444' : '#f1f0e8'}`, fontSize: '0.95rem', minHeight: '120px', resize: 'none' }} 
-                                        placeholder="Describe the menu item in English..." 
-                                    />
-                                    {validationErrors.description && (
-                                        <p style={{ color: '#ef4444', fontSize: '0.8rem', fontWeight: 700, marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <AlertCircle size={14} /> {validationErrors.description}
-                                        </p>
-                                    )}
+                                {/* 2. Description Section */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8C6B52', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>DESCRIPTION (ENG)</div>
+                                        <div style={{ position: 'relative' }}>
+                                            <Info size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: '#BCA38F' }} />
+                                            <textarea 
+                                                value={formData.description?.en || ''} 
+                                                onChange={(e) => handleInputChange('description', 'en', e.target.value)} 
+                                                style={{ width: '100%', padding: '16px 16px 16px 48px', borderRadius: '12px', border: `1px solid ${validationErrors.description ? '#ef4444' : '#E8E0D8'}`, outline: 'none', fontSize: '0.9rem', minHeight: '90px', resize: 'none', fontFamily: 'inherit', color: '#3b1f0e', transition: 'border-color 0.2s', lineHeight: '1.5' }} 
+                                                placeholder="Describe in English..." 
+                                                onFocus={(e) => e.target.style.borderColor = validationErrors.description ? '#ef4444' : '#8C6B52'}
+                                                onBlur={(e) => e.target.style.borderColor = validationErrors.description ? '#ef4444' : '#E8E0D8'}
+                                            />
+                                        </div>
+                                        {validationErrors.description && (
+                                            <p style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 600, marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <AlertCircle size={14} /> {validationErrors.description}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8C6B52', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>DESCRIPTION (SIN)</div>
+                                        <div style={{ position: 'relative' }}>
+                                            <Info size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: '#BCA38F' }} />
+                                            <textarea 
+                                                value={formData.description?.si || ''} 
+                                                onChange={(e) => handleInputChange('description', 'si', e.target.value)} 
+                                                style={{ width: '100%', padding: '16px 16px 16px 48px', borderRadius: '12px', border: `1px solid ${validationErrors.descSi ? '#ef4444' : '#E8E0D8'}`, outline: 'none', fontSize: '0.9rem', minHeight: '90px', resize: 'none', fontFamily: 'inherit', color: '#3b1f0e', transition: 'border-color 0.2s', lineHeight: '1.5' }} 
+                                                placeholder="සිංහලෙන් විස්තරය..." 
+                                                onFocus={(e) => e.target.style.borderColor = validationErrors.descSi ? '#ef4444' : '#8C6B52'}
+                                                onBlur={(e) => e.target.style.borderColor = validationErrors.descSi ? '#ef4444' : '#E8E0D8'}
+                                            />
+                                        </div>
+                                        {validationErrors.descSi && <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '6px', fontWeight: 600 }}>{validationErrors.descSi}</p>}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8C6B52', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>DESCRIPTION (TAM)</div>
+                                        <div style={{ position: 'relative' }}>
+                                            <Info size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: '#BCA38F' }} />
+                                            <textarea 
+                                                value={formData.description?.ta || ''} 
+                                                onChange={(e) => handleInputChange('description', 'ta', e.target.value)} 
+                                                style={{ width: '100%', padding: '16px 16px 16px 48px', borderRadius: '12px', border: `1px solid ${validationErrors.descTa ? '#ef4444' : '#E8E0D8'}`, outline: 'none', fontSize: '0.9rem', minHeight: '90px', resize: 'none', fontFamily: 'inherit', color: '#3b1f0e', transition: 'border-color 0.2s', lineHeight: '1.5' }} 
+                                                placeholder="தமிழில் விளக்கம்..." 
+                                                onFocus={(e) => e.target.style.borderColor = validationErrors.descTa ? '#ef4444' : '#8C6B52'}
+                                                onBlur={(e) => e.target.style.borderColor = validationErrors.descTa ? '#ef4444' : '#E8E0D8'}
+                                            />
+                                        </div>
+                                        {validationErrors.descTa && <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '6px', fontWeight: 600 }}>{validationErrors.descTa}</p>}
+                                    </div>
                                 </div>
 
                                 {/* 3. Price & Image Section */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                                    <div style={{ background: 'white', borderRadius: '24px', padding: '25px', border: `1px solid ${validationErrors.price ? '#ef4444' : '#f1f0e8'}` }}>
-                                        <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--coffee-dark)', marginBottom: '15px' }}>PRICE (LKR)</h3>
-                                        <input 
-                                            required 
-                                            type="text" 
-                                            value={formData.price} 
-                                            onChange={(e) => handleInputChange('price', null, e.target.value)} 
-                                            style={{ width: '100%', padding: '16px 20px', borderRadius: '16px', border: `2px solid ${validationErrors.price ? '#ef4444' : '#f1f0e8'}`, fontSize: '1.1rem', fontWeight: 800 }} 
-                                            placeholder="0.00" 
-                                        />
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8C6B52', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PRICE (LKR) *</div>
+                                        <div style={{ position: 'relative' }}>
+                                            <DollarSign size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#BCA38F' }} />
+                                            <input 
+                                                required 
+                                                type="text" 
+                                                value={formData.price} 
+                                                onChange={(e) => handleInputChange('price', null, e.target.value)} 
+                                                style={{ width: '100%', padding: '12px 16px 12px 48px', borderRadius: '12px', border: `1px solid ${validationErrors.price ? '#ef4444' : '#E8E0D8'}`, outline: 'none', fontSize: '0.95rem', fontWeight: 600, color: '#3b1f0e', transition: 'border-color 0.2s' }} 
+                                                placeholder="0.00" 
+                                                onFocus={(e) => e.target.style.borderColor = validationErrors.price ? '#ef4444' : '#8C6B52'}
+                                                onBlur={(e) => e.target.style.borderColor = validationErrors.price ? '#ef4444' : '#E8E0D8'}
+                                            />
+                                        </div>
                                         {validationErrors.price && (
-                                            <p style={{ color: '#ef4444', fontSize: '0.8rem', fontWeight: 700, marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <p style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 600, marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                 <AlertCircle size={14} /> {validationErrors.price}
                                             </p>
                                         )}
                                     </div>
-                                    <div style={{ background: 'white', borderRadius: '24px', padding: '25px', border: '1px solid #f1f0e8' }}>
-                                        <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--coffee-dark)', marginBottom: '15px' }}>IMAGE URL</h3>
-                                        <input 
-                                            type="text" 
-                                            value={formData.image} 
-                                            onChange={(e) => handleInputChange('image', null, e.target.value)} 
-                                            style={{ width: '100%', padding: '16px 20px', borderRadius: '16px', border: '2px solid #f1f0e8', fontSize: '0.9rem' }} 
-                                            placeholder="https://..." 
-                                        />
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8C6B52', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>IMAGE URL</div>
+                                        <div style={{ position: 'relative' }}>
+                                            <ImageIcon size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#BCA38F' }} />
+                                            <input 
+                                                type="text" 
+                                                value={formData.image} 
+                                                onChange={(e) => handleInputChange('image', null, e.target.value)} 
+                                                style={{ width: '100%', padding: '12px 16px 12px 48px', borderRadius: '12px', border: '1px solid #E8E0D8', outline: 'none', fontSize: '0.9rem', color: '#3b1f0e', transition: 'border-color 0.2s' }} 
+                                                placeholder="https://..." 
+                                                onFocus={(e) => e.target.style.borderColor = '#8C6B52'}
+                                                onBlur={(e) => e.target.style.borderColor = '#E8E0D8'}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <button 
-                                type="submit" 
-                                className="btn-premium" 
-                                style={{ width: '100%', padding: '22px', borderRadius: '22px', fontSize: '1.2rem', fontWeight: 800, marginTop: '40px', background: 'var(--coffee-dark)', color: 'white' }}
-                            >
-                                <Save size={24} /> {isEdit ? 'Update Menu Item' : 'Add to Menu'}
-                            </button>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '40px', paddingTop: '24px', borderTop: '1px solid #F1EDE9' }}>
+                                <button 
+                                    type="button" 
+                                    onClick={onClose} 
+                                    style={{ padding: '14px 28px', borderRadius: '12px', border: '1px solid #D4C5B9', background: '#ffffff', color: '#8C6B52', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', transition: 'background 0.2s' }}
+                                    onMouseOver={(e) => e.currentTarget.style.background = '#fcf8f5'}
+                                    onMouseOut={(e) => e.currentTarget.style.background = '#ffffff'}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    style={{ padding: '14px 28px', borderRadius: '12px', border: 'none', background: '#5C3A21', color: '#ffffff', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'background 0.2s', boxShadow: '0 4px 12px rgba(92, 58, 33, 0.2)' }}
+                                    onMouseOver={(e) => e.currentTarget.style.background = '#4a2f1a'}
+                                    onMouseOut={(e) => e.currentTarget.style.background = '#5C3A21'}
+                                >
+                                    {isEdit ? <Save size={18} /> : <Plus size={18} />}
+                                    {isEdit ? 'Update Menu Item' : 'Add Menu Item'}
+                                </button>
+                            </div>
                         </form>
                     </motion.div>
                 </div>
@@ -164,7 +247,7 @@ const MenuManagement = () => {
     const [editingItem, setEditingItem] = useState(null);
     const [showSuccess, setShowSuccess] = useState('');
     const [loading, setLoading] = useState(false);
-    const [validationErrors, setValidationErrors] = useState({ si: '', ta: '', price: '', description: '' });
+    const [validationErrors, setValidationErrors] = useState({ si: '', ta: '', descSi: '', descTa: '', price: '', description: '' });
 
     const [formData, setFormData] = useState({
         name: { en: '', si: '', ta: '' },
@@ -211,9 +294,14 @@ const MenuManagement = () => {
 
     const handleInputChange = (field, lang, value) => {
         if (lang) {
-            if (field === 'name' && (lang === 'si' || lang === 'ta')) {
+            if (lang === 'si' || lang === 'ta') {
                 const error = validateField(lang, value);
-                setValidationErrors(prev => ({ ...prev, [lang]: error }));
+                if (field === 'name') {
+                    setValidationErrors(prev => ({ ...prev, [lang]: error }));
+                } else if (field === 'description') {
+                    const descLangKey = lang === 'si' ? 'descSi' : 'descTa';
+                    setValidationErrors(prev => ({ ...prev, [descLangKey]: error }));
+                }
             }
             if (field === 'description' && lang === 'en') {
                 if (!value.trim()) {
@@ -257,13 +345,13 @@ const MenuManagement = () => {
             dietary: ['Veg'],
             availability: true
         });
-        setValidationErrors({ si: '', ta: '', price: '', description: '' });
+        setValidationErrors({ si: '', ta: '', descSi: '', descTa: '', price: '', description: '' });
     };
 
     const handleAddItem = async (e) => {
         e.preventDefault();
         
-        if (validationErrors.price || validationErrors.description) {
+        if (validationErrors.price || validationErrors.description || validationErrors.si || validationErrors.ta || validationErrors.descSi || validationErrors.descTa) {
             alert('Please fix validation errors before submitting.');
             return;
         }
@@ -274,16 +362,6 @@ const MenuManagement = () => {
         }
         const finalData = {
             ...formData,
-            name: {
-                en: formData.name.en,
-                si: formData.name.en,
-                ta: formData.name.en
-            },
-            description: {
-                en: formData.description.en,
-                si: formData.description.en,
-                ta: formData.description.en
-            },
             // Default category to Lunch if none selected
             category: formData.category.length > 0 ? formData.category : ['Lunch']
         };
@@ -304,7 +382,7 @@ const MenuManagement = () => {
     const handleEditItem = async (e) => {
         e.preventDefault();
         
-        if (validationErrors.price || validationErrors.description) {
+        if (validationErrors.price || validationErrors.description || validationErrors.si || validationErrors.ta || validationErrors.descSi || validationErrors.descTa) {
             alert('Please fix validation errors before submitting.');
             return;
         }
@@ -314,17 +392,7 @@ const MenuManagement = () => {
             return;
         }
         const finalData = {
-            ...formData,
-            name: {
-                en: formData.name.en,
-                si: formData.name.en,
-                ta: formData.name.en
-            },
-            description: {
-                en: formData.description.en,
-                si: formData.description.en,
-                ta: formData.description.en
-            }
+            ...formData
         };
 
         try {
