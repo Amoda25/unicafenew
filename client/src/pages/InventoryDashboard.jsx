@@ -151,10 +151,10 @@ const InventoryDashboard = () => {
                                     disabled={recalculating}
                                     style={{
                                         display: 'flex', alignItems: 'center', gap: '8px',
-                                        padding: '10px 20px', background: recalculating ? '#e2e8f0' : 'linear-gradient(135deg, #6f4e37 0%, #4b2c20 100%)',
+                                        padding: '10px 20px', background: recalculating ? '#e2e8f0' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                                         color: recalculating ? '#94a3b8' : 'white', border: 'none', borderRadius: '10px',
                                         fontSize: '0.875rem', fontWeight: 700, cursor: recalculating ? 'not-allowed' : 'pointer',
-                                        boxShadow: '0 4px 12px rgba(111, 78, 55, 0.25)', transition: 'all 0.2s'
+                                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)', transition: 'all 0.2s'
                                     }}
                                 >
                                     <RefreshCw size={16} style={{ animation: recalculating ? 'spin 1s linear infinite' : 'none' }} />
