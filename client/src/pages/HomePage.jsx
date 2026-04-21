@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MapPin, Star, Utensils, Heart, ShoppingBag, Coffee, Pizza, Navigation, ArrowRight } from 'lucide-react';
 import heroFood from '../assets/hero_food_new.png';
@@ -10,8 +10,10 @@ import pastaImg from '../assets/pasta.png';
 import campusBg from '../assets/campus_bg.png';
 
 const HomePage = () => {
+    const navigate = useNavigate();
 
     const categories = [
+        { name: 'Special Menu', count: 'Exclusive', img: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&auto=format&fit=crop' },
         { name: 'Pizza', count: '14', img: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=800&auto=format&fit=crop' },
         { name: 'Broast', count: '4', img: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=800&auto=format&fit=crop' },
         { name: 'Chicken', count: '5', img: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?w=800&auto=format&fit=crop' },
@@ -137,6 +139,7 @@ const HomePage = () => {
                         <motion.div 
                             key={i}
                             whileHover={{ y: -5 }}
+                            onClick={() => navigate(`/order?category=${encodeURIComponent(cat.name)}`)}
                             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
                         >
                             <div style={{
