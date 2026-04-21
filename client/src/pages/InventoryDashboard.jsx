@@ -156,10 +156,10 @@ const InventoryDashboard = () => {
                                     disabled={recalculating}
                                     style={{
                                         display: 'flex', alignItems: 'center', gap: '8px',
-                                        padding: '10px 20px', background: recalculating ? '#e2e8f0' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                        padding: '10px 20px', background: recalculating ? '#e2e8f0' : '#1e293b',
                                         color: recalculating ? '#94a3b8' : 'white', border: 'none', borderRadius: '10px',
                                         fontSize: '0.875rem', fontWeight: 700, cursor: recalculating ? 'not-allowed' : 'pointer',
-                                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)', transition: 'all 0.2s'
+                                        boxShadow: recalculating ? 'none' : '0 4px 12px rgba(30, 41, 59, 0.25)', transition: 'all 0.2s'
                                     }}
                                 >
                                     <RefreshCw size={16} style={{ animation: recalculating ? 'spin 1s linear infinite' : 'none' }} />
@@ -489,6 +489,7 @@ const InventoryDashboard = () => {
                                                                     <button 
                                                                         onClick={() => setActiveTab('inventory')}
                                                                         style={{ 
+                                                                            display: 'flex', alignItems: 'center', gap: '6px',
                                                                             background: '#9f1239', color: 'white', border: 'none', 
                                                                             padding: '6px 12px', borderRadius: '8px', fontSize: '0.7rem', 
                                                                             fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(159,18,57,0.2)',
@@ -497,6 +498,7 @@ const InventoryDashboard = () => {
                                                                         onMouseOver={e=>e.currentTarget.style.background='#881337'}
                                                                         onMouseOut={e=>e.currentTarget.style.background='#9f1239'}
                                                                     >
+                                                                        <Trash2 size={12} />
                                                                         Dispose
                                                                     </button>
                                                                 )}
@@ -564,7 +566,7 @@ const InventoryDashboard = () => {
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                                 }}
                             >
-                                {disposeLoading ? <RotateCw size={16} className="spin" /> : <ShieldAlert size={16} />}
+                                {disposeLoading ? <RotateCw size={16} className="spin" /> : <Trash2 size={16} />}
                                 Confirm Dispose
                             </button>
                         </div>

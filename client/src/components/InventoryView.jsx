@@ -504,8 +504,18 @@ const InventoryView = () => {
                         display: 'flex', alignItems: 'center', gap: '8px', 
                         background: 'linear-gradient(135deg, #7f5539 0%, #432818 100%)', color: 'white', border: 'none', 
                         padding: '10px 20px', borderRadius: '8px', fontSize: '0.95rem', 
-                        fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(67,40,24,0.25)'
-                    }}>
+                        fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(67,40,24,0.25)',
+                        transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => { 
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(67,40,24,0.35)';
+                    }}
+                    onMouseOut={(e) => { 
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(67,40,24,0.25)';
+                    }}
+                    >
                         <Plus size={18} />
                         Add New Item
                     </button>
@@ -641,6 +651,7 @@ const InventoryView = () => {
                                                     <button 
                                                         onClick={() => { setItemToDispose(item); setIsDisposeModalOpen(true); }}
                                                         style={{ 
+                                                            display: 'flex', alignItems: 'center', gap: '6px',
                                                             background: '#9f1239', color: 'white', border: 'none', 
                                                             padding: '6px 14px', borderRadius: '8px', fontSize: '0.75rem', 
                                                             fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(159,18,57,0.2)',
@@ -649,6 +660,7 @@ const InventoryView = () => {
                                                         onMouseOver={e=>e.currentTarget.style.background='#881337'}
                                                         onMouseOut={e=>e.currentTarget.style.background='#9f1239'}
                                                     >
+                                                        <Trash2 size={14} />
                                                         Dispose
                                                     </button>
                                                 )}
@@ -1049,7 +1061,7 @@ const InventoryView = () => {
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                                 }}
                             >
-                                {disposeLoading ? <RotateCw size={16} className="spin" /> : <ShieldAlert size={16} />}
+                                {disposeLoading ? <RotateCw size={16} className="spin" /> : <Trash2 size={16} />}
                                 Confirm Dispose
                             </button>
                         </div>
