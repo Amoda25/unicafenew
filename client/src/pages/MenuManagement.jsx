@@ -271,7 +271,7 @@ const MenuManagement = () => {
         availability: true
     });
 
-    const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Beverages'];
+    const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Beverages', 'Special Menu'];
 
     useEffect(() => {
         fetchMenuItems();

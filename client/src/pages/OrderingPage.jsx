@@ -84,12 +84,17 @@ const OrderingPage = () => {
 
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-    // Sync Search from URL
+    // Sync Search & Category from URL
     useEffect(() => {
         const query = searchParams.get('q');
+        const cat = searchParams.get('category');
+        
         if (query) {
             setSearchQuery(query);
             setActiveCategory('All');
+        } else if (cat) {
+            setActiveCategory(cat);
+            setSearchQuery('');
         }
     }, [searchParams]);
 
@@ -147,7 +152,8 @@ const OrderingPage = () => {
         { name: 'Lunch', icon: '🍛', displayName: 'Lunch' },
         { name: 'Dinner', icon: '🍲', displayName: 'Dinner' },
         { name: 'Snacks', icon: '🥟', displayName: 'Snacks' },
-        { name: 'Beverages', icon: '🥤', displayName: 'Beverages' }
+        { name: 'Beverages', icon: '🥤', displayName: 'Beverages' },
+        { name: 'Special Menu', icon: '🌟', displayName: 'Special Menu' }
     ];
 
     const addToCart = (item) => {

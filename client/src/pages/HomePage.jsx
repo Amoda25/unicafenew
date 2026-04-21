@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MapPin, Star, Utensils, Heart, ShoppingBag, Coffee, Pizza, Navigation, ArrowRight } from 'lucide-react';
 import heroFood from '../assets/hero_food_new.png';
@@ -10,6 +10,7 @@ import pastaImg from '../assets/pasta.png';
 import campusBg from '../assets/campus_bg.png';
 
 const HomePage = () => {
+    const navigate = useNavigate();
 
     const categories = [
         { name: 'Pizza', count: '14', img: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=800&auto=format&fit=crop' },
@@ -19,8 +20,13 @@ const HomePage = () => {
         { name: 'Shakes', count: '22', img: milkshake },
         { name: 'Sandwiches', count: '6', img: sandwichImg },
         { name: 'Pasta', count: '10', img: pastaImg },
+        { name: 'Special Menu', count: 'New', img: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop' },
         { name: 'Desserts', count: '15', img: 'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=800&auto=format&fit=crop' }
     ];
+
+    const handleCategoryClick = (name) => {
+        navigate(`/order?category=${encodeURIComponent(name)}`);
+    };
 
     return (
         <div style={{ backgroundColor: '#F9F9F9', minHeight: '100vh', paddingBottom: '4rem' }}>
@@ -137,6 +143,7 @@ const HomePage = () => {
                         <motion.div 
                             key={i}
                             whileHover={{ y: -5 }}
+                            onClick={() => handleCategoryClick(cat.name)}
                             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
                         >
                             <div style={{
