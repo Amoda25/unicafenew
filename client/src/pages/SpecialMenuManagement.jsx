@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Save, Utensils, Plus, X, Search, Edit2, Trash2, 
     Filter, ChevronRight, Image as ImageIcon, Check, AlertCircle,
-    Globe, Info, DollarSign, Tag
+    Globe, Info, DollarSign, Tag, Star
 } from 'lucide-react';
 import axios from 'axios';
 import OrderSidebar from '../components/OrderSidebar';
@@ -64,7 +64,7 @@ const FormModal = ({ show, onClose, onSubmit, title, isEdit, formData, handleInp
                                     justifyContent: 'center', 
                                     color: 'white'
                                 }}>
-                                    {isEdit ? <Edit2 size={24} /> : <Plus size={24} />}
+                                    <Star size={24} />
                                 </div>
                                 <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--coffee-dark)', margin: 0 }}>{title}</h2>
                             </div>
@@ -86,7 +86,7 @@ const FormModal = ({ show, onClose, onSubmit, title, isEdit, formData, handleInp
                                         value={formData.name.en} 
                                         onChange={(e) => handleInputChange('name', 'en', e.target.value)} 
                                         style={{ width: '100%', padding: '16px 20px', borderRadius: '16px', border: '2px solid #f1f0e8', fontSize: '1rem', fontWeight: 600 }} 
-                                        placeholder="e.g. Rice and Curry" 
+                                        placeholder="e.g. Classic Beef Burger" 
                                     />
                                 </div>
 
@@ -99,7 +99,7 @@ const FormModal = ({ show, onClose, onSubmit, title, isEdit, formData, handleInp
                                         value={formData.description?.en || ''} 
                                         onChange={(e) => handleInputChange('description', 'en', e.target.value)} 
                                         style={{ width: '100%', padding: '16px 20px', borderRadius: '16px', border: '2px solid #f1f0e8', fontSize: '0.95rem', minHeight: '120px', resize: 'none' }} 
-                                        placeholder="Describe the menu item in English..." 
+                                        placeholder="Describe the item in English..." 
                                     />
                                 </div>
 
@@ -134,7 +134,7 @@ const FormModal = ({ show, onClose, onSubmit, title, isEdit, formData, handleInp
                                 className="btn-premium" 
                                 style={{ width: '100%', padding: '22px', borderRadius: '22px', fontSize: '1.2rem', fontWeight: 800, marginTop: '40px', background: 'var(--coffee-dark)', color: 'white' }}
                             >
-                                <Save size={24} /> {isEdit ? 'Update Menu Item' : 'Add to Menu'}
+                                <Save size={24} /> {isEdit ? 'Update Item' : 'Create Item'}
                             </button>
                         </form>
                     </motion.div>
@@ -144,11 +144,10 @@ const FormModal = ({ show, onClose, onSubmit, title, isEdit, formData, handleInp
     </AnimatePresence>
 );
 
-const MenuManagement = () => {
+const SpecialMenuManagement = () => {
     const navigate = useNavigate();
     const [menuItems, setMenuItems] = useState([]);
     const [globalSearch, setGlobalSearch] = useState('');
-    const [activeCategory, setActiveCategory] = useState('All');
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
@@ -160,13 +159,11 @@ const MenuManagement = () => {
         name: { en: '', si: '', ta: '' },
         description: { en: '', si: '', ta: '' },
         price: '',
-        category: [],
+        category: ['Special Menu'],
         image: '',
         dietary: ['Veg'],
         availability: true
     });
-
-    const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Beverages', 'Special Menu'];
 
     useEffect(() => {
         fetchMenuItems();
@@ -176,7 +173,11 @@ const MenuManagement = () => {
         setLoading(true);
         try {
             const response = await axios.get('/api/menu/all');
-            setMenuItems(response.data);
+            // Filter only Special Menu category
+            const specials = response.data.filter(item => 
+                Array.isArray(item.category) ? item.category.includes('Special Menu') : item.category === 'Special Menu'
+            );
+            setMenuItems(specials);
         } catch (err) {
             console.error('Error fetching menu:', err);
         } finally {
@@ -188,13 +189,9 @@ const MenuManagement = () => {
         if (!value) return '';
         const englishRegex = /[a-zA-Z]/;
         if (lang === 'si') {
-            if (englishRegex.test(value)) {
-                return 'Please use Sinhala (සිංහල)';
-            }
+            if (englishRegex.test(value)) return 'Please use Sinhala (සිංහල)';
         } else if (lang === 'ta') {
-            if (englishRegex.test(value)) {
-                return 'Please use Tamil (தமிழ்)';
-            }
+            if (englishRegex.test(value)) return 'Please use Tamil (தமிழ்)';
         }
         return '';
     };
@@ -213,11 +210,10 @@ const MenuManagement = () => {
             if (field === 'price') {
                 const currencyChars = /[$£€¥₹]|Rs|LKR/i;
                 const onlyNumbers = /^[0-9]*\.?[0-9]*$/;
-                
                 if (currencyChars.test(value)) {
-                    setValidationErrors(prev => ({ ...prev, price: 'Currency symbols are not allowed. Please enter numbers only.' }));
+                    setValidationErrors(prev => ({ ...prev, price: 'Numbers only please.' }));
                 } else if (!onlyNumbers.test(value)) {
-                    setValidationErrors(prev => ({ ...prev, price: 'Please enter a valid number (e.g. 100 or 100.50).' }));
+                    setValidationErrors(prev => ({ ...prev, price: 'Invalid number format.' }));
                 } else {
                     setValidationErrors(prev => ({ ...prev, price: '' }));
                 }
@@ -231,7 +227,7 @@ const MenuManagement = () => {
             name: { en: '', si: '', ta: '' },
             description: { en: '', si: '', ta: '' },
             price: '',
-            category: [],
+            category: ['Special Menu'],
             image: '',
             dietary: ['Veg'],
             availability: true
@@ -254,21 +250,19 @@ const MenuManagement = () => {
                 en: formData.description.en,
                 si: formData.description.en,
                 ta: formData.description.en
-            },
-            // Default category to Lunch if none selected
-            category: formData.category.length > 0 ? formData.category : ['Lunch']
+            }
         };
 
         try {
             await axios.post('/api/menu', finalData);
-            setShowSuccess('Menu item added successfully!');
+            setShowSuccess('Special item launched successfully!');
             fetchMenuItems();
             setShowAddModal(false);
             resetForm();
             setTimeout(() => setShowSuccess(''), 3000);
         } catch (err) {
-            console.error('Error adding item:', err);
-            alert('Failed to add menu item.');
+            console.error('Error adding special item:', err);
+            alert('Failed to add special item.');
         }
     };
 
@@ -292,28 +286,27 @@ const MenuManagement = () => {
 
         try {
             await axios.put(`/api/menu/${editingItem._id}`, finalData);
-            setShowSuccess('Menu item updated successfully!');
+            setShowSuccess('Special item updated successfully!');
             fetchMenuItems();
             setShowEditModal(false);
             setEditingItem(null);
             resetForm();
             setTimeout(() => setShowSuccess(''), 3000);
         } catch (err) {
-            console.error('Error updating item:', err);
-            alert('Failed to update menu item.');
+            console.error('Error updating special item:', err);
+            alert('Failed to update special item.');
         }
     };
 
     const handleDeleteItem = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this item? This action cannot be undone.')) return;
+        if (!window.confirm('Delete this special?')) return;
         try {
             await axios.delete(`/api/menu/${id}`);
-            setShowSuccess('Item deleted successfully!');
+            setShowSuccess('Item deleted.');
             fetchMenuItems();
             setTimeout(() => setShowSuccess(''), 3000);
         } catch (err) {
             console.error('Error deleting item:', err);
-            alert('Failed to delete item.');
         }
     };
 
@@ -336,13 +329,12 @@ const MenuManagement = () => {
             (item.name?.en?.toLowerCase() || '').includes(globalSearch.toLowerCase()) ||
             (item.name?.si?.toLowerCase() || '').includes(globalSearch.toLowerCase()) ||
             (item.name?.ta?.toLowerCase() || '').includes(globalSearch.toLowerCase());
-        const matchesCategory = activeCategory === 'All' || (Array.isArray(item.category) && item.category.includes(activeCategory));
-        return matchesSearch && matchesCategory;
+        return matchesSearch;
     });
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-page)', color: '#111827' }}>
-            <OrderSidebar activeTab="menu" setActiveTab={() => {}} />
+            <OrderSidebar activeTab="special-menu" setActiveTab={() => {}} />
             
             <main style={{ flex: 1, padding: '40px', display: 'flex', flexDirection: 'column' }}>
                 {/* Page Header */}
@@ -353,23 +345,20 @@ const MenuManagement = () => {
                             style={{ 
                                 padding: '12px', 
                                 borderRadius: '14px', 
-                                background: 'var(--latte-card)', 
+                                background: 'white', 
                                 border: '1px solid #e2e8f0', 
                                 color: '#64748b', 
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'all 0.2s'
+                                justifyContent: 'center'
                             }}
-                            onMouseOver={e => e.currentTarget.style.background = '#f8fafc'}
-                            onMouseOut={e => e.currentTarget.style.background = 'white'}
                         >
                             <ChevronRight size={20} style={{ transform: 'rotate(180deg)' }} />
                         </button>
                         <div>
-                            <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#1e293b', margin: 0 }}>Menu Items Dashboard</h1>
-                            <p style={{ color: '#64748b', fontWeight: 500, margin: '4px 0 0' }}>Part of Order Management Subsystem</p>
+                            <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#1e293b', margin: 0 }}>Special Menu Hub</h1>
+                            <p style={{ color: '#64748b', fontWeight: 500, margin: '4px 0 0' }}>Manage limited-time and featured campus delicacies</p>
                         </div>
                     </div>
                     <button 
@@ -379,223 +368,138 @@ const MenuManagement = () => {
                             display: 'flex', 
                             alignItems: 'center', 
                             gap: '12px', 
-                            padding: '12px 24px', 
-                            borderRadius: '16px',
+                            padding: '14px 28px', 
+                            borderRadius: '18px',
                             background: 'linear-gradient(135deg, var(--coffee-dark) 0%, #3b1f0e 100%)',
                             color: 'white',
                             border: 'none',
                             cursor: 'pointer',
                             fontWeight: 800,
-                            boxShadow: '0 10px 20px rgba(59, 31, 14, 0.15)',
+                            boxShadow: '0 10px 25px rgba(59, 31, 14, 0.2)',
                             transition: 'all 0.3s ease'
                         }}
                         onMouseOver={e => {
                             e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 15px 30px rgba(59, 31, 14, 0.25)';
+                            e.currentTarget.style.boxShadow = '0 15px 35px rgba(59, 31, 14, 0.3)';
                         }}
                         onMouseOut={e => {
                             e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 10px 20px rgba(59, 31, 14, 0.15)';
+                            e.currentTarget.style.boxShadow = '0 10px 25px rgba(59, 31, 14, 0.2)';
                         }}
                     >
                         <div style={{ 
-                            width: '28px', 
-                            height: '28px', 
+                            width: '30px', 
+                            height: '30px', 
                             borderRadius: '50%', 
                             background: 'rgba(255,255,255,0.2)', 
                             display: 'flex', 
                             alignItems: 'center', 
                             justifyContent: 'center' 
                         }}>
-                            <Plus size={18} />
+                            <Plus size={20} />
                         </div>
-                        <span style={{ letterSpacing: '0.5px' }}>ADD NEW ITEM</span>
+                        <span style={{ letterSpacing: '0.5px' }}>ADD NEW SPECIAL MENU</span>
                     </button>
                 </div>
 
-                {/* Stats Summary Bar */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '40px' }}>
-                    <div style={{ padding: '24px', borderRadius: '20px', background: 'var(--latte-card)', border: '1px solid #f1f5f9' }}>
-                        <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Total Items</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{menuItems.length}</div>
-                    </div>
-                    <div style={{ padding: '24px', borderRadius: '20px', background: 'var(--latte-card)', border: '1px solid #f1f5f9' }}>
-                        <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Live Items</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary)' }}>{menuItems.filter(i => i.availability).length}</div>
-                    </div>
-                    <div style={{ padding: '24px', borderRadius: '20px', background: 'var(--latte-card)', border: '1px solid #f1f5f9' }}>
-                        <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Vegetarian</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#10b981' }}>{menuItems.filter(i => i.dietary?.includes('Veg')).length}</div>
-                    </div>
-                    <div style={{ padding: '24px', borderRadius: '20px', background: 'var(--latte-card)', border: '1px solid #f1f5f9' }}>
-                        <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Categories</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>5</div>
-                    </div>
-                </div>
-
-                {/* Filters & Search */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                        {['All', ...categories].map(cat => (
-                            <button
-                                key={cat}
-                                onClick={() => setActiveCategory(cat)}
-                                style={{
-                                    padding: '8px 20px',
-                                    borderRadius: '99px',
-                                    background: activeCategory === cat ? 'var(--primary)' : 'white',
-                                    color: activeCategory === cat ? 'white' : '#64748b',
-                                    border: '1px solid #e2e8f0',
-                                    fontWeight: 700,
-                                    fontSize: '0.85rem',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                {cat}
-                            </button>
-                        ))}
-                    </div>
+                {/* Search */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
                     <div style={{ position: 'relative', width: '300px' }}>
                         <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                         <input 
                             type="text" 
-                            placeholder="Search menu..." 
+                            placeholder="Find a special..." 
                             value={globalSearch}
                             onChange={(e) => setGlobalSearch(e.target.value)}
-                            style={{ width: '100%', padding: '12px 16px 12px 48px', borderRadius: '12px', border: '1px solid #e2e8f0', outline: 'none', background: 'var(--latte-card)' }}
+                            style={{ width: '100%', padding: '12px 16px 12px 48px', borderRadius: '12px', border: '1px solid #e2e8f0', outline: 'none', background: 'white' }}
                         />
                     </div>
                 </div>
 
-                {/* Main Table */}
-                <div style={{ background: 'var(--latte-card)', borderRadius: '24px', border: '1px solid #f1f5f9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
-                                <th style={{ padding: '20px 24px', textAlign: 'left', color: '#64748b', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase' }}>Item Name</th>
-                                <th style={{ padding: '20px 24px', textAlign: 'left', color: '#64748b', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase' }}>Category</th>
-                                <th style={{ padding: '20px 24px', textAlign: 'left', color: '#64748b', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase' }}>Price</th>
-                                <th style={{ padding: '20px 24px', textAlign: 'center', color: '#64748b', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase' }}>Status</th>
-                                <th style={{ padding: '20px 24px', textAlign: 'right', color: '#64748b', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase' }}>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan="5" style={{ padding: '100px', textAlign: 'center', color: '#94a3b8' }}>Loading menu items...</td>
-                                </tr>
-                            ) : filteredItems.length === 0 ? (
-                                <tr>
-                                    <td colSpan="5" style={{ padding: '100px', textAlign: 'center' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-                                            <Utensils size={48} style={{ opacity: 0.1 }} />
-                                            <p style={{ color: '#94a3b8', fontWeight: 600 }}>No menu items found.</p>
+                {/* Main Content */}
+                {loading ? (
+                    <div style={{ padding: '100px', textAlign: 'center', color: '#94a3b8' }}>Loading...</div>
+                ) : filteredItems.length === 0 ? (
+                    <div style={{ background: 'white', borderRadius: '24px', padding: '100px', textAlign: 'center', border: '1px solid #f1f5f9' }}>
+                        <Star size={48} style={{ opacity: 0.1, marginBottom: '16px' }} />
+                        <p style={{ color: '#94a3b8', fontWeight: 600 }}>No special menu items currently active.</p>
+                        <button onClick={() => setShowAddModal(true)} style={{ marginTop: '20px', color: 'var(--primary)', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer' }}>
+                            Create your first special menu item →
+                        </button>
+                    </div>
+                ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '25px' }}>
+                        {filteredItems.map(item => (
+                            <motion.div
+                                key={item._id}
+                                whileHover={{ y: -5 }}
+                                style={{ background: 'white', borderRadius: '24px', overflow: 'hidden', border: '1px solid #f1f5f9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}
+                            >
+                                <div style={{ height: '200px', position: 'relative' }}>
+                                    <img src={item.image || 'https://via.placeholder.com/400x200'} alt={item.name.en} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <div style={{ position: 'absolute', top: '15px', right: '15px', background: 'rgba(255,255,255,0.9)', padding: '5px 12px', borderRadius: '50px', fontWeight: 800, fontSize: '0.9rem' }}>
+                                        LKR {item.price}
+                                    </div>
+                                    {!item.availability && (
+                                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800 }}>
+                                            OFFLINE
                                         </div>
-                                    </td>
-                                </tr>
-                            ) : filteredItems.map((item) => (
-                                <tr key={item._id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#fcfcfc'} onMouseOut={e => e.currentTarget.style.background = 'white'}>
-                                    <td style={{ padding: '16px 24px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                            <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: '#f1f5f9', overflow: 'hidden', flexShrink: 0 }}>
-                                                {item.image ? (
-                                                    <img src={item.image} alt={item.name.en} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                ) : (
-                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}>
-                                                        <ImageIcon size={24} />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                                    <span style={{ fontWeight: 800, color: '#1e293b' }}>{item.name.en}</span>
-                                                    <div style={{ display: 'flex', gap: '4px' }}>
-                                                        {item.dietary?.includes('Veg') && <div style={{ width: '14px', height: '14px', border: '1px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Vegetarian"><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} /></div>}
-                                                        {item.dietary?.includes('Non-Veg') && <div style={{ width: '14px', height: '14px', border: '1px solid #f43f5e', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Non-Vegetarian"><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f43f5e' }} /></div>}
-                                                    </div>
-                                                </div>
-                                            </div>
+                                    )}
+                                </div>
+                                <div style={{ padding: '20px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                        <div>
+                                            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 4px' }}>{item.name.en}</h3>
+                                            <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>{item.name.si} • {item.name.ta}</p>
                                         </div>
-                                    </td>
-                                    <td style={{ padding: '16px 24px' }}>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                                            {(Array.isArray(item.category) ? item.category : [item.category]).map(c => (
-                                                <span key={c} style={{ padding: '4px 10px', borderRadius: '6px', background: '#f1f5f9', color: '#475569', fontSize: '0.7rem', fontWeight: 800 }}>{c}</span>
-                                            ))}
+                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                            {item.dietary?.includes('Veg') && <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#10b981' }} />}
+                                            {item.dietary?.includes('Non-Veg') && <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#f43f5e' }} />}
                                         </div>
-                                    </td>
-                                    <td style={{ padding: '16px 24px' }}>
-                                        <div style={{ fontWeight: 800, color: '#1e293b' }}>LKR {item.price}</div>
-                                    </td>
-                                    <td style={{ padding: '16px 24px', textAlign: 'center' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.availability ? '#10b981' : '#f43f5e' }} />
-                                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: item.availability ? '#059669' : '#e11d48' }}>{item.availability ? 'LIVE' : 'OFFLINE'}</span>
-                                        </div>
-                                    </td>
-                                    <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                            <button onClick={() => openEditModal(item)} style={{ padding: '8px', borderRadius: '10px', background: 'var(--latte-card)', border: '1px solid #e2e8f0', color: '#3b82f6', cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#eff6ff'} onMouseOut={e => e.currentTarget.style.background = 'white'}>
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button onClick={() => handleDeleteItem(item._id)} style={{ padding: '8px', borderRadius: '10px', background: 'var(--latte-card)', border: '1px solid #e2e8f0', color: '#ef4444', cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#fef2f2'} onMouseOut={e => e.currentTarget.style.background = 'white'}>
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                                        <button onClick={() => openEditModal(item)} style={{ flex: 1, padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 700 }}>
+                                            <Edit2 size={16} /> Edit
+                                        </button>
+                                        <button onClick={() => handleDeleteItem(item._id)} style={{ padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0', background: 'white', color: '#ef4444', cursor: 'pointer' }}>
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
             </main>
 
             <FormModal 
                 show={showAddModal} 
                 onClose={() => setShowAddModal(false)} 
                 onSubmit={handleAddItem} 
-                title="Add New Menu Item" 
+                title="Create Special Menu" 
                 isEdit={false} 
                 formData={formData}
                 handleInputChange={handleInputChange}
-                categories={categories}
                 validationErrors={validationErrors}
             />
             <FormModal 
                 show={showEditModal} 
                 onClose={() => { setShowEditModal(false); setEditingItem(null); resetForm(); }} 
                 onSubmit={handleEditItem} 
-                title="Edit Menu Item" 
+                title="Modify Special" 
                 isEdit={true} 
                 formData={formData}
                 handleInputChange={handleInputChange}
-                categories={categories}
                 validationErrors={validationErrors}
             />
 
             {showSuccess && (
-                <motion.div
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    style={{ position: 'fixed', bottom: '40px', right: '40px', background: '#10b981', padding: '16px 25px', borderRadius: '16px', color: 'white', fontWeight: 700, zIndex: 3000, boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)', display: 'flex', alignItems: 'center', gap: '12px' }}
-                >
-                    <Check size={20} />
-                    {showSuccess}
-                </motion.div>
+                <div style={{ position: 'fixed', bottom: '40px', right: '40px', background: '#10b981', padding: '16px 25px', borderRadius: '16px', color: 'white', fontWeight: 700, zIndex: 3000, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Check size={20} /> {showSuccess}
+                </div>
             )}
-
-            <style>{`
-                .hide-scrollbar::-webkit-scrollbar {
-                    display: none;
-                }
-                .hide-scrollbar {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
-                }
-            `}</style>
         </div>
     );
 };
 
-export default MenuManagement;
+export default SpecialMenuManagement;
