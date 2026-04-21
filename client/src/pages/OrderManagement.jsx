@@ -384,9 +384,9 @@ const OrderManagement = () => {
                                     <td style={{ padding: '20px 16px' }}>
                                         <div style={{ fontWeight: 700 }}>{order.username}</div>
                                         <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            <Clock size={12} /> {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            <Clock size={12} /> {new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
                                             <span style={{ color: timeDiff > 15 ? '#ef4444' : '#64748b', fontWeight: 700 }}>
-                                                ({timeDiff >= 60 ? `${Math.floor(timeDiff / 60)}h ${timeDiff % 60}m` : `${timeDiff}m`} ago)
+                                                ({timeDiff >= 1440 ? `${Math.floor(timeDiff / 1440)}d ${Math.floor((timeDiff % 1440) / 60)}h` : timeDiff >= 60 ? `${Math.floor(timeDiff / 60)}h ${timeDiff % 60}m` : `${timeDiff}m`} ago)
                                             </span>
                                         </div>
                                     </td>
