@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Package, AlertTriangle, Clock, Users, ShieldAlert, ShieldCheck, ShieldX, ArrowUpRight, TrendingDown, RefreshCw, Zap, Trash2, X, RotateCw } from 'lucide-react';
+import { Package, AlertTriangle, Clock, Users, ShieldAlert, ShieldCheck, ShieldX, ArrowUpRight, TrendingDown, RefreshCw, Zap, Trash2, X, RotateCw, Eye } from 'lucide-react';
 import axios from 'axios';
 import InventorySidebar from '../components/InventorySidebar';
 import InventoryView from '../components/InventoryView';
 import SuppliersView from '../components/SuppliersView';
 import UsageStockView from '../components/UsageStockView';
+import RestockModal from '../components/RestockModal';
 
 const InventoryDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -22,6 +23,10 @@ const InventoryDashboard = () => {
     const [alertsLoading, setAlertsLoading] = useState(false);
     const [lastComputed, setLastComputed]  = useState(null);
     const [recalculating, setRecalculating] = useState(false);
+    
+    // Shared restock state
+    const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
+    const [restockItem, setRestockItem] = useState(null);
 
     // ── Data fetchers ────────────────────────────────────────────────────────
     const fetchInventory = useCallback(async () => {
@@ -121,7 +126,7 @@ const InventoryDashboard = () => {
     }[status] || { bg: '#f8fafc', color: '#64748b', border: '#e2e8f0', leftBar: '#94a3b8' });
 
     const daysLeftBadge = (item) => {
-        if (item.stockDaysLeft === null) return { text: 'No usage data', bg: '#f1f5f9', color: '#94a3b8' };
+        if (item.stockDaysLeft === null) return null;
         if (item.stockDaysLeft === 0)    return { text: 'Out of stock soon!', bg: '#fee2e2', color: '#dc2626' };
         if (item.stockDaysLeft < 3)      return { text: `${item.stockDaysLeft} day${item.stockDaysLeft !== 1 ? 's' : ''} left`, bg: '#fee2e2', color: '#dc2626' };
         return { text: `${item.stockDaysLeft} days left`, bg: '#fff7ed', color: '#ea580c' };
@@ -334,12 +339,14 @@ const InventoryDashboard = () => {
                                                         {/* Row 3: Usage stats */}
                                                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                                                             {/* Days left pill */}
-                                                            <span style={{
-                                                                padding: '3px 10px', background: badge.bg, color: badge.color,
-                                                                borderRadius: '99px', fontSize: '0.72rem', fontWeight: 800, border: `1px solid ${badge.color}40`
-                                                            }}>
-                                                                ⏱ {badge.text}
-                                                            </span>
+                                                            {badge && (
+                                                                <span style={{
+                                                                    padding: '3px 10px', background: badge.bg, color: badge.color,
+                                                                    borderRadius: '99px', fontSize: '0.72rem', fontWeight: 800, border: `1px solid ${badge.color}40`
+                                                                }}>
+                                                                    ⏱ {badge.text}
+                                                                </span>
+                                                            )}
                                                             {/* Current stock */}
                                                             <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
                                                                 Stock: <strong style={{ color: '#1e293b' }}>{item.qty} {item.unit}</strong>
@@ -352,20 +359,39 @@ const InventoryDashboard = () => {
                                                             )}
                                                         </div>
 
-                                                        {/* Row 4: Manage button */}
-                                                        <button
-                                                            onClick={() => setActiveTab('inventory')}
-                                                            style={{
-                                                                alignSelf: 'flex-end', padding: '6px 14px',
-                                                                background: 'white', border: `1px solid ${s.border}`,
-                                                                borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700,
-                                                                color: s.color, cursor: 'pointer', transition: 'all 0.2s'
-                                                            }}
-                                                            onMouseOver={e => { e.currentTarget.style.background = s.bg; }}
-                                                            onMouseOut={e => { e.currentTarget.style.background = 'white'; }}
-                                                        >
-                                                            RESTOCK
-                                                        </button>
+                                                        {/* Row 4: Action buttons */}
+                                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
+                                                            <button
+                                                                onClick={() => setActiveTab('inventory')}
+                                                                style={{
+                                                                    display: 'flex', alignItems: 'center', gap: '4px',
+                                                                    padding: '6px 14px',
+                                                                    background: 'white', border: `1px solid #e2e8f0`,
+                                                                    borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700,
+                                                                    color: '#64748b', cursor: 'pointer', transition: 'all 0.2s'
+                                                                }}
+                                                                onMouseOver={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#1e293b'; }}
+                                                                onMouseOut={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#64748b'; }}
+                                                            >
+                                                                <Eye size={14} />
+                                                                VIEW ITEM
+                                                            </button>
+                                                            <button
+                                                                onClick={() => { setRestockItem(item); setIsRestockModalOpen(true); }}
+                                                                style={{
+                                                                    display: 'flex', alignItems: 'center', gap: '4px',
+                                                                    padding: '6px 14px',
+                                                                    background: 'white', border: `1px solid ${s.border}`,
+                                                                    borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700,
+                                                                    color: s.color, cursor: 'pointer', transition: 'all 0.2s'
+                                                                }}
+                                                                onMouseOver={e => { e.currentTarget.style.background = s.bg; }}
+                                                                onMouseOut={e => { e.currentTarget.style.background = 'white'; }}
+                                                            >
+                                                                <RotateCw size={14} />
+                                                                RESTOCK
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 );
                                             })
@@ -545,6 +571,17 @@ const InventoryDashboard = () => {
                     </div>
                 </div>
             )}
+
+            <RestockModal 
+                isOpen={isRestockModalOpen}
+                onClose={() => { setIsRestockModalOpen(false); setRestockItem(null); }}
+                item={restockItem}
+                onSuccess={(msg) => {
+                    setShowSuccess(msg);
+                    fetchDashboardData();
+                    setTimeout(() => setShowSuccess(''), 3000);
+                }}
+            />
 
             {showSuccess && (
                 <div style={{ 
