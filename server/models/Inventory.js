@@ -35,6 +35,23 @@ const InventorySchema = new mongoose.Schema({
     lastRestocked: { 
         type: Date, 
         default: Date.now 
+    },
+    weeklyUsage: {
+        type: Number,
+        default: 0
+    },
+    dailyUsage: {
+        type: Number,
+        default: 0
+    },
+    stockDaysLeft: {
+        type: Number,
+        default: null
+    },
+    stockStatus: {
+        type: String,
+        enum: ['GOOD', 'LOW STOCK', 'CRITICAL'],
+        default: 'GOOD'
     }
 }, { timestamps: true });
 

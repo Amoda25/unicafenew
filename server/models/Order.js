@@ -10,7 +10,9 @@ const OrderSchema = new mongoose.Schema({
     totalAmount: Number,
     status: {
         type: String,
-        enum: ['pending', 'preparing', 'process', 'cookd', 'picup', 'picked-up'],
+        enum: ['pending', 'Paid', 'preparing', 'process', 'cookd', 'ready', 'picked-up'],
+
+
         default: 'pending'
     },
     pickupTime: Date,

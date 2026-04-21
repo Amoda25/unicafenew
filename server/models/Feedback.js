@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 
 const FeedbackSchema = new mongoose.Schema({
     username: String,
+    isAnonymous: {
+        type: Boolean,
+        default: false
+    },
     vendorId: String,
     orderId: String,
     category: String,
@@ -36,6 +40,15 @@ const FeedbackSchema = new mongoose.Schema({
     imageUrl: {
         type: String,
         default: ''
+    },
+    impactScore: {
+        type: Number,
+        default: 0
+    },
+    impactLevel: {
+        type: String,
+        enum: ['High', 'Medium', 'Low'],
+        default: 'Low'
     },
     createdAt: {
         type: Date,

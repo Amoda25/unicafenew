@@ -42,7 +42,8 @@ const CalendarView = ({ isEmbedded = false }) => {
             const response = await axios.get('/api/calendar/events');
             const eventsMap = {};
             response.data.forEach(event => {
-                eventsMap[event.date] = event;
+                if (!eventsMap[event.date]) eventsMap[event.date] = [];
+                eventsMap[event.date].push(event);
             });
             setEvents(eventsMap);
         } catch (err) {
@@ -105,7 +106,9 @@ const CalendarView = ({ isEmbedded = false }) => {
     const formatDateKey = (day) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
     const selectedDateKey = formatDateKey(selectedDate.getDate());
-    const dayEvent = events[selectedDateKey];
+    const dayEvents = events[selectedDateKey] || [];
+    const dayEvent = dayEvents.find(e => e.type !== 'admin_note');
+    const adminNoteEvent = dayEvents.find(e => e.type === 'admin_note');
     const selectedDayName = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(selectedDate);
 
     return (
@@ -171,14 +174,16 @@ const CalendarView = ({ isEmbedded = false }) => {
                         {[...Array(daysInMonth)].map((_, i) => {
                             const d = i + 1;
                             const dateKey = formatDateKey(d);
-                            const event = events[dateKey];
+                            const currentDayEvents = events[dateKey] || [];
+                            const event = currentDayEvents.find(e => e.type !== 'admin_note');
+                            const adminNote = currentDayEvents.find(e => e.type === 'admin_note');
                             const selected = isSelected(d);
                             const today = isToday(d);
 
                             const handleCellClick = () => {
                                 const newDate = new Date(year, month, d);
                                 setSelectedDate(newDate);
-                                if (isAdmin && !event) {
+                                if (isAdmin && currentDayEvents.length === 0) {
                                     setShowModal(true);
                                 }
                             };
@@ -212,7 +217,7 @@ const CalendarView = ({ isEmbedded = false }) => {
                                         {d}
                                     </span>
                                     
-                                    {isAdmin && !event && (
+                                    {isAdmin && currentDayEvents.length === 0 && (
                                         <motion.div
                                             initial={{ opacity: 0, scale: 0.5 }}
                                             whileHover={{ opacity: 1, scale: 1 }}
@@ -239,11 +244,26 @@ const CalendarView = ({ isEmbedded = false }) => {
                                         <div style={{
                                             position: 'absolute',
                                             bottom: '8px',
+                                            left: adminNote ? 'calc(50% - 8px)' : '50%',
+                                            transform: 'translateX(-50%)',
                                             width: '6px',
                                             height: '6px',
                                             borderRadius: '50%',
                                             background: event.type === 'closing' ? '#ef4444' : '#f59e0b',
                                             boxShadow: `0 0 10px ${event.type === 'closing' ? 'rgba(239, 68, 68, 0.5)' : 'rgba(245, 158, 11, 0.5)'}`
+                                        }} />
+                                    )}
+                                    {adminNote && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            bottom: '8px',
+                                            left: event ? 'calc(50% + 8px)' : '50%',
+                                            transform: 'translateX(-50%)',
+                                            width: '6px',
+                                            height: '6px',
+                                            borderRadius: '50%',
+                                            background: '#0ea5e9',
+                                            boxShadow: '0 0 10px rgba(14, 165, 233, 0.5)'
                                         }} />
                                     )}
                                 </motion.div>
@@ -265,14 +285,17 @@ const CalendarView = ({ isEmbedded = false }) => {
                             <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-main)' }}>
                                 {selectedDayName}, {monthName} {selectedDate.getDate()}
                             </h3>
-                            {isAdmin && !dayEvent && (
-                                <button 
-                                    onClick={() => setShowModal(true)}
-                                    style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                >
-                                    <Plus size={14} /> Add Event
-                                </button>
-                            )}
+                            {isAdmin && (
+                                        <button 
+                                            onClick={() => {
+                                                setEventData({ type: 'event', title: '', desc: '' });
+                                                setShowModal(true);
+                                            }}
+                                            style={{ background: 'var(--primary)', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                        >
+                                            <Plus size={14} /> Add Event/Note
+                                        </button>
+                                    )}
                         </div>
 
                         {dayEvent ? (
@@ -338,7 +361,37 @@ const CalendarView = ({ isEmbedded = false }) => {
                             <h4 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>Admin Notes</h4>
                         </div>
                         <div style={{ fontSize: '0.9rem', color: '#475569', lineHeight: 1.7, fontWeight: 500 }}>
-                            {dayEvent?.desc || "Evening snacks are available daily from 3:30 PM to 6:00 PM. Weekend menus may vary based on ingredient availability."}
+                            {adminNoteEvent ? (
+                                <div style={{ position: 'relative' }}>
+                                    {isAdmin && (
+                                        <button 
+                                            onClick={() => handleDeleteEvent(adminNoteEvent._id)}
+                                            style={{ position: 'absolute', top: '-25px', right: '0', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '5px' }}
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
+                                    <h5 style={{ fontWeight: 800, marginTop: 0, marginBottom: '5px', color: '#0ea5e9' }}>{adminNoteEvent.title}</h5>
+                                    {adminNoteEvent.desc}
+                                </div>
+                            ) : (
+                                <div>
+                                    <div style={{ marginBottom: isAdmin ? '10px' : '0' }}>
+                                        No admin notes for this date. Evening snacks are available daily from 3:30 PM to 6:00 PM.
+                                    </div>
+                                    {isAdmin && (
+                                        <button 
+                                            onClick={() => {
+                                                setEventData({ type: 'admin_note', title: '', desc: '' });
+                                                setShowModal(true);
+                                            }}
+                                            style={{ background: '#e0f2fe', color: '#0ea5e9', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                        >
+                                            <Plus size={14} /> Add Admin Note
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -374,7 +427,9 @@ const CalendarView = ({ isEmbedded = false }) => {
                             }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>Mark Special Date</h3>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>
+                                    {eventData.type === 'admin_note' ? 'Add Admin Note' : 'Mark Special Date'}
+                                </h3>
                                 <X onClick={() => setShowModal(false)} style={{ cursor: 'pointer', color: 'var(--text-secondary)' }} />
                             </div>
 
@@ -395,6 +450,7 @@ const CalendarView = ({ isEmbedded = false }) => {
                                     >
                                         <option value="event">Special Event</option>
                                         <option value="closing">Canteen Closed</option>
+                                        <option value="admin_note">Admin Note</option>
                                     </select>
                                 </div>
 

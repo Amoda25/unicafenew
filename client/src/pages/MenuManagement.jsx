@@ -31,7 +31,7 @@ const FormModal = ({ show, onClose, onSubmit, title, isEdit, formData, handleInp
                             maxWidth: '850px', 
                             maxHeight: '90vh', 
                             overflowY: 'auto', 
-                            background: 'white', 
+                            background: 'var(--latte-card)', 
                             borderRadius: '24px', 
                             padding: '0', 
                             border: '1px solid #e2e8f0', 
@@ -40,7 +40,7 @@ const FormModal = ({ show, onClose, onSubmit, title, isEdit, formData, handleInp
                         className="hide-scrollbar"
                     >
                         {/* Modal Header */}
-                        <div style={{ padding: '24px 32px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, background: 'white', zIndex: 10 }}>
+                        <div style={{ padding: '24px 32px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, background: 'var(--latte-card)', zIndex: 10 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255, 199, 44, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
                                     <Plus size={20} />
@@ -232,7 +232,7 @@ const FormModal = ({ show, onClose, onSubmit, title, isEdit, formData, handleInp
                                             onClick={() => handleInputChange('availability', null, !formData.availability)}
                                             style={{ width: '44px', height: '24px', borderRadius: '12px', background: formData.availability ? 'var(--primary)' : '#cbd5e1', position: 'relative', transition: 'all 0.3s' }}
                                         >
-                                            <div style={{ position: 'absolute', top: '3px', left: formData.availability ? '23px' : '3px', width: '18px', height: '18px', borderRadius: '50%', background: 'white', transition: 'all 0.3s' }} />
+                                            <div style={{ position: 'absolute', top: '3px', left: formData.availability ? '23px' : '3px', width: '18px', height: '18px', borderRadius: '50%', background: 'var(--latte-card)', transition: 'all 0.3s' }} />
                                         </div>
                                         <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#334155' }}>Live on Ordering Page</span>
                                     </label>
@@ -422,7 +422,7 @@ const MenuManagement = () => {
     });
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', color: '#111827' }}>
+        <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-page)', color: '#111827' }}>
             <OrderSidebar activeTab="menu" setActiveTab={() => {}} />
             
             <main style={{ flex: 1, padding: '40px', display: 'flex', flexDirection: 'column' }}>
@@ -434,7 +434,7 @@ const MenuManagement = () => {
                             style={{ 
                                 padding: '12px', 
                                 borderRadius: '14px', 
-                                background: 'white', 
+                                background: 'var(--latte-card)', 
                                 border: '1px solid #e2e8f0', 
                                 color: '#64748b', 
                                 cursor: 'pointer',
@@ -460,19 +460,19 @@ const MenuManagement = () => {
 
                 {/* Stats Summary Bar */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '40px' }}>
-                    <div style={{ padding: '24px', borderRadius: '20px', background: 'white', border: '1px solid #f1f5f9' }}>
+                    <div style={{ padding: '24px', borderRadius: '20px', background: 'var(--latte-card)', border: '1px solid #f1f5f9' }}>
                         <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Total Items</div>
                         <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>{menuItems.length}</div>
                     </div>
-                    <div style={{ padding: '24px', borderRadius: '20px', background: 'white', border: '1px solid #f1f5f9' }}>
+                    <div style={{ padding: '24px', borderRadius: '20px', background: 'var(--latte-card)', border: '1px solid #f1f5f9' }}>
                         <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Live Items</div>
                         <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary)' }}>{menuItems.filter(i => i.availability).length}</div>
                     </div>
-                    <div style={{ padding: '24px', borderRadius: '20px', background: 'white', border: '1px solid #f1f5f9' }}>
+                    <div style={{ padding: '24px', borderRadius: '20px', background: 'var(--latte-card)', border: '1px solid #f1f5f9' }}>
                         <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Vegetarian</div>
                         <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#10b981' }}>{menuItems.filter(i => i.dietary?.includes('Veg')).length}</div>
                     </div>
-                    <div style={{ padding: '24px', borderRadius: '20px', background: 'white', border: '1px solid #f1f5f9' }}>
+                    <div style={{ padding: '24px', borderRadius: '20px', background: 'var(--latte-card)', border: '1px solid #f1f5f9' }}>
                         <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>Categories</div>
                         <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>5</div>
                     </div>
@@ -508,13 +508,13 @@ const MenuManagement = () => {
                             placeholder="Search menu..." 
                             value={globalSearch}
                             onChange={(e) => setGlobalSearch(e.target.value)}
-                            style={{ width: '100%', padding: '12px 16px 12px 48px', borderRadius: '12px', border: '1px solid #e2e8f0', outline: 'none', background: 'white' }}
+                            style={{ width: '100%', padding: '12px 16px 12px 48px', borderRadius: '12px', border: '1px solid #e2e8f0', outline: 'none', background: 'var(--latte-card)' }}
                         />
                     </div>
                 </div>
 
                 {/* Main Table */}
-                <div style={{ background: 'white', borderRadius: '24px', border: '1px solid #f1f5f9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
+                <div style={{ background: 'var(--latte-card)', borderRadius: '24px', border: '1px solid #f1f5f9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
@@ -581,10 +581,10 @@ const MenuManagement = () => {
                                     </td>
                                     <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                            <button onClick={() => openEditModal(item)} style={{ padding: '8px', borderRadius: '10px', background: 'white', border: '1px solid #e2e8f0', color: '#3b82f6', cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#eff6ff'} onMouseOut={e => e.currentTarget.style.background = 'white'}>
+                                            <button onClick={() => openEditModal(item)} style={{ padding: '8px', borderRadius: '10px', background: 'var(--latte-card)', border: '1px solid #e2e8f0', color: '#3b82f6', cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#eff6ff'} onMouseOut={e => e.currentTarget.style.background = 'white'}>
                                                 <Edit2 size={16} />
                                             </button>
-                                            <button onClick={() => handleDeleteItem(item._id)} style={{ padding: '8px', borderRadius: '10px', background: 'white', border: '1px solid #e2e8f0', color: '#ef4444', cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#fef2f2'} onMouseOut={e => e.currentTarget.style.background = 'white'}>
+                                            <button onClick={() => handleDeleteItem(item._id)} style={{ padding: '8px', borderRadius: '10px', background: 'var(--latte-card)', border: '1px solid #e2e8f0', color: '#ef4444', cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#fef2f2'} onMouseOut={e => e.currentTarget.style.background = 'white'}>
                                                 <Trash2 size={16} />
                                             </button>
                                         </div>

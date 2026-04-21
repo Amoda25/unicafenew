@@ -12,7 +12,7 @@ import {
     LogOut
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/unicafe_logo_orange.png'; // Assuming it's the same path
+import logo from '../assets/unicafe_logo_vintage.png'; // Assuming it's the same path
 
 const OrderSidebar = ({ activeTab, setActiveTab }) => {
     const navigate = useNavigate();
@@ -64,21 +64,19 @@ const OrderSidebar = ({ activeTab, setActiveTab }) => {
         <aside className="admin-sidebar sidebar-modern" style={{
             width: '280px',
             height: 'calc(100vh - 50px)',
-            color: '#ffffff',
             display: 'flex',
             flexDirection: 'column',
             position: 'sticky',
             top: '50px',
             left: 0,
             overflowY: 'auto',
-            borderRight: 'none',
             zIndex: 100
         }}>
             {/* Logo Area */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '30px 20px', paddingBottom: '10px' }}>
-                <img src={logo} alt="UniCafé Logo" style={{ height: '40px', width: '40px', objectFit: 'cover', borderRadius: '50%', boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }} />
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'white', letterSpacing: '-0.5px' }}>
-                    UniCafe<span style={{ color: 'var(--primary)' }}>ORDERS</span>
+                <img src={logo} alt="UniCafé Logo" style={{ height: '48px', objectFit: 'contain' }} />
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--coffee-dark)', letterSpacing: '-0.5px' }}>
+                    UniCafe<span style={{ color: 'var(--latte-highlight)' }}>ORDERS</span>
                 </h2>
             </div>
 
@@ -88,7 +86,7 @@ const OrderSidebar = ({ activeTab, setActiveTab }) => {
                     <div key={idx} style={{ marginBottom: '35px' }}>
                         <h3 style={{
                             fontSize: '0.75rem',
-                            color: 'rgba(255,255,255,0.5)',
+                            color: 'var(--coffee-soft)',
                             fontWeight: 800,
                             paddingLeft: '30px',
                             marginBottom: '15px',
@@ -108,13 +106,13 @@ const OrderSidebar = ({ activeTab, setActiveTab }) => {
                                         gap: '12px',
                                         padding: '12px 20px',
                                         borderRadius: '12px',
-                                        background: activeTab === item.id ? 'rgba(255, 199, 44, 0.15)' : 'transparent',
-                                        color: activeTab === item.id ? 'var(--primary)' : 'rgba(255,255,255,0.7)',
+                                        background: activeTab === item.id ? 'var(--coffee-dark)' : 'transparent',
+                                        color: activeTab === item.id ? '#ffffff' : 'var(--coffee-muted)',
                                         border: 'none',
                                         cursor: 'pointer',
                                         width: '100%',
                                         textAlign: 'left',
-                                        fontWeight: activeTab === item.id ? 700 : 500,
+                                        fontWeight: activeTab === item.id ? 700 : 600,
                                         transition: 'all 0.2s ease',
                                         marginBottom: '4px'
                                     }}
@@ -129,25 +127,36 @@ const OrderSidebar = ({ activeTab, setActiveTab }) => {
             </div>
 
             {/* User Profile Summary or Logout */}
-            <div style={{ padding: '30px 20px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ padding: '30px 20px', borderTop: '1px solid var(--latte-border)' }}>
                 <button
                     onClick={handleLogout}
                     style={{
-                        width: '100%',
+                        width: 'calc(100% - 40px)',
+                        margin: '0 20px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '12px',
-                        padding: '15px',
+                        padding: '12px 20px',
                         borderRadius: '12px',
-                        border: 'none',
-                        background: 'rgba(255,255,255,0.1)',
-                        color: 'white',
+                        border: '1px solid var(--latte-border)',
+                        background: '#fff',
+                        color: 'var(--coffee-dark)',
                         cursor: 'pointer',
-                        fontWeight: 600,
-                        transition: 'all 0.2s ease'
+                        fontWeight: 700,
+                        fontSize: '0.9rem',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 8px rgba(59,31,14,0.04)'
                     }}
-                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.8)'}
-                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                    onMouseOver={(e) => {
+                        e.currentTarget.style.background = '#ef4444';
+                        e.currentTarget.style.color = '#fff';
+                        e.currentTarget.style.borderColor = '#ef4444';
+                    }}
+                    onMouseOut={(e) => {
+                        e.currentTarget.style.background = '#fff';
+                        e.currentTarget.style.color = 'var(--coffee-dark)';
+                        e.currentTarget.style.borderColor = 'var(--latte-border)';
+                    }}
                 >
                     <LogOut size={20} />
                     <span>Sign Out</span>
