@@ -91,30 +91,40 @@ const FormModal = ({ show, onClose, onSubmit, title, isEdit, formData, handleInp
                                 </div>
 
                                 {/* 2. Description Section (English Only) */}
-                                <div style={{ background: '#fcfaf7', borderRadius: '24px', padding: '25px', border: '1px solid #f1f0e8' }}>
+                                <div style={{ background: '#fcfaf7', borderRadius: '24px', padding: '25px', border: `1px solid ${validationErrors.description ? '#ef4444' : '#f1f0e8'}` }}>
                                     <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--coffee-dark)', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <Info size={18} /> DESCRIPTION (ENGLISH)
                                     </h3>
                                     <textarea 
                                         value={formData.description?.en || ''} 
                                         onChange={(e) => handleInputChange('description', 'en', e.target.value)} 
-                                        style={{ width: '100%', padding: '16px 20px', borderRadius: '16px', border: '2px solid #f1f0e8', fontSize: '0.95rem', minHeight: '120px', resize: 'none' }} 
+                                        style={{ width: '100%', padding: '16px 20px', borderRadius: '16px', border: `2px solid ${validationErrors.description ? '#ef4444' : '#f1f0e8'}`, fontSize: '0.95rem', minHeight: '120px', resize: 'none' }} 
                                         placeholder="Describe the item in English..." 
                                     />
+                                    {validationErrors.description && (
+                                        <p style={{ color: '#ef4444', fontSize: '0.8rem', fontWeight: 700, marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <AlertCircle size={14} /> {validationErrors.description}
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* 3. Price & Image Section */}
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                                    <div style={{ background: 'white', borderRadius: '24px', padding: '25px', border: '1px solid #f1f0e8' }}>
+                                    <div style={{ background: 'white', borderRadius: '24px', padding: '25px', border: `1px solid ${validationErrors.price ? '#ef4444' : '#f1f0e8'}` }}>
                                         <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--coffee-dark)', marginBottom: '15px' }}>PRICE (LKR)</h3>
                                         <input 
                                             required 
                                             type="text" 
                                             value={formData.price} 
                                             onChange={(e) => handleInputChange('price', null, e.target.value)} 
-                                            style={{ width: '100%', padding: '16px 20px', borderRadius: '16px', border: '2px solid #f1f0e8', fontSize: '1.1rem', fontWeight: 800 }} 
+                                            style={{ width: '100%', padding: '16px 20px', borderRadius: '16px', border: `2px solid ${validationErrors.price ? '#ef4444' : '#f1f0e8'}`, fontSize: '1.1rem', fontWeight: 800 }} 
                                             placeholder="0.00" 
                                         />
+                                        {validationErrors.price && (
+                                            <p style={{ color: '#ef4444', fontSize: '0.8rem', fontWeight: 700, marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <AlertCircle size={14} /> {validationErrors.price}
+                                            </p>
+                                        )}
                                     </div>
                                     <div style={{ background: 'white', borderRadius: '24px', padding: '25px', border: '1px solid #f1f0e8' }}>
                                         <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--coffee-dark)', marginBottom: '15px' }}>IMAGE URL</h3>
@@ -153,7 +163,7 @@ const SpecialMenuManagement = () => {
     const [editingItem, setEditingItem] = useState(null);
     const [showSuccess, setShowSuccess] = useState('');
     const [loading, setLoading] = useState(false);
-    const [validationErrors, setValidationErrors] = useState({ si: '', ta: '', price: '' });
+    const [validationErrors, setValidationErrors] = useState({ si: '', ta: '', price: '', description: '' });
 
     const [formData, setFormData] = useState({
         name: { en: '', si: '', ta: '' },
@@ -202,6 +212,15 @@ const SpecialMenuManagement = () => {
                 const error = validateField(lang, value);
                 setValidationErrors(prev => ({ ...prev, [lang]: error }));
             }
+            if (field === 'description' && lang === 'en') {
+                if (!value.trim()) {
+                    setValidationErrors(prev => ({ ...prev, description: 'Description is required.' }));
+                } else if (value.trim().length < 10) {
+                    setValidationErrors(prev => ({ ...prev, description: 'Please provide a more detailed description (min 10 chars).' }));
+                } else {
+                    setValidationErrors(prev => ({ ...prev, description: '' }));
+                }
+            }
             setFormData(prev => ({
                 ...prev,
                 [field]: { ...prev[field], [lang]: value }
@@ -211,9 +230,11 @@ const SpecialMenuManagement = () => {
                 const currencyChars = /[$£€¥₹]|Rs|LKR/i;
                 const onlyNumbers = /^[0-9]*\.?[0-9]*$/;
                 if (currencyChars.test(value)) {
-                    setValidationErrors(prev => ({ ...prev, price: 'Numbers only please.' }));
+                    setValidationErrors(prev => ({ ...prev, price: 'Numbers only please (no currency symbols).' }));
                 } else if (!onlyNumbers.test(value)) {
                     setValidationErrors(prev => ({ ...prev, price: 'Invalid number format.' }));
+                } else if (parseFloat(value) <= 0) {
+                    setValidationErrors(prev => ({ ...prev, price: 'Price must be greater than 0.' }));
                 } else {
                     setValidationErrors(prev => ({ ...prev, price: '' }));
                 }
@@ -232,13 +253,22 @@ const SpecialMenuManagement = () => {
             dietary: ['Veg'],
             availability: true
         });
-        setValidationErrors({ si: '', ta: '', price: '' });
+        setValidationErrors({ si: '', ta: '', price: '', description: '' });
     };
 
     const handleAddItem = async (e) => {
         e.preventDefault();
         
-        // Final sync of English to other languages for DB compatibility
+        // Manual final check
+        if (validationErrors.price || validationErrors.description) {
+            alert('Please fix the errors before creating the item.');
+            return;
+        }
+
+        if (!formData.description.en || formData.description.en.length < 10) {
+            setValidationErrors(prev => ({ ...prev, description: 'Please provide a detailed description (min 10 chars).' }));
+            return;
+        }
         const finalData = {
             ...formData,
             name: {
@@ -269,7 +299,16 @@ const SpecialMenuManagement = () => {
     const handleEditItem = async (e) => {
         e.preventDefault();
         
-        // Final sync of English to other languages for DB compatibility
+        // Manual final check
+        if (validationErrors.price || validationErrors.description) {
+            alert('Please fix the errors before updating the item.');
+            return;
+        }
+
+        if (!formData.description.en || formData.description.en.length < 10) {
+            setValidationErrors(prev => ({ ...prev, description: 'Please provide a detailed description (min 10 chars).' }));
+            return;
+        }
         const finalData = {
             ...formData,
             name: {
