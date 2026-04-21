@@ -31,7 +31,11 @@ const OrderManagement = () => {
     const [analytics, setAnalytics] = useState(null);
 
     const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Beverages'];
-    const statuses = ['pending', 'preparing', 'process', 'cookd', 'picup', 'picked-up'];
+    const statuses = ['pending', 'preparing', 'ready', 'picked-up'];
+
+
+
+
 
     useEffect(() => {
         fetchOrders();
@@ -101,7 +105,8 @@ const OrderManagement = () => {
     const renderDashboardOverview = () => {
         const pendingCount = orders.filter(o => o.status === 'pending').length;
         const activeCount = orders.filter(o => ['preparing', 'process', 'cookd'].includes(o.status)).length;
-        const readyCount = orders.filter(o => o.status === 'picup').length;
+        const readyCount = orders.filter(o => o.status === 'ready').length;
+
         const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
         const totalOrdersToday = orders.length;
 
@@ -109,7 +114,9 @@ const OrderManagement = () => {
             { title: 'Pending Orders', val: pendingCount, sub: 'Waiting to start', icon: Clock, color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.1)' },
             { title: 'Kitchen Active', val: activeCount, sub: 'Preparing/Cooking', icon: Activity, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
             { title: 'Ready to Pickup', val: readyCount, sub: 'Waiting for student', icon: CheckCircle, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
-            { title: 'Total Volume', val: totalOrdersToday, sub: 'Today\'s orders', icon: Smartphone, color: '#ec4899', bg: 'rgba(236, 72, 153, 0.1)' }
+            { title: 'Confirmed Payments', val: orders.filter(o => o.status === 'Paid').length, sub: 'Confirmed via QR scan', icon: Smartphone, color: '#6366f1', bg: 'rgba(99, 102, 241, 0.1)' },
+            { title: 'Total Volume', val: totalOrdersToday, sub: 'Today\'s orders', icon: Zap, color: '#ec4899', bg: 'rgba(236, 72, 153, 0.1)' }
+
         ];
 
         return (
@@ -186,11 +193,11 @@ const OrderManagement = () => {
                         </h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                                <div style={{ padding: '15px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                                <div style={{ padding: '15px', background: 'var(--latte-card)', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
                                     <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginBottom: '5px' }}>AVG. Wait Time</div>
                                     <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#6366f1' }}>{analytics?.analytics?.avgOrderValue ? '12 min' : '10 min'}</div>
                                 </div>
-                                <div style={{ padding: '15px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                                <div style={{ padding: '15px', background: 'var(--latte-card)', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
                                     <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginBottom: '5px' }}>Peak Service Hour</div>
                                     <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ec4899' }}>12:00 PM</div>
                                 </div>
@@ -225,7 +232,7 @@ const OrderManagement = () => {
                         </h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {orders.slice(0, 5).map((order) => (
-                                <div key={order._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                                <div key={order._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--latte-card)', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                                         <div style={{ fontWeight: 800, color: '#6366f1' }}>#{order.queuePosition}</div>
                                         <div>
@@ -240,9 +247,9 @@ const OrderManagement = () => {
                                         fontWeight: 800,
                                         padding: '4px 10px',
                                         borderRadius: '99px',
-                                        background: order.status === 'picup' ? '#dcfce7' : 
+                                        background: order.status === 'ready' ? '#dcfce7' : 
                                                    ['preparing', 'process', 'cookd'].includes(order.status) ? '#fef3c7' : '#fee2e2',
-                                        color: order.status === 'picup' ? '#10b981' : 
+                                        color: order.status === 'ready' ? '#10b981' : 
                                                ['preparing', 'process', 'cookd'].includes(order.status) ? '#f59e0b' : '#ef4444'
                                     }}>
                                         {order.status.toUpperCase()}
@@ -253,17 +260,32 @@ const OrderManagement = () => {
                     </div>
 
                     {/* Quick Shortcuts */}
-                    <div className="glass" style={{ padding: '24px', background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', color: 'white' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '20px' }}>Quick Actions</h3>
+                    <div className="glass" style={{ padding: '24px', background: 'linear-gradient(135deg, var(--coffee-dark) 0%, #3b1f0e 100%)', color: 'white', border: '1px solid rgba(201, 147, 90, 0.3)' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '20px', color: 'var(--latte-bg)' }}>Quick Actions</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <button onClick={() => setActiveTab('orders')} style={{ padding: '15px', borderRadius: '12px', border: 'none', background: 'rgba(255,255,255,0.1)', color: 'white', fontWeight: 700, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}>
-                                View Active Queue
+                            <button 
+                                onClick={() => setActiveTab('orders')} 
+                                style={{ padding: '15px', borderRadius: '12px', border: 'none', background: 'rgba(255,255,255,0.08)', color: 'white', fontWeight: 700, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', gap: '10px' }} 
+                                onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'} 
+                                onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                            >
+                                <Users size={16} color="var(--latte-highlight)" /> View Active Queue
                             </button>
-                            <button onClick={() => setActiveTab('calendar')} style={{ padding: '15px', borderRadius: '12px', border: 'none', background: 'rgba(255,255,255,0.1)', color: 'white', fontWeight: 700, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}>
-                                Special Events Calendar
+                            <button 
+                                onClick={() => setActiveTab('calendar')} 
+                                style={{ padding: '15px', borderRadius: '12px', border: 'none', background: 'rgba(255,255,255,0.08)', color: 'white', fontWeight: 700, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', gap: '10px' }} 
+                                onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'} 
+                                onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                            >
+                                <Calendar size={16} color="var(--latte-highlight)" /> Special Events Calendar
                             </button>
-                            <button onClick={() => navigate('/menu-admin')} style={{ padding: '15px', borderRadius: '12px', border: 'none', background: 'rgba(255,184,0,0.2)', color: '#FFB800', fontWeight: 700, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,184,0,0.3)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(255,184,0,0.2)'}>
-                                Update Menu Items
+                            <button 
+                                onClick={() => navigate('/menu-admin')} 
+                                style={{ padding: '15px', borderRadius: '12px', border: 'none', background: 'rgba(201, 147, 90, 0.2)', color: 'var(--latte-highlight)', fontWeight: 800, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', gap: '10px' }} 
+                                onMouseOver={e => e.currentTarget.style.background = 'rgba(201, 147, 90, 0.3)'} 
+                                onMouseOut={e => e.currentTarget.style.background = 'rgba(201, 147, 90, 0.2)'}
+                            >
+                                <Utensils size={16} /> Update Menu Items
                             </button>
                         </div>
                     </div>
@@ -321,24 +343,33 @@ const OrderManagement = () => {
                                 width: '8px',
                                 height: '8px',
                                 borderRadius: '50%',
-                                background: status === 'picup' ? '#10b981' :
-                                    ['preparing', 'process', 'cookd'].includes(status) ? '#f59e0b' :
-                                        status === 'pending' ? '#fbbf24' : '#64748b'
+                                background: status === 'Paid' ? '#10b981' :
+                                    status === 'ready' ? '#10b981' :
+
+                                        status === 'preparing' ? '#f59e0b' :
+                                            status === 'pending' ? '#fbbf24' : '#64748b'
+
+
+
                             }} />
-                            {status.toUpperCase()}
+                            {status === 'ready' ? 'READY' : status.toUpperCase()}
+
+
                         </div>
                     ))}
                 </div>
             </div>
 
-            <div style={{ padding: '32px', borderRadius: '24px', background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
+            <div style={{ padding: '32px', borderRadius: '24px', background: 'var(--latte-card)', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 12px' }}>
                     <thead>
                         <tr style={{ color: '#94a3b8', fontSize: '0.875rem', fontWeight: 600 }}>
                             <th style={{ padding: '0 16px', textAlign: 'left' }}>Que #</th>
                             <th style={{ padding: '0 16px', textAlign: 'left' }}>Student Details</th>
                             <th style={{ padding: '0 16px', textAlign: 'left' }}>Order Content</th>
+                            <th style={{ padding: '0 16px', textAlign: 'left' }}>Payment</th>
                             <th style={{ padding: '0 16px', textAlign: 'left' }}>Current Status</th>
+
                             <th style={{ padding: '0 16px', textAlign: 'right' }}>Update</th>
                         </tr>
                     </thead>
@@ -346,7 +377,7 @@ const OrderManagement = () => {
                         {orders.filter(order => (order._id?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (order.username?.toLowerCase() || '').includes(globalSearch.toLowerCase())).map(order => {
                             const timeDiff = Math.floor((new Date() - new Date(order.createdAt)) / 60000);
                             return (
-                                <tr key={order._id} style={{ background: '#f8fafc', borderBottom: '4px solid white' }}>
+                                <tr key={order._id} style={{ background: '#f8fafc', borderBottom: '4px solid var(--latte-bg)' }}>
                                     <td style={{ padding: '20px 16px', borderTopLeftRadius: '16px', borderBottomLeftRadius: '16px' }}>
                                         <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--primary)' }}>#{order.queuePosition}</div>
                                     </td>
@@ -354,7 +385,9 @@ const OrderManagement = () => {
                                         <div style={{ fontWeight: 700 }}>{order.username}</div>
                                         <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                             <Clock size={12} /> {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            <span style={{ color: timeDiff > 15 ? '#ef4444' : '#64748b', fontWeight: 700 }}>({timeDiff}m ago)</span>
+                                            <span style={{ color: timeDiff > 15 ? '#ef4444' : '#64748b', fontWeight: 700 }}>
+                                                ({timeDiff >= 60 ? `${Math.floor(timeDiff / 60)}h ${timeDiff % 60}m` : `${timeDiff}m`} ago)
+                                            </span>
                                         </div>
                                     </td>
                                     <td style={{ padding: '20px 16px' }}>
@@ -368,23 +401,48 @@ const OrderManagement = () => {
                                         <div style={{ fontWeight: 800, marginTop: '8px', fontSize: '0.875rem' }}>LKR {order.totalAmount}</div>
                                     </td>
                                     <td style={{ padding: '20px 16px' }}>
+                                        <span style={{ 
+                                            fontSize: '0.75rem', 
+                                            padding: '6px 12px', 
+                                            borderRadius: '8px', 
+                                            background: order.status === 'Paid' ? '#DCFCE7' : '#FEE2E2',
+                                            color: order.status === 'Paid' ? '#15803D' : '#B91C1C',
+                                            fontWeight: 900,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                        }}>
+                                            {order.status === 'Paid' ? <CheckCircle size={14} /> : <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#B91C1C' }} />}
+                                            {order.status === 'Paid' ? 'PAID' : 'NOT PAID'}
+                                        </span>
+
+
+                                    </td>
+                                    <td style={{ padding: '20px 16px' }}>
                                         <span style={{
                                             padding: '6px 12px',
                                             borderRadius: '8px',
                                             fontSize: '0.75rem',
                                             fontWeight: 700,
-                                            background: order.status === 'picup' ? 'rgba(16, 185, 129, 0.1)' :
-                                                ['preparing', 'process', 'cookd'].includes(order.status) ? 'rgba(245, 158, 11, 0.1)' :
-                                                    order.status === 'pending' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(100, 116, 139, 0.1)',
-                                            color: order.status === 'picup' ? '#10b981' :
-                                                ['preparing', 'process', 'cookd'].includes(order.status) ? '#f59e0b' :
-                                                    order.status === 'pending' ? '#fbbf24' : '#64748b',
+                                            background: order.status === 'Paid' ? 'rgba(16, 185, 129, 0.1)' :
+                                                order.status === 'ready' ? 'rgba(16, 185, 129, 0.1)' :
+
+                                                    ['preparing', 'process', 'cookd'].includes(order.status) ? 'rgba(245, 158, 11, 0.1)' :
+                                                        order.status === 'pending' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                                            color: order.status === 'Paid' ? '#10b981' :
+                                                order.status === 'ready' ? '#10b981' :
+
+                                                    ['preparing', 'process', 'cookd'].includes(order.status) ? '#f59e0b' :
+                                                        order.status === 'pending' ? '#fbbf24' : '#64748b',
+
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             gap: '6px'
                                         }}>
                                             <Zap size={12} />
-                                            {order.status.toUpperCase()}
+                                            {order.status === 'ready' ? 'READY' : order.status.toUpperCase()}
+
+
                                         </span>
                                     </td>
                                     <td style={{ padding: '20px 16px', textAlign: 'right', borderTopRightRadius: '16px', borderBottomRightRadius: '16px' }}>
@@ -399,29 +457,15 @@ const OrderManagement = () => {
                                             )}
                                             {order.status === 'preparing' && (
                                                 <button 
-                                                    onClick={() => handleUpdateOrderStatus(order._id, 'process')}
-                                                    style={{ padding: '8px 12px', borderRadius: '8px', background: '#f59e0b', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
-                                                >
-                                                    Start Process
-                                                </button>
-                                            )}
-                                            {order.status === 'process' && (
-                                                <button 
-                                                    onClick={() => handleUpdateOrderStatus(order._id, 'cookd')}
-                                                    style={{ padding: '8px 12px', borderRadius: '8px', background: '#ec4899', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
-                                                >
-                                                    Mark Cooked
-                                                </button>
-                                            )}
-                                            {order.status === 'cookd' && (
-                                                <button 
-                                                    onClick={() => handleUpdateOrderStatus(order._id, 'picup')}
+                                                    onClick={() => handleUpdateOrderStatus(order._id, 'ready')}
+
                                                     style={{ padding: '8px 12px', borderRadius: '8px', background: '#10b981', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
                                                 >
-                                                    Set to Pickup
+                                                    Ready for Pickup
                                                 </button>
                                             )}
-                                            {order.status === 'picup' && (
+                                            {order.status === 'ready' && (
+
                                                 <button 
                                                     onClick={() => handleUpdateOrderStatus(order._id, 'picked-up')}
                                                     style={{ padding: '8px 12px', borderRadius: '8px', background: '#6366f1', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
@@ -429,7 +473,7 @@ const OrderManagement = () => {
                                                     Finalize
                                                 </button>
                                             )}
-                                            
+
                                             <div style={{ width: '1px', height: '20px', background: '#e2e8f0', margin: '0 4px' }} />
 
                                             <select
@@ -447,11 +491,13 @@ const OrderManagement = () => {
                                                     outline: 'none'
                                                 }}
                                             >
-                                                {statuses.map(s => (
-                                                    <option key={s} value={s}>{s.toUpperCase()}</option>
+                                                {statuses.filter(s => s !== 'Paid' && s !== 'picked-up').map(s => (
+                                                    <option key={s} value={s}>{s === 'ready' ? 'READY' : s.toUpperCase()}</option>
                                                 ))}
+
+
                                             </select>
-                                            
+
                                             <div style={{ width: '1px', height: '20px', background: '#e2e8f0', margin: '0 4px' }} />
 
                                             <button
@@ -472,7 +518,7 @@ const OrderManagement = () => {
     );
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', color: '#111827' }}>
+        <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-page)', color: '#111827' }}>
             <OrderSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ position: 'relative', padding: '20px' }}>

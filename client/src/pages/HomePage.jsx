@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MapPin, Star, Utensils, Heart, ShoppingBag, Coffee, Pizza, Navigation, ArrowRight } from 'lucide-react';
-import heroBurger from '../assets/hero_burger.png';
+import heroFood from '../assets/hero_food_new.png';
 import stringHoppers from '../assets/string_hoppers.jpg';
 import milkshake from '../assets/milkshake.png';
 import sandwichImg from '../assets/sandwich.png';
 import pastaImg from '../assets/pasta.png';
+import campusBg from '../assets/campus_bg.png';
 
 const HomePage = () => {
-
 
     const categories = [
         { name: 'Pizza', count: '14', img: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=800&auto=format&fit=crop' },
@@ -22,137 +22,98 @@ const HomePage = () => {
         { name: 'Desserts', count: '15', img: 'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=800&auto=format&fit=crop' }
     ];
 
-    const popularIcons = [
-        { bg: '#E2F0CB', icon: <Utensils color="#000" size={20} /> },
-        { bg: '#FFDFD3', icon: <Heart color="#000" size={20} /> },
-        { bg: '#FEC8D8', icon: <ShoppingBag color="#000" size={20} /> },
-        { bg: '#D0F4DE', icon: <Coffee color="#000" size={20} /> },
-        { bg: '#A9DEF9', icon: <Pizza color="#000" size={20} /> },
-        { bg: '#FDE4CF', icon: <Navigation color="#000" size={20} /> }
-    ];
-
     return (
         <div style={{ backgroundColor: '#F9F9F9', minHeight: '100vh', paddingBottom: '4rem' }}>
-            {/* HERO SECTION */}
+            {/* HERO SECTION - Full Width Redesign */}
             <section style={{
+                width: '100%',
+                minHeight: '100vh',
+                display: 'flex',
+                justifyContent: 'flex-start',
+                alignItems: 'center',
+                background: 'linear-gradient(to right, rgba(20, 15, 10, 0.9) 0%, rgba(20, 15, 10, 0.5) 50%, rgba(20, 15, 10, 0.1) 100%), url("https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1600&auto=format&fit=crop")',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundAttachment: 'fixed',
                 position: 'relative',
-                backgroundColor: '#0F1215',
                 overflow: 'hidden',
-                marginTop: '-40px',
-                paddingTop: '40px'
+                padding: '60px 8%'
             }}>
-                <div style={{
-                    maxWidth: '1200px',
-                    margin: '0 auto',
-                    padding: '6rem 20px 14rem',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    gap: '4rem',
-                    position: 'relative',
-                    zIndex: 1
-                }}>
-                    <div style={{ flex: '1 1 500px' }}>
-                        {/* Badge */}
+                <div style={{ width: '100%', maxWidth: '1300px', margin: '0 auto' }}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        style={{ maxWidth: '650px', position: 'relative', zIndex: 10 }}
+                    >
+                        {/* Pill/Tag */}
                         <div style={{
-                            display: 'table',
-                            background: 'rgba(239, 68, 68, 0.1)',
-                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            display: 'inline-block',
+                            background: 'rgba(210, 180, 140, 0.2)',
+                            backdropFilter: 'blur(10px)',
+                            padding: '8px 20px',
                             borderRadius: '50px',
-                            padding: '8px 16px',
-                            color: 'var(--primary)',
-                            fontSize: '0.9rem',
-                            fontWeight: '600',
-                            marginBottom: '1.5rem'
+                            color: '#eaddcf',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            marginBottom: '20px',
+                            border: '1px solid rgba(210, 180, 140, 0.3)',
+                            letterSpacing: '1px',
+                            textTransform: 'uppercase'
                         }}>
-                            Easy way to order your food 🛵
+                            Premium Dining
                         </div>
                         
+                        {/* Title */}
                         <h1 style={{
-                            color: 'white',
-                            fontSize: 'clamp(2.5rem, 5vw, 4rem)',
-                            fontWeight: 900,
+                            color: '#ffffff',
+                            fontFamily: '"Outfit", sans-serif',
+                            fontSize: 'clamp(3rem, 5vw, 4.5rem)',
+                            fontWeight: 800,
                             lineHeight: 1.1,
-                            marginBottom: '1.5rem',
-                            letterSpacing: '-1px'
+                            marginBottom: '20px',
+                            letterSpacing: '-1px',
+                            textShadow: '0 4px 20px rgba(0,0,0,0.3)'
                         }}>
-                            Experience the Best<br />Campus Dining
+                            Welcome to Your<br />
+                            University Dining<br/>Experience
                         </h1>
                         
+                        {/* Description */}
                         <p style={{
-                            color: '#A0AAB2',
+                            color: 'rgba(255, 255, 255, 0.85)',
                             fontSize: '1.1rem',
                             lineHeight: 1.6,
-                            marginBottom: '2.5rem',
+                            marginBottom: '40px',
+                            fontWeight: 400,
                             maxWidth: '480px'
                         }}>
-                            Enjoy delicious, freshly prepared meals that fuel your studies and satisfy your cravings. Your ultimate destination for multi-cuisine dining right on campus.
+                            UniCafe brings together online ordering, fresh meals, and a seamless digital experience. 
+                            Skip the line and enjoy your favorite campus food, brewed fresh and served warm.
                         </p>
 
-                        {/* Order Now Button */}
-                        <div style={{ marginBottom: '3rem' }}>
-                            <Link to="/order" className="btn-premium" style={{ 
-                                textDecoration: 'none', 
-                                display: 'inline-flex', 
-                                alignItems: 'center', 
-                                gap: '0.8rem',
-                                padding: '1rem 2.5rem',
-                                fontSize: '1.1rem',
-                                boxShadow: '0 10px 25px rgba(255, 199, 44, 0.4)'
-                            }}>
-                                Order Now
-                                <ArrowRight size={20} />
-                            </Link>
-                        </div>
-
-                        {/* Popular Restaurant Small Icons */}
-                        <div>
-                            <div style={{ color: 'white', fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>
-                                Popular Restaurant
-                            </div>
-                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                                {popularIcons.map((item, i) => (
-                                    <div key={i} style={{
-                                        width: '45px',
-                                        height: '45px',
-                                        background: item.bg,
-                                        borderRadius: '8px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}>
-                                        {item.icon}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                        {/* Button */}
+                        <Link to="/order" style={{ 
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: '#ffffff',
+                            color: '#2d1e12',
+                            textDecoration: 'none', 
+                            padding: '16px 45px',
+                            borderRadius: '50px',
+                            fontSize: '1rem',
+                            fontWeight: '700',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                            transition: 'all 0.3s ease'
+                        }} 
+                        onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.background = '#f8f0e6'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = '#ffffff'; }}
+                        >
+                            Visit us
+                        </Link>
+                    </motion.div>
                 </div>
-
-                {/* Right Hero Image overlapping dark section */}
-                <div style={{
-                    position: 'absolute',
-                    top: '0',
-                    right: '0%',
-                    width: '65%',
-                    height: '100%',
-                    background: `url(${heroBurger}) right 65% / cover no-repeat`,
-                    maskImage: 'linear-gradient(to right, transparent, black 30%)',
-                    WebkitMaskImage: 'linear-gradient(to right, transparent, black 30%)',
-                    zIndex: 0,
-                    pointerEvents: 'none'
-                }} />
-
-                {/* Bottom White Curve SVG */}
-                <svg 
-                    style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', zIndex: 2, display: 'block' }}
-                    viewBox="0 0 1440 120" 
-                    fill="none" 
-                    xmlns="http://www.w3.org/2000/svg"
-                    preserveAspectRatio="none"
-                >
-                    <path d="M0,80 C320,160 1120,0 1440,80 L1440,120 L0,120 Z" fill="#F9F9F9"/>
-                </svg>
             </section>
 
             {/* TOP FOODS CATEGORIES */}

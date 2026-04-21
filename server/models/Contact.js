@@ -9,6 +9,10 @@ const ContactSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    isAnonymous: {
+        type: Boolean,
+        default: false
+    },
     message: {
         type: String,
         required: true
@@ -29,6 +33,15 @@ const ContactSchema = new mongoose.Schema({
     isPriority: {
         type: Boolean,
         default: false
+    },
+    impactScore: {
+        type: Number,
+        default: 0
+    },
+    impactLevel: {
+        type: String,
+        enum: ['High', 'Medium', 'Low'],
+        default: 'Low'
     },
     createdAt: {
         type: Date,

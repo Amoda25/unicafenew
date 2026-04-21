@@ -17,7 +17,15 @@ import OrderManagement from './pages/OrderManagement';
 import SalesManagement from './pages/SalesManagement';
 import FeedbackManagement from './pages/FeedbackManagement';
 import MenuManagement from './pages/MenuManagement';
+import NotificationsPage from './pages/NotificationsPage';
+import CartPage from './pages/CartPage';
+import OrderSuccessPage from './pages/OrderSuccessPage';
+import OrderScanPage from './pages/OrderScanPage';
 import GoogleAuthWrapper from './components/GoogleAuthWrapper';
+
+
+
+
 
 const AppContent = () => {
   const location = useLocation();
@@ -54,6 +62,14 @@ const AppContent = () => {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/feedback" element={<FeedbackPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
+            <Route path="/order-scan/:orderId" element={<OrderScanPage />} />
+
+
+
+
           </Routes>
         </main>
         {!isAuthRoute && <Footer />}

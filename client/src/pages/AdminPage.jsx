@@ -362,7 +362,7 @@ const AdminPage = () => {
                                 maxWidth: '750px', 
                                 maxHeight: '90vh', 
                                 overflowY: 'auto', 
-                                background: 'white', 
+                                background: 'var(--latte-card)', 
                                 borderRadius: '24px', 
                                 padding: '2.5rem', 
                                 border: '1px solid #f1f5f9', 
@@ -376,12 +376,12 @@ const AdminPage = () => {
                         <form onSubmit={(e) => { e.preventDefault(); onClose(); setShowSuccess('Stock updated successfully!'); setTimeout(() => setShowSuccess(''), 3000); }}>
                             <div style={{ marginBottom: '1.5rem' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Item Name</label>
-                                <input required placeholder="e.g. Basmati Rice" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
+                                <input required placeholder="e.g. Basmati Rice" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Category</label>
-                                    <select style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
+                                    <select style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
                                         <option>Vegetables</option>
                                         <option>Meat</option>
                                         <option>Dairy</option>
@@ -392,7 +392,7 @@ const AdminPage = () => {
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Supplier</label>
-                                    <select style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
+                                    <select style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
                                         <option>Lanka Foods</option>
                                         <option>Fresh Meats Co</option>
                                         <option>Agro Distributors</option>
@@ -403,11 +403,11 @@ const AdminPage = () => {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Quantity</label>
-                                    <input required type="number" placeholder="0" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
+                                    <input required type="number" placeholder="0" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Unit</label>
-                                    <select style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
+                                    <select style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
                                         <option>kg</option>
                                         <option>g</option>
                                         <option>liters</option>
@@ -418,12 +418,12 @@ const AdminPage = () => {
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Min Alert Threshold</label>
-                                    <input required type="number" placeholder="e.g. 5" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
+                                    <input required type="number" placeholder="e.g. 5" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
                                 </div>
                             </div>
                             <div style={{ marginBottom: '2.5rem' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Expiry Date</label>
-                                <input required type="date" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
+                                <input required type="date" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
                             </div>
                             <button type="submit" className="btn-premium" style={{ width: '100%', padding: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
                                 <Save size={20} /> Save Stock Item
@@ -458,7 +458,7 @@ const AdminPage = () => {
                                 pointerEvents: 'auto',
                                 width: '100%', 
                                 maxWidth: '500px', 
-                                background: 'white', 
+                                background: 'var(--latte-card)', 
                                 borderRadius: '24px', 
                                 padding: '2.5rem', 
                                 zIndex: 1002, 
@@ -473,20 +473,20 @@ const AdminPage = () => {
                         <form onSubmit={handleAddUser}>
                             <div style={{ marginBottom: '1.5rem' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Full Name</label>
-                                <input required value={userFormData.name} onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. John Doe" />
+                                <input required value={userFormData.name} onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. John Doe" />
                             </div>
                             <div style={{ marginBottom: '1.5rem' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Student/Staff ID (Username)</label>
-                                <input required value={userFormData.username} onChange={(e) => setUserFormData({ ...userFormData, username: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. IT2100000" />
+                                <input required value={userFormData.username} onChange={(e) => setUserFormData({ ...userFormData, username: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. IT2100000" />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Password</label>
-                                    <input required type="password" value={userFormData.password} onChange={(e) => { setUserFormData({ ...userFormData, password: e.target.value }); validatePassword(e.target.value); }} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="********" />
+                                    <input required type="password" value={userFormData.password} onChange={(e) => { setUserFormData({ ...userFormData, password: e.target.value }); validatePassword(e.target.value); }} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="********" />
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Role</label>
-                                    <select value={userFormData.role} onChange={(e) => setUserFormData({ ...userFormData, role: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
+                                    <select value={userFormData.role} onChange={(e) => setUserFormData({ ...userFormData, role: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
                                         <option value="student">Student</option>
                                         <option value="staff">Staff</option>
                                         <option value="admin">Admin</option>
@@ -564,7 +564,7 @@ const AdminPage = () => {
                 </div>
             </div>
 
-            <div style={{ padding: '32px', borderRadius: '24px', background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
+            <div style={{ padding: '32px', borderRadius: '24px', background: 'var(--latte-card)', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 12px' }}>
                     <thead>
                         <tr style={{ color: '#94a3b8', fontSize: '0.875rem', fontWeight: 600 }}>
@@ -636,7 +636,7 @@ const AdminPage = () => {
                                         <button
                                             onClick={() => handleDeleteOrder(order._id)}
                                             className="glass"
-                                            style={{ padding: '10px', borderRadius: '10px', background: 'white', color: '#ef4444', border: '1px solid #fca5a5', cursor: 'pointer' }}
+                                            style={{ padding: '10px', borderRadius: '10px', background: 'var(--latte-card)', color: '#ef4444', border: '1px solid #fca5a5', cursor: 'pointer' }}
                                         >
                                             <Trash2 size={18} />
                                         </button>
@@ -663,7 +663,7 @@ const AdminPage = () => {
                 </button>
             </div>
 
-            <div style={{ padding: '32px', borderRadius: '24px', background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
+            <div style={{ padding: '32px', borderRadius: '24px', background: 'var(--latte-card)', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
                         <thead>
@@ -776,7 +776,7 @@ const AdminPage = () => {
                 </div>
 
                 {inventoryTab === 'stock' && (
-                    <div style={{ padding: '32px', borderRadius: '24px', background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
+                    <div style={{ padding: '32px', borderRadius: '24px', background: 'var(--latte-card)', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                             <div style={{ display: 'flex', gap: '12px' }}>
                                 <div style={{ position: 'relative' }}>
@@ -1098,7 +1098,7 @@ const AdminPage = () => {
                                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
                                             className="glass"
                                             style={{
-                                                width: '100%', maxWidth: '800px', background: 'white', borderRadius: '32px', position: 'relative', zIndex: 1, overflow: 'hidden',
+                                                width: '100%', maxWidth: '800px', background: 'var(--latte-card)', borderRadius: '32px', position: 'relative', zIndex: 1, overflow: 'hidden',
                                                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
                                             }}
                                         >
