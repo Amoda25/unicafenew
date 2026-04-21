@@ -203,6 +203,13 @@ const HomePage = () => {
                         <motion.div 
                             key={i}
                             whileHover={{ y: -10 }}
+                            onClick={() => {
+                                if (item.title.toLowerCase().includes('special')) {
+                                    navigate('/order?category=Special%20Menu');
+                                } else {
+                                    navigate(`/order?q=${item.title}`);
+                                }
+                            }}
                             style={{
                                 borderRadius: '16px',
                                 overflow: 'hidden',
