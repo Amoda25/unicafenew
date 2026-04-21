@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Filter, Plus, Edit2, RotateCw, Trash2, AlertTriangle, ChevronLeft, ChevronRight, X, CheckCircle2, Clock, ShieldAlert, FileDown } from 'lucide-react';
 import axios from 'axios';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import logo from '../assets/unicafe_logo_vintage.png';
 import RestockModal from './RestockModal';
 
@@ -35,6 +35,21 @@ const InventoryView = () => {
     const [isDisposeModalOpen, setIsDisposeModalOpen] = useState(false);
     const [itemToDispose, setItemToDispose] = useState(null);
     const [disposeLoading, setDisposeLoading] = useState(false);
+    
+    // Report dropdown state
+    const [isReportDropdownOpen, setIsReportDropdownOpen] = useState(false);
+    const reportDropdownRef = useRef(null);
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (reportDropdownRef.current && !reportDropdownRef.current.contains(event.target)) {
+                setIsReportDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
     
     const categories = ['All', 'Beverage', 'Dairy', 'Pantry', 'Meat', 'Vegetables', 'Other'];
     
@@ -227,73 +242,143 @@ const InventoryView = () => {
         return matchesCategory && matchesSearch;
     });
 
-    const generateInventoryReport = () => {
+    const generateInventoryReport = (reportType = 'Stock Summary Report') => {
         const doc = new jsPDF();
-        
+        let reportData = [...inventoryData];
+        let title = 'UniCafé Inventory Report';
+        let fileName = 'UniCafe_Inventory_Report';
+        let tableColumn = ["Item Name", "Category", "Quantity", "Unit", "Expiry Date", "Status"];
+
+        // Filtering logic based on reportType
+        if (reportType === 'Low Stock Report') {
+            reportData = inventoryData.filter(item => item.qty <= (item.minStockThreshold || 10));
+            title = 'UniCafé Low Stock Report';
+            fileName = 'UniCafe_Low_Stock_Report';
+        } else if (reportType === 'Expiry Report') {
+            const today = new Date();
+            const sevenDaysLater = new Date();
+            sevenDaysLater.setDate(today.getDate() + 7);
+            reportData = inventoryData.filter(item => item.expiry && new Date(item.expiry) <= sevenDaysLater);
+            title = 'UniCafé Expiry Report';
+            fileName = 'UniCafe_Expiry_Report';
+        } else if (reportType === 'Waste / Disposal Report') {
+            reportData = wasteLogs.map(log => ({
+                name: log.name,
+                category: log.category,
+                qty: log.qty,
+                unit: log.unit,
+                expiry: new Date(log.disposedAt).toLocaleDateString(),
+                status: 'DISPOSED'
+            }));
+            title = 'UniCafé Waste / Disposal Report';
+            fileName = 'UniCafe_Waste_Disposal_Report';
+            tableColumn = ["Item Name", "Category", "Quantity", "Unit", "Disposed Date", "Status"];
+        } else if (reportType === 'Usage Report') {
+            title = 'UniCafé Inventory Usage Summary';
+            fileName = 'UniCafe_Usage_Report';
+        } else if (reportType === 'Stock Summary Report') {
+            title = 'Inventory Stock Summary';
+            fileName = 'UniCafe_Stock_Summary';
+            tableColumn = ["Item Name", "Category", "Stock Level", "Unit", "Last Restocked", "Status"];
+        }
+
         // Add Header Branding
         doc.setFillColor(67, 40, 24); // #432818 (Mahogany Espresso)
         doc.rect(0, 0, 210, 40, 'F');
         
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(22);
-        doc.setFont('helvetica', 'bold');
-        doc.text('UniCafé Inventory Report', 15, 25);
-        
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, 33);
-        doc.text(`Total Items: ${filteredData.length}`, 150, 33);
+        try {
+            // Draw a white circular badge for the logo
+            doc.setFillColor(255, 255, 255);
+            doc.circle(27, 20, 15, 'F');
+            doc.addImage(logo, 'PNG', 15, 8, 24, 24);
+        } catch (e) {
+            console.warn('Logo addition failed:', e);
+        }
 
-        // Define table columns
-        const tableColumn = ["Item Name", "Category", "Quantity", "Unit", "Expiry Date", "Status"];
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.text('UniCafé', 45, 20);
+        
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'normal');
+        doc.text(title, 45, 30);
+        
+        doc.setFontSize(9);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 150, 20);
+        doc.text(`Total Records: ${reportData.length}`, 150, 30);
+
         const tableRows = [];
 
-        filteredData.forEach(item => {
-            const isExpired = item.expiry && new Date(item.expiry) < new Date();
-            const status = isExpired ? 'EXPIRED' : 'GOOD';
+        reportData.forEach(item => {
+            let status = 'GOOD';
+            if (reportType !== 'Waste / Disposal Report') {
+                const isExpired = item.expiry && new Date(item.expiry) < new Date();
+                status = isExpired ? 'EXPIRED' : 'GOOD';
+                if (item.qty <= (item.minStockThreshold || 10)) status = 'LOW STOCK';
+            } else {
+                status = 'DISPOSED';
+            }
             
-            const inventoryRow = [
-                item.name,
-                item.category,
-                item.qty,
-                item.unit,
-                item.expiry ? new Date(item.expiry).toLocaleDateString() : 'N/A',
-                status
-            ];
-            tableRows.push(inventoryRow);
+            let row = [];
+            if (reportType === 'Stock Summary Report') {
+                row = [
+                    item.name,
+                    item.category,
+                    item.qty,
+                    item.unit,
+                    item.lastRestocked ? new Date(item.lastRestocked).toLocaleDateString() : 'N/A',
+                    status
+                ];
+            } else {
+                row = [
+                    item.name,
+                    item.category,
+                    item.qty,
+                    item.unit,
+                    item.expiry && !isNaN(Date.parse(item.expiry)) ? new Date(item.expiry).toLocaleDateString() : (item.expiry || 'N/A'),
+                    status
+                ];
+            }
+            tableRows.push(row);
         });
 
         // Generate Table
-        doc.autoTable({
-            head: [tableColumn],
-            body: tableRows,
-            startY: 45,
-            theme: 'grid',
-            headStyles: {
-                fillColor: [127, 85, 57], // #7f5539
-                textColor: [255, 255, 255],
-                fontSize: 10,
-                fontStyle: 'bold'
-            },
-            alternateRowStyles: {
-                fillColor: [253, 250, 248] // Very light coffee
-            },
-            styles: {
-                fontSize: 9,
-                cellPadding: 4
+        try {
+            autoTable(doc, {
+                head: [tableColumn],
+                body: tableRows,
+                startY: 45,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [127, 85, 57], // #7f5539
+                    textColor: [255, 255, 255],
+                    fontSize: 10,
+                    fontStyle: 'bold'
+                },
+                alternateRowStyles: {
+                    fillColor: [253, 250, 248] // Very light coffee
+                },
+                styles: {
+                    fontSize: 9,
+                    cellPadding: 4
+                }
+            });
+
+            // Add Footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text(`Page ${i} of ${pageCount} - UniCafé Inventory Management System`, 105, 285, { align: 'center' });
             }
-        });
 
-        // Add Footer
-        const pageCount = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.setTextColor(150);
-            doc.text(`Page ${i} of ${pageCount} - UniCafé Inventory Management System`, 105, 285, { align: 'center' });
+            doc.save(`${fileName}_${new Date().toISOString().split('T')[0]}.pdf`);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Failed to generate PDF. Please check the console for details.');
         }
-
-        doc.save(`UniCafe_Inventory_Report_${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
     return (
@@ -332,7 +417,7 @@ const InventoryView = () => {
                     animation: slideDown 0.2s ease-out;
                 }
                 @keyframes slideDown {
-                    from { opacity: 0; transform: translateY(-5px); }
+                    from { opacity: 0; transform: translateY(-10px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
                 .inventory-label {
@@ -357,20 +442,59 @@ const InventoryView = () => {
                     <p style={{ color: '#9c6644', fontSize: '1rem', margin: 0 }}>Add, update, and track all cafeteria ingredients.</p>
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ position: 'relative' }} ref={reportDropdownRef}>
                     <button 
-                        onClick={generateInventoryReport}
+                        onClick={() => setIsReportDropdownOpen(!isReportDropdownOpen)}
                         style={{
                             display: 'flex', alignItems: 'center', gap: '8px', 
                             background: 'white', color: '#7f5539', border: '2px solid #7f5539', 
                             padding: '10px 20px', borderRadius: '8px', fontSize: '0.95rem', 
                             fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
                         }}
-                        onMouseOver={(e) => { e.currentTarget.style.background = '#fdfaf8'; }}
+                        onMouseOver={(e) => { e.currentTarget.style.background = '#f5ebe0'; }}
                         onMouseOut={(e) => { e.currentTarget.style.background = 'white'; }}
                     >
                         <FileDown size={18} />
                         Generate Report
                     </button>
+                    
+                    {isReportDropdownOpen && (
+                        <div style={{ 
+                            position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+                            background: 'white', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                            border: '1px solid #f1f5f9', zIndex: 100, width: '280px', overflow: 'hidden',
+                            animation: 'slideDown 0.2s ease-out'
+                        }}>
+                            {[
+                                'Stock Summary Report',
+                                'Low Stock Report',
+                                'Expiry Report',
+                                'Usage Report',
+                                'Waste / Disposal Report'
+                            ].map((report, idx) => (
+                                <button 
+                                    key={idx}
+                                    onClick={() => {
+                                        generateInventoryReport(report);
+                                        setIsReportDropdownOpen(false);
+                                    }}
+                                    style={{
+                                        width: '100%', padding: '12px 20px', textAlign: 'left',
+                                        background: 'none', border: 'none', color: '#1e293b',
+                                        fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
+                                        transition: 'background 0.2s',
+                                        borderBottom: idx === 4 ? 'none' : '1px solid #f1f5f9',
+                                        display: 'block'
+                                    }}
+                                    onMouseOver={(e) => { e.currentTarget.style.background = '#f5ebe0'; e.currentTarget.style.color = '#432818'; }}
+                                    onMouseOut={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#1e293b'; }}
+                                >
+                                    {report}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
                     <button onClick={() => { 
                         setEditingId(null); 
                         setFormData({ name: '', category: 'Beverage', qty: '', unit: 'kg', expiry: '', supplier: '', minStockThreshold: '' }); 
