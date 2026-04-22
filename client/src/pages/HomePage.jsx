@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Star, Utensils, Heart, ShoppingBag, Coffee, Pizza, Navigation, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Star, Utensils, Heart, ShoppingBag, Coffee, Pizza, Navigation, ArrowRight, Image as ImageIcon, Zap, Clock, Tag } from 'lucide-react';
 import axios from 'axios';
 import heroFood from '../assets/hero_food_new.png';
 import stringHoppers from '../assets/string_hoppers.jpg';
@@ -13,6 +13,8 @@ import campusBg from '../assets/campus_bg.png';
 const HomePage = () => {
     const navigate = useNavigate();
     const [specialItems, setSpecialItems] = useState([]);
+    const [flashDeals, setFlashDeals] = useState([]);
+    const user = JSON.parse(localStorage.getItem('user'));
 
     const categories = [
         { name: 'Special Menu', count: 'Exclusive', img: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&auto=format&fit=crop' },
@@ -31,19 +33,27 @@ const HomePage = () => {
         const fetchSpecialItems = async () => {
             try {
                 const res = await axios.get('/api/menu');
-                // Filter items that have "Special Menu" in their category array
                 const filtered = res.data.filter(item => 
                     item.category && 
                     (Array.isArray(item.category) 
                         ? item.category.includes('Special Menu') 
                         : item.category === 'Special Menu')
                 );
-                setSpecialItems(filtered.slice(0, 3)); // Only take top 3
+                setSpecialItems(filtered.slice(0, 3));
             } catch (err) {
                 console.error('Error fetching special items:', err);
             }
         };
+        const fetchFlashDeals = async () => {
+            try {
+                const res = await axios.get('/api/flash-deals');
+                setFlashDeals(res.data);
+            } catch (err) {
+                console.error('Error fetching flash deals:', err);
+            }
+        };
         fetchSpecialItems();
+        fetchFlashDeals();
     }, []);
 
     const handleCategoryClick = (name) => {
@@ -161,6 +171,103 @@ const HomePage = () => {
                     </motion.div>
                 </div>
             </section>
+
+            {/* FLASH DEALS SECTION — visible only when logged in & deals are active */}
+            {user && flashDeals.length > 0 && (
+                <section style={{ maxWidth: '1200px', margin: '3rem auto 0', padding: '0 20px' }}>
+                    {/* Section Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                            <div style={{
+                                width: '44px', height: '44px', borderRadius: '14px',
+                                background: 'linear-gradient(135deg, #ef4444, #f97316)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                boxShadow: '0 6px 16px rgba(239,68,68,0.3)',
+                                animation: 'pulse 2s infinite'
+                            }}>
+                                <Zap size={22} color="white" fill="white" />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#ef4444', letterSpacing: '1px', textTransform: 'uppercase' }}>Limited Time</div>
+                                <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 900, color: '#1F2937' }}>⚡ Flash Deals</h2>
+                            </div>
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                            <Clock size={14} />
+                            Expires in 24h
+                        </div>
+                    </div>
+
+                    {/* Deal Cards */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+                        {flashDeals.map((deal, i) => (
+                            <motion.div
+                                key={deal._id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.08 }}
+                                whileHover={{ y: -5, boxShadow: '0 20px 40px rgba(239,68,68,0.15)' }}
+                                onClick={() => navigate(`/order?q=${encodeURIComponent(deal.itemName)}`)}
+                                style={{
+                                    borderRadius: '20px',
+                                    background: 'white',
+                                    border: '1.5px solid #fecaca',
+                                    padding: '22px',
+                                    cursor: 'pointer',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    boxShadow: '0 4px 20px rgba(239,68,68,0.06)',
+                                    transition: 'all 0.3s ease'
+                                }}
+                            >
+                                {/* Discount Badge */}
+                                <div style={{
+                                    position: 'absolute', top: '14px', right: '14px',
+                                    background: 'linear-gradient(135deg, #ef4444, #f97316)',
+                                    color: 'white', fontWeight: 900, fontSize: '0.9rem',
+                                    padding: '4px 12px', borderRadius: '20px',
+                                    boxShadow: '0 4px 10px rgba(239,68,68,0.35)'
+                                }}>
+                                    {deal.discountPct}% OFF
+                                </div>
+
+                                {/* Flash icon background */}
+                                <div style={{ position: 'absolute', bottom: '-10px', right: '-10px', opacity: 0.04 }}>
+                                    <Zap size={100} color="#ef4444" fill="#ef4444" />
+                                </div>
+
+                                <div style={{ marginBottom: '12px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', animation: 'pulse 1.5s infinite' }} />
+                                        <span style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Flash Sale Active</span>
+                                    </div>
+                                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#1F2937', paddingRight: '70px' }}>{deal.itemName}</h3>
+                                </div>
+
+                                <p style={{ margin: '0 0 14px', fontSize: '0.82rem', color: '#6B7280', lineHeight: 1.5 }}>
+                                    {deal.suggestion}
+                                </p>
+
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 600 }}>
+                                        <Clock size={12} />
+                                        Limited time offer
+                                    </div>
+                                    <div style={{
+                                        padding: '7px 14px', borderRadius: '10px',
+                                        background: 'linear-gradient(135deg, #ef4444, #f97316)',
+                                        color: 'white', fontWeight: 700, fontSize: '0.78rem',
+                                        display: 'flex', alignItems: 'center', gap: '5px'
+                                    }}>
+                                        <Zap size={12} fill="white" /> Order Now
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                    <div style={{ height: '1px', background: 'linear-gradient(to right, transparent, #e5e7eb, transparent)', margin: '3rem 0 0' }} />
+                </section>
+            )}
 
             {/* TOP FOODS CATEGORIES */}
             <section style={{ maxWidth: '1200px', margin: '4rem auto', padding: '0 20px', textAlign: 'center' }}>
