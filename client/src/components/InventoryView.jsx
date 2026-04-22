@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Filter, Plus, Edit2, RotateCw, Trash2, AlertTriangle, ChevronLeft, ChevronRight, X, CheckCircle2, Clock, ShieldAlert, FileDown } from 'lucide-react';
+import { Search, Filter, Plus, Edit2, RotateCw, Trash2, AlertTriangle, ChevronLeft, ChevronRight, X, CheckCircle2, Clock, ShieldAlert, FileDown, Calendar, Building2, MoreVertical, Coffee, Beef, LayoutGrid, Milk, Carrot, Package, Info, ChevronDown } from 'lucide-react';
 import axios from 'axios';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -36,15 +36,29 @@ const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
     const [itemToDispose, setItemToDispose] = useState(null);
     const [disposeLoading, setDisposeLoading] = useState(false);
     
-    // Report dropdown state
+    // Dropdown states
+    const [activeMenuId, setActiveMenuId] = useState(null);
     const [isReportDropdownOpen, setIsReportDropdownOpen] = useState(false);
+    const [isSortOpen, setIsSortOpen] = useState(false);
     const reportDropdownRef = useRef(null);
+    const sortRef = useRef(null);
 
-    // Close dropdown on click outside
+    // Sort settings
+    const [sortBy, setSortBy] = useState('name');
+    const [sortOrder, setSortOrder] = useState('asc');
+
+    // Close dropdowns on click outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (reportDropdownRef.current && !reportDropdownRef.current.contains(event.target)) {
                 setIsReportDropdownOpen(false);
+            }
+            if (sortRef.current && !sortRef.current.contains(event.target)) {
+                setIsSortOpen(false);
+            }
+            // Close any open row menu
+            if (!event.target.closest('button')) {
+                setActiveMenuId(null);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -54,12 +68,12 @@ const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
     const categories = ['All', 'Beverage', 'Dairy', 'Pantry', 'Meat', 'Vegetables', 'Other'];
     
     const categoryStyles = {
-        'Beverage': { bg: '#eff6ff', text: '#3b82f6' },
-        'Dairy': { bg: '#faf5ff', text: '#a855f7' },
-        'Pantry': { bg: '#fff7ed', text: '#f97316' },
-        'Meat': { bg: '#fef2f2', text: '#ef4444' },
-        'Vegetables': { bg: '#f0fdf4', text: '#10b981' },
-        'Other': { bg: '#f1f5f9', text: '#64748b' }
+        'Beverage': { bg: '#eff6ff', text: '#3b82f6', icon: <Coffee size={14} /> },
+        'Dairy': { bg: '#faf5ff', text: '#a855f7', icon: <Milk size={14} /> },
+        'Pantry': { bg: '#fff7ed', text: '#f97316', icon: <Package size={14} /> },
+        'Meat': { bg: '#fef2f2', text: '#ef4444', icon: <Beef size={14} /> },
+        'Vegetables': { bg: '#f0fdf4', text: '#10b981', icon: <Carrot size={14} /> },
+        'Other': { bg: '#f1f5f9', text: '#64748b', icon: <LayoutGrid size={14} /> }
     };
 
     useEffect(() => {
@@ -149,6 +163,7 @@ const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
         const error = validateField(name, value);
         setFormErrors(prev => ({ ...prev, [name]: error }));
     };
+
 
     const handleFormSubmit = async (e) => {
         e.preventDefault();
@@ -249,9 +264,21 @@ const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
         
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const matchesExpired = inventoryFilter === 'expired' ? (item.expiry && new Date(item.expiry) < today) : true;
+        const matchesExpiredBanner = inventoryFilter === 'expired' ? (item.expiry && new Date(item.expiry) < today) : true;
         
-        return matchesCategory && matchesSearch && matchesExpired;
+        return matchesCategory && matchesSearch && matchesExpiredBanner;
+    }).sort((a, b) => {
+        let comparison = 0;
+        if (sortBy === 'name') {
+            comparison = a.name.localeCompare(b.name);
+        } else if (sortBy === 'qty') {
+            comparison = a.qty - b.qty;
+        } else if (sortBy === 'expiry') {
+            const dateA = a.expiry ? new Date(a.expiry) : new Date(8640000000000000);
+            const dateB = b.expiry ? new Date(b.expiry) : new Date(8640000000000000);
+            comparison = dateA - dateB;
+        }
+        return sortOrder === 'asc' ? comparison : -comparison;
     });
 
     const generateInventoryReport = (reportType = 'Stock Summary Report') => {
@@ -588,20 +615,83 @@ const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
             <div className="glass" style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', borderRadius: '16px', background: 'white' }}>
                 
                 {/* Table Toolbar */}
-                <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9' }}>
-                    <div style={{ position: 'relative', width: '350px' }}>
-                        <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f8fafc' }}>
+                    <div style={{ position: 'relative', width: '380px' }}>
+                        <Search size={20} style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                         <input 
                             type="text" 
                             placeholder="Search items or suppliers..." 
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             style={{ 
-                                width: '100%', padding: '10px 16px 10px 44px',
-                                borderRadius: '8px', border: '1px solid #e2e8f0', 
-                                background: '#ffffff', color: '#1e293b', fontSize: '0.9rem', outline: 'none'
+                                width: '100%', padding: '12px 16px 12px 52px',
+                                borderRadius: '12px', border: '1px solid #e2e8f0', 
+                                background: '#ffffff', color: '#1e293b', fontSize: '1rem', 
+                                outline: 'none', transition: 'all 0.2s',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = '#7f5539';
+                                e.target.style.boxShadow = '0 0 0 4px rgba(127, 85, 57, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = '#e2e8f0';
+                                e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
                             }}
                         />
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                        {/* Sort Dropdown */}
+                        <div style={{ position: 'relative' }} ref={sortRef}>
+                            <button 
+                                onClick={() => setIsSortOpen(!isSortOpen)}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px',
+                                    background: 'white', border: '1px solid #e2e8f0', borderRadius: '10px',
+                                    color: '#475569', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                Sort by: <span style={{ color: '#1e293b' }}>{sortBy === 'name' ? 'Item Name' : sortBy === 'qty' ? 'Quantity' : 'Expiry Date'}</span>
+                                <ChevronDown size={18} />
+                            </button>
+
+                            {isSortOpen && (
+                                <div style={{ 
+                                    position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+                                    background: 'white', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)',
+                                    border: '1px solid #f1f5f9', zIndex: 100, width: '200px', overflow: 'hidden',
+                                    animation: 'slideDown 0.2s ease-out'
+                                }}>
+                                    {[
+                                        { label: 'Item Name (A-Z)', val: 'name', ord: 'asc' },
+                                        { label: 'Item Name (Z-A)', val: 'name', ord: 'desc' },
+                                        { label: 'Quantity (Lowest)', val: 'qty', ord: 'asc' },
+                                        { label: 'Quantity (Highest)', val: 'qty', ord: 'desc' },
+                                        { label: 'Expiry Date (Soonest)', val: 'expiry', ord: 'asc' },
+                                        { label: 'Expiry Date (Latest)', val: 'expiry', ord: 'desc' }
+                                    ].map((opt, oidx) => (
+                                        <button 
+                                            key={oidx}
+                                            onClick={() => { setSortBy(opt.val); setSortOrder(opt.ord); setIsSortOpen(false); }}
+                                            style={{ 
+                                                width: '100%', padding: '12px 16px', border: 'none', background: 'none',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                color: (sortBy === opt.val && sortOrder === opt.ord) ? '#7f5539' : '#475569', 
+                                                fontSize: '0.85rem', fontWeight: (sortBy === opt.val && sortOrder === opt.ord) ? 700 : 600,
+                                                cursor: 'pointer', textAlign: 'left', transition: 'background 0.2s',
+                                                borderBottom: oidx === 5 ? 'none' : '1px solid #f1f5f9'
+                                            }}
+                                            onMouseOver={e=>e.currentTarget.style.background='#f8fafc'}
+                                            onMouseOut={e=>e.currentTarget.style.background='none'}
+                                        >
+                                            {opt.label}
+                                            {sortBy === opt.val && sortOrder === opt.ord && <CheckCircle2 size={14} />}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -609,12 +699,24 @@ const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
-                            <tr style={{ color: '#475569', fontSize: '0.875rem', fontWeight: 700, borderBottom: '1px solid #e2e8f0' }}>
-                                <th style={{ padding: '20px', width: '25%' }}>Item Name</th>
-                                <th style={{ padding: '20px', width: '15%' }}>Category</th>
-                                <th style={{ padding: '20px', width: '15%' }}>Quantity</th>
-                                <th style={{ padding: '20px', width: '15%' }}>Expiry Date</th>
-                                <th style={{ padding: '20px', width: '20%' }}>Supplier</th>
+                            <tr style={{ color: '#475569', fontSize: '0.85rem', fontWeight: 800, borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
+                                <th style={{ padding: '20px', width: '25%', textAlign: 'left' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <Package size={16} /> Item Name
+                                    </div>
+                                </th>
+                                <th style={{ padding: '20px', width: '15%', textAlign: 'left' }}>Category</th>
+                                <th style={{ padding: '20px', width: '15%', textAlign: 'left' }}>Quantity</th>
+                                <th style={{ padding: '20px', width: '18%', textAlign: 'left' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <Calendar size={16} /> Expiry Date <ChevronDown size={14} style={{ color: '#cbd5e1' }} />
+                                    </div>
+                                </th>
+                                <th style={{ padding: '20px', width: '17%', textAlign: 'left' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <Building2 size={16} /> Supplier
+                                    </div>
+                                </th>
                                 <th style={{ padding: '20px', width: '10%', textAlign: 'center' }}>Actions</th>
                             </tr>
                         </thead>
@@ -635,115 +737,192 @@ const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
                                 const isExpired = item.expiry && new Date(item.expiry) < today;
                                 
                                 return (
-                                    <tr key={item._id} style={{ borderBottom: idx < filteredData.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
-                                         <td style={{ padding: '20px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                <div style={{ color: '#1e293b', fontWeight: 700 }}>{item.name}</div>
-                                                {isExpired && (
-                                                    <span style={{ 
-                                                        background: '#fee2e2', color: '#ef4444', padding: '2px 8px', 
-                                                        borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800 
-                                                    }}>EXPIRED</span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        
-                                        <td style={{ padding: '20px' }}>
-                                            <span style={{ 
-                                                padding: '6px 12px', background: style.bg, color: style.text, 
-                                                borderRadius: '99px', fontSize: '0.75rem', fontWeight: 800
-                                            }}>
-                                                {item.category}
-                                            </span>
-                                        </td>
+                                    <tr key={item._id} style={{ borderBottom: idx < filteredData.length - 1 ? '1px solid #f8fafc' : 'none', transition: 'background 0.2s' }}>
+                                         <td style={{ padding: '24px 20px', textAlign: 'left' }}>
+                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                 <div style={{ color: '#1e293b', fontWeight: 800, fontSize: '1.05rem' }}>{item.name}</div>
+                                                 {isExpired ? (
+                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                         <span style={{ 
+                                                             display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                             background: '#fee2e2', color: '#ef4444', padding: '2px 8px', 
+                                                             borderRadius: '6px', fontSize: '0.65rem', fontWeight: 900,
+                                                             width: 'fit-content'
+                                                         }}>
+                                                             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444' }} />
+                                                             EXPIRED
+                                                         </span>
+                                                         <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 600 }}>
+                                                             Expired {Math.abs(Math.floor((today - new Date(item.expiry)) / (1000 * 60 * 60 * 24)))} days ago
+                                                         </span>
+                                                     </div>
+                                                 ) : item.expiry && (
+                                                     <span style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 500 }}>
+                                                         Expires in {Math.floor((new Date(item.expiry) - today) / (1000 * 60 * 60 * 24))} days
+                                                     </span>
+                                                 )}
+                                             </div>
+                                         </td>
+                                         
+                                         <td style={{ padding: '24px 20px', textAlign: 'left' }}>
+                                             <span style={{ 
+                                                 padding: '8px 16px', background: style.bg, color: style.text, 
+                                                 borderRadius: '12px', fontSize: '0.8rem', fontWeight: 800,
+                                                 display: 'inline-flex', alignItems: 'center', gap: '8px'
+                                             }}>
+                                                 {style.icon}
+                                                 {item.category}
+                                             </span>
+                                         </td>
+                                         
+                                         <td style={{ padding: '24px 20px', textAlign: 'left' }}>
+                                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
+                                                 <div style={{ color: '#1e293b', fontWeight: 800, fontSize: '1.1rem' }}>
+                                                     <span style={{ color: isLowStock ? '#ef4444' : '#1e293b' }}>{item.qty}</span> <span style={{ color: '#94a3b8', fontSize: '0.85rem', fontWeight: 600 }}>{item.unit}</span>
+                                                 </div>
+                                                 {isLowStock && (
+                                                     <span style={{ 
+                                                         display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                         padding: '4px 10px', border: '1px solid #fef3c7', background: '#fffbeb', 
+                                                         color: '#d97706', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800,
+                                                         boxShadow: '0 1px 2px rgba(217, 119, 6, 0.05)'
+                                                     }}>
+                                                         <AlertTriangle size={12} strokeWidth={2.5} />
+                                                         LOW STOCK
+                                                     </span>
+                                                 )}
+                                             </div>
+                                         </td>
 
-                                        <td style={{ padding: '20px' }}>
-                                            <div style={{ 
-                                                color: isLowStock ? '#d97706' : '#1e293b', 
-                                                fontWeight: 800, fontSize: '0.95rem', marginBottom: isLowStock ? '6px' : '0' 
-                                            }}>
-                                                {item.qty} <span style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>{item.unit}</span>
-                                            </div>
-                                            {isLowStock && (
-                                                <span style={{ 
-                                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                                    padding: '4px 8px', border: '1px solid #fde68a', background: '#fffbeb', 
-                                                    color: '#d97706', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 800
+                                         <td style={{ padding: '24px 20px', textAlign: 'left' }}>
+                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#334155', fontSize: '1rem', fontWeight: 700 }}>
+                                                     <Calendar size={16} style={{ color: '#94a3b8' }} />
+                                                     {item.expiry || 'N/A'}
+                                                 </div>
+                                                 {item.expiry && (
+                                                     <span style={{ 
+                                                         fontSize: '0.75rem', fontWeight: 600, 
+                                                         color: isExpired ? '#ef4444' : '#10b981',
+                                                         marginLeft: '24px'
+                                                     }}>
+                                                         {isExpired ? 'Expired' : `${Math.floor((new Date(item.expiry) - today) / (1000 * 60 * 60 * 24))} days left`}
+                                                     </span>
+                                                 )}
+                                             </div>
+                                         </td>
+
+                                         <td style={{ padding: '24px 20px', textAlign: 'left' }}>
+                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <div style={{ 
+                                                    width: '32px', height: '32px', borderRadius: '8px', background: '#f1f5f9', 
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center' 
                                                 }}>
-                                                    <AlertTriangle size={10} strokeWidth={3} />
-                                                    LOW STOCK
-                                                </span>
-                                            )}
-                                        </td>
+                                                    <Building2 size={16} style={{ color: '#64748b' }} />
+                                                </div>
+                                                <div style={{ color: '#64748b', fontSize: '0.95rem', fontWeight: 600 }}>
+                                                    {item.supplier || 'Unassigned'}
+                                                </div>
+                                             </div>
+                                         </td>
 
-                                        <td style={{ padding: '20px', color: '#475569', fontSize: '0.9rem', fontWeight: 600 }}>
-                                            {item.expiry || 'N/A'}
-                                        </td>
-
-                                        <td style={{ padding: '20px', color: '#475569', fontSize: '0.9rem' }}>
-                                            {item.supplier || 'Unassigned'}
-                                        </td>
-
-                                        <td style={{ padding: '20px' }}>
-                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
-                                                {isExpired && (
-                                                    <button 
-                                                        onClick={() => { setItemToDispose(item); setIsDisposeModalOpen(true); }}
-                                                         style={{ 
-                                                            display: 'flex', alignItems: 'center', gap: '6px',
-                                                            background: '#9f1239', color: 'white', border: 'none', 
-                                                            padding: '8px 18px', borderRadius: '12px', fontSize: '0.85rem', 
-                                                            fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(159,18,57,0.25)',
-                                                            transition: 'all 0.2s'
-                                                        }}
-                                                        onMouseOver={e=> {
-                                                            e.currentTarget.style.background='#881337';
-                                                            e.currentTarget.style.transform='scale(1.05)';
-                                                        }}
-                                                        onMouseOut={e=> {
-                                                            e.currentTarget.style.background='#9f1239';
-                                                            e.currentTarget.style.transform='scale(1)';
-                                                        }}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                        Dispose
-                                                    </button>
-                                                )}
-                                                <button 
-                                                    onClick={() => { setRestockItem(item); setIsRestockModalOpen(true); }}
-                                                    style={{ 
-                                                        background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex',
-                                                        color: isLowStock ? '#ea580c' : '#cbd5e1', transition: 'all 0.2s'
-                                                    }}
-                                                    title="Restock Item"
-                                                    onMouseOver={e=>e.currentTarget.style.color='#ea580c'} 
-                                                    onMouseOut={e=>e.currentTarget.style.color=isLowStock ? '#ea580c' : '#cbd5e1'}
-                                                >
-                                                    <RotateCw size={16} />
-                                                </button>
-                                                <Edit2 size={16} style={{ cursor: 'pointer', color: '#cbd5e1' }} 
-                                                    onClick={() => openEditModal(item)}
-                                                    onMouseOver={e=>e.currentTarget.style.color='#3b82f6'} 
-                                                    onMouseOut={e=>e.currentTarget.style.color='#cbd5e1'} 
-                                                />
-                                                <Trash2 size={16} style={{ cursor: 'pointer', color: '#cbd5e1' }} 
-                                                    onClick={() => { setItemToDelete(item); setIsDeleteModalOpen(true); }}
-                                                    onMouseOver={e=>e.currentTarget.style.color='#ef4444'} 
-                                                    onMouseOut={e=>e.currentTarget.style.color='#cbd5e1'} 
-                                                />
-                                            </div>
-                                        </td>
-                                    </tr>
+                                         <td style={{ padding: '24px 20px' }}>
+                                             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
+                                                 {isExpired ? (
+                                                     <>
+                                                        <button 
+                                                            onClick={() => { setItemToDispose(item); setIsDisposeModalOpen(true); }}
+                                                            style={{ 
+                                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                                background: '#9f1239', color: 'white', border: 'none', 
+                                                                padding: '10px 18px', borderRadius: '10px', fontSize: '0.85rem', 
+                                                                fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(159,18,57,0.3)',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            onMouseOver={e=> { e.currentTarget.style.background='#881337'; e.currentTarget.style.transform='translateY(-1px)'; }}
+                                                            onMouseOut={e=> { e.currentTarget.style.background='#9f1239'; e.currentTarget.style.transform='translateY(0)'; }}
+                                                        >
+                                                            <Trash2 size={16} /> Dispose
+                                                        </button>
+                                                        <button style={{ 
+                                                            background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', 
+                                                            padding: '8px', cursor: 'pointer', color: '#64748b' 
+                                                        }}>
+                                                            <MoreVertical size={18} />
+                                                        </button>
+                                                     </>
+                                                 ) : (
+                                                     <div style={{ display: 'flex', gap: '8px' }}>
+                                                         {[
+                                                             { icon: <RotateCw size={18} />, action: () => { setRestockItem(item); setIsRestockModalOpen(true); }, color: '#3b82f6' },
+                                                             { icon: <Edit2 size={18} />, action: () => openEditModal(item), color: '#64748b' },
+                                                             { icon: <Trash2 size={18} />, action: () => { setItemToDelete(item); setIsDeleteModalOpen(true); }, color: '#ef4444' }
+                                                         ].map((btn, bidx) => (
+                                                             <button 
+                                                                 key={bidx}
+                                                                 onClick={btn.action}
+                                                                 style={{ 
+                                                                     background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', 
+                                                                     padding: '8px', cursor: 'pointer', color: '#94a3b8', transition: 'all 0.2s',
+                                                                     display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                                 }}
+                                                                 onMouseOver={e=> { e.currentTarget.style.borderColor = btn.color; e.currentTarget.style.color = btn.color; e.currentTarget.style.background = `${btn.color}05`; }}
+                                                                 onMouseOut={e=> { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'white'; }}
+                                                             >
+                                                                 {btn.icon}
+                                                             </button>
+                                                         ))}
+                                                     </div>
+                                                 )}
+                                             </div>
+                                         </td>
+                                     </tr>
                                 );
                             })}
                         </tbody>
                     </table>
                 </div>
 
-                {/* Pagination (Static for now) */}
-                <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9' }}>
-                    <div style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 500 }}>
-                        Showing <span style={{ fontWeight: 800, color: '#1e293b' }}>{filteredData.length}</span> items
+                {/* Pagination / Item Count */}
+                <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f8fafc', background: '#ffffff' }}>
+                    <div style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: 600 }}>
+                        Showing <span style={{ fontWeight: 800, color: '#1e293b' }}>1 to {filteredData.length}</span> of {filteredData.length} items
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button style={{ padding: '8px', borderRadius: '8px', border: '1px solid #e2e8f0', background: 'white', color: '#94a3b8', cursor: 'pointer' }}>
+                            <ChevronLeft size={18} />
+                        </button>
+                        <button style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#9f1239', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer' }}>1</button>
+                        <button style={{ padding: '8px', borderRadius: '8px', border: '1px solid #e2e8f0', background: 'white', color: '#94a3b8', cursor: 'pointer' }}>
+                            <ChevronRight size={18} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Legend & Info Section */}
+                <div style={{ padding: '24px', background: '#fcfcfc', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#475569' }}>Legend:</span>
+                        <div style={{ display: 'flex', gap: '16px' }}>
+                            {[
+                                { label: 'EXPIRED', color: '#ef4444', bg: '#fee2e2' },
+                                { label: 'LOW STOCK', color: '#d97706', bg: '#fffbeb' },
+                                { label: 'GOOD STOCK', color: '#10b981', bg: '#f0fdf4' }
+                            ].map((item, idx) => (
+                                <div key={idx} style={{ 
+                                    display: 'flex', alignItems: 'center', gap: '8px', 
+                                    padding: '6px 12px', background: item.bg, borderRadius: '8px',
+                                    fontSize: '0.75rem', fontWeight: 800, color: item.color
+                                }}>
+                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: item.color }} />
+                                    {item.label}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.85rem', fontWeight: 500 }}>
+                        <Info size={16} />
+                        Keep your inventory updated for accurate alerts.
                     </div>
                 </div>
 
@@ -881,6 +1060,7 @@ const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
                                     {formErrors.minStockThreshold && <div className="error-text"><AlertTriangle size={12} /> {formErrors.minStockThreshold}</div>}
                                 </div>
                             </div>
+
                             
                             <hr style={{ border: 'none', borderTop: '1px solid #f3e8e0', margin: '10px 0 0 0' }} />
 
