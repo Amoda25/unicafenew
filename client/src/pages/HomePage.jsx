@@ -197,8 +197,8 @@ const HomePage = () => {
                 </div>
             </section>
 
-            {/* FLASH DEALS SECTION — visible only when logged in & deals are active */}
-            {user && flashDeals.length > 0 && (
+            {/* FLASH DEALS SECTION — visible when deals are active */}
+            {flashDeals.length > 0 && (
                 <section style={{ maxWidth: '1200px', margin: '3rem auto 0', padding: '0 20px' }}>
                     {/* Section Header */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
