@@ -122,7 +122,7 @@ const isPasswordComplex = (password) => {
 // Auth Routes
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { name, username, password, role } = req.body;
+        const { name, username, password, role, faculty } = req.body;
 
         // Robust Input Validation
         if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -137,6 +137,9 @@ app.post('/api/auth/register', async (req, res) => {
             const studentIdRegex = /^[A-Za-z]{2,}\d{5,}$/;
             if (!studentIdRegex.test(username.trim())) {
                 return res.status(400).json({ message: 'Invalid Student ID. Use letters followed by digits (e.g., IT123456).' });
+            }
+            if (!faculty) {
+                return res.status(400).json({ message: 'Faculty is required for students' });
             }
         }
         if (!password || typeof password !== 'string' || !isPasswordComplex(password)) {
@@ -158,7 +161,8 @@ app.post('/api/auth/register', async (req, res) => {
             name: name.trim(),
             username: username.trim(),
             password: hashedPassword,
-            role: role || 'student'
+            role: role || 'student',
+            faculty: role === 'student' ? faculty : undefined
         });
 
         await user.save();
@@ -210,7 +214,8 @@ app.post('/api/auth/google', async (req, res) => {
                 name,
                 username: email,
                 password: await bcrypt.hash(sub, 10), // Random password for Google users
-                role: 'student'
+                role: 'student',
+                faculty: 'Other' // Default for Google users as we don't have faculty info yet
             });
             await user.save();
         }
@@ -630,7 +635,7 @@ app.get('/api/users', async (req, res) => {
 
 app.post('/api/users', async (req, res) => {
     try {
-        const { name, username, password, role } = req.body;
+        const { name, username, password, role, faculty } = req.body;
 
         if (!name || name.trim().length === 0) return res.status(400).json({ message: 'Name is required' });
         if (!username || username.trim().length === 0) return res.status(400).json({ message: 'Username is required' });
@@ -660,7 +665,8 @@ app.post('/api/users', async (req, res) => {
             name,
             username,
             password: hashedPassword,
-            role: role || 'student'
+            role: role || 'student',
+            faculty
         });
 
         const savedUser = await newUser.save();

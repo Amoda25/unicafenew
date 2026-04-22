@@ -13,7 +13,8 @@ const SignupPage = () => {
         username: '',
         password: '',
         confirmPassword: '',
-        role: 'student'
+        role: 'student',
+        faculty: ''
     });
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -98,7 +99,8 @@ const SignupPage = () => {
                 name: formData.name,
                 username: formData.username,
                 password: formData.password,
-                role: formData.role
+                role: formData.role,
+                faculty: formData.role === 'student' ? formData.faculty : undefined
             });
             console.log('Registration success');
             setSuccess(true);
@@ -291,7 +293,7 @@ const SignupPage = () => {
                                 <motion.div 
                                     key={role.id}
                                     whileTap={{ scale: 0.97 }}
-                                    onClick={() => setFormData({ ...formData, role: role.id })}
+                                    onClick={() => setFormData({ ...formData, role: role.id, faculty: role.id === 'student' ? formData.faculty : '' })}
                                     style={{
                                         flex: 1,
                                         padding: '0.55rem 1rem',
@@ -317,6 +319,41 @@ const SignupPage = () => {
                             ))}
                         </div>
                     </div>
+
+                    {/* Faculty Selector (Conditional for Students) */}
+                    {formData.role === 'student' && (
+                        <motion.div 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            style={{ marginBottom: '0.9rem' }}
+                        >
+                            <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--coffee-dark)', fontWeight: 800, marginBottom: '0.4rem', marginLeft: '5px' }}>Faculty</label>
+                            <select
+                                name="faculty"
+                                required
+                                value={formData.faculty}
+                                onChange={handleChange}
+                                className="glass-input"
+                                style={{ 
+                                    background: '#fff', 
+                                    border: '1px solid var(--latte-border)', 
+                                    borderRadius: '12px', 
+                                    fontSize: '0.88rem', 
+                                    padding: '10px 13px',
+                                    width: '100%',
+                                    outline: 'none',
+                                    color: formData.faculty ? 'var(--coffee-dark)' : 'var(--coffee-soft)'
+                                }}
+                            >
+                                <option value="" disabled>Select your Faculty</option>
+                                <option value="Computing">Faculty of Computing</option>
+                                <option value="Business">Faculty of Business</option>
+                                <option value="Engineering">Faculty of Engineering</option>
+                                <option value="Humanities & Sciences">Faculty of Humanities & Sciences</option>
+                                <option value="Graduate Studies">Faculty of Graduate Studies</option>
+                            </select>
+                        </motion.div>
+                    )}
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', marginBottom: '1rem' }}>
                         <div>
