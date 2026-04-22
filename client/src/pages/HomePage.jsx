@@ -199,116 +199,6 @@ const HomePage = () => {
                 </div>
             </section>
 
-            {/* FLASH DEALS SECTION — visible only when logged in & deals are active */}
-            {user && flashDeals.length > 0 && (
-                <section style={{ width: '100%', margin: '4rem 0', background: 'linear-gradient(135deg, var(--coffee-darker) 0%, var(--coffee-dark) 100%)', padding: '60px 8%', position: 'relative', overflow: 'hidden' }}>
-                    {/* Background decorations */}
-                    <div style={{ position: 'absolute', top: '-20%', right: '-5%', opacity: 0.05, transform: 'rotate(15deg)' }}>
-                        <Zap size={500} color="var(--latte-highlight)" fill="var(--latte-highlight)" />
-                    </div>
-                    
-                    <div style={{ maxWidth: '1300px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
-                        {/* Section Header */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '20px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <div style={{
-                                    width: '54px', height: '54px', borderRadius: '16px',
-                                    background: 'linear-gradient(135deg, var(--latte-highlight), var(--coffee-medium))',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    boxShadow: '0 8px 24px rgba(201, 147, 90, 0.4)',
-                                    animation: 'pulse 2s infinite'
-                                }}>
-                                    <Zap size={28} color="white" fill="white" />
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--latte-highlight)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '4px' }}>Limited Time Offers</div>
-                                    <h2 style={{ margin: 0, fontSize: '2.4rem', fontWeight: 900, color: 'var(--latte-card)', letterSpacing: '-0.5px' }}>⚡ Flash Deals</h2>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Deal Hero Cards */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                            {flashDeals.map((deal, i) => (
-                                <motion.div
-                                    key={deal._id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: i * 0.1, duration: 0.5 }}
-                                    whileHover={{ scale: 1.02, boxShadow: '0 20px 40px rgba(0,0,0,0.4)', borderColor: 'var(--latte-highlight)' }}
-                                    onClick={() => navigate(`/order?q=${encodeURIComponent(deal.itemName)}`)}
-                                    style={{
-                                        borderRadius: '24px',
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                        backdropFilter: 'blur(20px)',
-                                        border: '1px solid rgba(201, 147, 90, 0.2)',
-                                        padding: '30px 40px',
-                                        cursor: 'pointer',
-                                        position: 'relative',
-                                        overflow: 'hidden',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        gap: '30px',
-                                        flexWrap: 'wrap',
-                                        transition: 'all 0.4s ease'
-                                    }}
-                                >
-                                    {/* Discount Accent Line */}
-                                    <div style={{
-                                        position: 'absolute', top: 0, left: 0, bottom: 0, width: '6px',
-                                        background: 'linear-gradient(to bottom, var(--latte-highlight), var(--coffee-medium))',
-                                    }}></div>
-
-                                    <div style={{ flex: '1', minWidth: '300px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-                                            <div style={{
-                                                background: 'linear-gradient(135deg, rgba(201, 147, 90, 0.2), rgba(118, 65, 52, 0.2))', 
-                                                color: 'var(--latte-highlight)',
-                                                padding: '6px 16px', borderRadius: '50px', fontSize: '0.85rem', fontWeight: 800,
-                                                border: '1px solid rgba(201, 147, 90, 0.3)',
-                                                display: 'flex', alignItems: 'center', gap: '6px'
-                                            }}>
-                                                <Tag size={14} /> {deal.discountPct}% OFF
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--latte-highlight)', boxShadow: '0 0 10px var(--latte-highlight)', animation: 'pulse 1.5s infinite' }} />
-                                                <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>Active Now</span>
-                                            </div>
-                                        </div>
-                                        
-                                        <h3 style={{ margin: '0 0 12px 0', fontSize: '2.2rem', fontWeight: 800, color: 'var(--latte-card)', letterSpacing: '-0.5px' }}>{deal.itemName}</h3>
-                                        <p style={{ margin: 0, fontSize: '1.05rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, maxWidth: '700px' }}>
-                                            {deal.suggestion}
-                                        </p>
-                                    </div>
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '16px', minWidth: '220px', background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                        <div style={{ width: '100%' }}>
-                                            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '1px' }}>Offer Ends In</div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.2rem', color: 'var(--latte-highlight)', fontWeight: 800, fontFamily: 'monospace' }}>
-                                                <Clock size={20} />
-                                                {timeRemaining[deal._id] || 'Loading...'}
-                                            </div>
-                                        </div>
-                                        <div style={{
-                                            width: '100%',
-                                            padding: '14px 20px', borderRadius: '12px',
-                                            background: 'linear-gradient(135deg, var(--latte-highlight), var(--coffee-medium))',
-                                            color: 'white', fontWeight: 800, fontSize: '1rem',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                            boxShadow: '0 10px 20px rgba(201, 147, 90, 0.3)',
-                                            transition: 'transform 0.2s ease'
-                                        }}>
-                                            Claim Deal <ArrowRight size={18} />
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-            )}
 
             {/* TOP FOODS CATEGORIES */}
             <section style={{ maxWidth: '1200px', margin: '4rem auto', padding: '0 20px', textAlign: 'center' }}>
@@ -451,6 +341,108 @@ const HomePage = () => {
                     ))}
                 </div>
             </section>
+
+            {/* FLASH DEALS SECTION — visible only when logged in & deals are active */}
+            {user && flashDeals.length > 0 && (
+                <section style={{ maxWidth: '1200px', margin: '4rem auto', padding: '0 20px', textAlign: 'center' }}>
+                    <div style={{ marginBottom: '4rem' }}>
+                        <div style={{ color: 'var(--primary)', fontSize: '0.9rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                            <Zap size={16} fill="var(--primary)" /> LIMITED TIME OFFERS
+                        </div>
+                        <h2 style={{ color: '#1F2937', fontSize: '2.5rem', fontWeight: 900, marginBottom: '15px' }}>
+                            ⚡ Flash Deals
+                        </h2>
+                        <div style={{ width: '40px', height: '3px', background: 'var(--primary)', margin: '0 auto' }}></div>
+                    </div>
+
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                        gap: '2rem'
+                    }}>
+                        {flashDeals.map((deal, i) => (
+                            <motion.div
+                                key={deal._id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.1, duration: 0.5 }}
+                                whileHover={{ y: -10 }}
+                                onClick={() => navigate(`/order?q=${encodeURIComponent(deal.itemName)}`)}
+                                style={{
+                                    borderRadius: '16px',
+                                    background: 'white',
+                                    boxShadow: '0 15px 35px rgba(0,0,0,0.06)',
+                                    cursor: 'pointer',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    textAlign: 'left',
+                                    border: '1px solid rgba(0,0,0,0.05)',
+                                    transition: 'all 0.3s ease'
+                                }}
+                            >
+                                {/* Discount Badge */}
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '15px',
+                                    right: '15px',
+                                    background: '#EF4444',
+                                    color: 'white',
+                                    padding: '6px 12px',
+                                    borderRadius: '50px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 800,
+                                    zIndex: 10,
+                                    boxShadow: '0 4px 10px rgba(239, 68, 68, 0.3)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                }}>
+                                    <Tag size={14} /> {deal.discountPct}% OFF
+                                </div>
+                                
+                                <div style={{ padding: '2rem 1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', boxShadow: '0 0 8px #10B981', animation: 'pulse 1.5s infinite' }} />
+                                        <span style={{ fontSize: '0.75rem', color: '#10B981', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Active Now</span>
+                                    </div>
+                                    
+                                    <h3 style={{ margin: '0 0 10px 0', fontSize: '1.5rem', fontWeight: 800, color: '#1F2937' }}>{deal.itemName}</h3>
+                                    <p style={{ margin: '0 0 20px 0', fontSize: '0.95rem', color: '#6B7280', lineHeight: 1.5, flex: 1 }}>
+                                        {deal.suggestion}
+                                    </p>
+                                    
+                                    <div style={{ background: '#F3F4F6', padding: '15px', borderRadius: '12px', marginBottom: '20px' }}>
+                                        <div style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: 600, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Offer Ends In</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', color: '#EF4444', fontWeight: 800, fontFamily: 'monospace' }}>
+                                            <Clock size={18} />
+                                            {timeRemaining[deal._id] || 'Loading...'}
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        borderRadius: '8px',
+                                        background: 'var(--primary)',
+                                        color: 'black',
+                                        fontWeight: 700,
+                                        fontSize: '0.95rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        transition: 'background 0.2s ease'
+                                    }}>
+                                        Claim Deal <ArrowRight size={16} />
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </section>
+            )}
         </div>
     );
 };
