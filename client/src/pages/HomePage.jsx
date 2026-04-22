@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Star, Utensils, Heart, ShoppingBag, Coffee, Pizza, Navigation, ArrowRight } from 'lucide-react';
+import { MapPin, Star, Utensils, Heart, ShoppingBag, Coffee, Pizza, Navigation, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import axios from 'axios';
 import heroFood from '../assets/hero_food_new.png';
 import stringHoppers from '../assets/string_hoppers.jpg';
 import milkshake from '../assets/milkshake.png';
@@ -11,6 +12,7 @@ import campusBg from '../assets/campus_bg.png';
 
 const HomePage = () => {
     const navigate = useNavigate();
+    const [specialItems, setSpecialItems] = useState([]);
 
     const categories = [
         { name: 'Special Menu', count: 'Exclusive', img: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&auto=format&fit=crop' },
@@ -21,9 +23,51 @@ const HomePage = () => {
         { name: 'Shakes', count: '22', img: milkshake },
         { name: 'Sandwiches', count: '6', img: sandwichImg },
         { name: 'Pasta', count: '10', img: pastaImg },
+        { name: 'Special Menu', count: 'New', img: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop' },
         { name: 'Desserts', count: '15', img: 'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=800&auto=format&fit=crop' }
     ];
 
+    useEffect(() => {
+        const fetchSpecialItems = async () => {
+            try {
+                const res = await axios.get('/api/menu');
+                // Filter items that have "Special Menu" in their category array
+                const filtered = res.data.filter(item => 
+                    item.category && 
+                    (Array.isArray(item.category) 
+                        ? item.category.includes('Special Menu') 
+                        : item.category === 'Special Menu')
+                );
+                setSpecialItems(filtered.slice(0, 3)); // Only take top 3
+            } catch (err) {
+                console.error('Error fetching special items:', err);
+            }
+        };
+        fetchSpecialItems();
+    }, []);
+
+    const handleCategoryClick = (name) => {
+        navigate(`/order?category=${encodeURIComponent(name)}`);
+    };
+
+    // Prepare favorites list (dynamic specials + fallbacks)
+    const fallbacks = [
+        { title: 'Study Session Combo', desc: 'Perfect coffee & snacks to keep you focused during exam weeks.', price: 'Rs. 450', img: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=800&auto=format&fit=crop' },
+        { title: 'Hostel Night Special', desc: 'A large pizza meant to be split with your roommates.', price: 'Rs. 2200', img: 'https://images.unsplash.com/photo-1590947132387-155cc02f3212?w=800&auto=format&fit=crop' },
+        { title: 'Morning Lecture Boost', desc: 'Fresh juice and light breakfast to start your uni day right.', price: 'Rs. 300', img: stringHoppers }
+    ];
+
+    const dynamicFavorites = specialItems.map(item => ({
+        title: item.name.en,
+        desc: item.description?.en || 'Premium special item from UniCafé hub.',
+        price: `Rs. ${item.price}`,
+        img: item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop',
+        isReal: true,
+        id: item._id
+    }));
+
+    // Fill with fallbacks if less than 3
+    const finalFavorites = [...dynamicFavorites, ...fallbacks].slice(0, 3);
     return (
         <div style={{ backgroundColor: '#F9F9F9', minHeight: '100vh', paddingBottom: '4rem' }}>
             {/* HERO SECTION - Full Width Redesign */}
@@ -139,7 +183,7 @@ const HomePage = () => {
                         <motion.div 
                             key={i}
                             whileHover={{ y: -5 }}
-                            onClick={() => navigate(`/order?category=${encodeURIComponent(cat.name)}`)}
+                            onClick={() => handleCategoryClick(cat.name)}
                             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
                         >
                             <div style={{
@@ -191,20 +235,24 @@ const HomePage = () => {
                     gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
                     gap: '2rem'
                 }}>
-                    {[
-                        { title: 'Study Session Combo', desc: 'Perfect coffee & snacks to keep you focused during exam weeks.', price: 'Rs. 450', img: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=800&auto=format&fit=crop' },
-                        { title: 'Hostel Night Special', desc: 'A large pizza meant to be split with your roommates.', price: 'Rs. 2200', img: 'https://images.unsplash.com/photo-1590947132387-155cc02f3212?w=800&auto=format&fit=crop' },
-                        { title: 'Morning Lecture Boost', desc: 'Fresh juice and light breakfast to start your uni day right.', price: 'Rs. 300', img: stringHoppers }
-                    ].map((item, i) => (
+                    {finalFavorites.map((item, i) => (
                         <motion.div 
                             key={i}
                             whileHover={{ y: -10 }}
+                            onClick={() => {
+                                if (item.isReal || item.title.toLowerCase().includes('special')) {
+                                    navigate('/order?category=Special%20Menu');
+                                } else {
+                                    navigate(`/order?q=${encodeURIComponent(item.title)}`);
+                                }
+                            }}
                             style={{
                                 borderRadius: '16px',
                                 overflow: 'hidden',
                                 boxShadow: '0 15px 35px rgba(0,0,0,0.06)',
                                 cursor: 'pointer',
-                                position: 'relative'
+                                position: 'relative',
+                                background: 'white'
                             }}
                         >
                             <div style={{ height: '300px', position: 'relative' }}>
@@ -216,18 +264,38 @@ const HomePage = () => {
                                     background: 'var(--primary)',
                                     borderRadius: '50px',
                                     padding: '6px 12px',
-                                    fontWeight: 'bold',
+                                    fontWeight: 800,
                                     color: 'black',
-                                    boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+                                    boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+                                    fontSize: '0.9rem'
                                 }}>
                                     {item.price}
                                 </div>
+                                {item.isReal && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '15px',
+                                        left: '15px',
+                                        background: 'rgba(0,0,0,0.6)',
+                                        backdropFilter: 'blur(10px)',
+                                        borderRadius: '50px',
+                                        padding: '6px 12px',
+                                        fontWeight: 700,
+                                        color: 'white',
+                                        fontSize: '0.75rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                    }}>
+                                        <Star size={12} fill="#FFD700" color="#FFD700" /> SPECIAL
+                                    </div>
+                                )}
                             </div>
-                            <div style={{ padding: '1.5rem', background: 'white', textAlign: 'left' }}>
+                            <div style={{ padding: '1.5rem', textAlign: 'left' }}>
                                 <div style={{ marginBottom: '10px' }}>
                                     <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1F2937' }}>{item.title}</h3>
                                 </div>
-                                <p style={{ color: '#6B7280', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                <p style={{ color: '#6B7280', fontSize: '0.95rem', lineHeight: 1.5, height: '4.5em', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
                                     {item.desc}
                                 </p>
                             </div>

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Plus, Building2, User, Mail, Phone, Edit, Package, Trash2, Users, UserCheck, UserX, ShoppingBag, X, MapPin, CheckCircle2, FileDown } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Plus, Building2, User, Mail, Phone, Edit, Package, Trash2, Users, UserCheck, UserX, ShoppingBag, X, MapPin, CheckCircle2, FileDown, RotateCw } from 'lucide-react';
 import axios from 'axios';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import logo from '../assets/unicafe_logo_vintage.png';
 
 
@@ -28,6 +28,21 @@ const SuppliersView = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [supplierToDelete, setSupplierToDelete] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
+    
+    // Report dropdown state
+    const [isReportDropdownOpen, setIsReportDropdownOpen] = useState(false);
+    const reportDropdownRef = useRef(null);
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (reportDropdownRef.current && !reportDropdownRef.current.contains(event.target)) {
+                setIsReportDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const [newSupplier, setNewSupplier] = useState({
         name: '',
@@ -172,66 +187,127 @@ const SuppliersView = () => {
         return matchesFilter && matchesSearch;
     });
 
-    const generateSuppliersReport = () => {
+    const generateSuppliersReport = async (reportType = 'Full Registry Report') => {
         const doc = new jsPDF();
-        
+        let reportData = [...suppliers];
+        let title = 'UniCafé Supplier Registry';
+        let fileName = 'UniCafe_Suppliers_Report';
+        let tableColumn = ["Supplier Name", "Contact Person", "Email", "Phone", "Status"];
+
+        if (reportType === 'Active Suppliers Report') {
+            reportData = suppliers.filter(s => s.status === 'ACTIVE');
+            title = 'UniCafé Active Suppliers';
+            fileName = 'UniCafe_Active_Suppliers';
+        } else if (reportType === 'Inactive Suppliers Report') {
+            reportData = suppliers.filter(s => s.status === 'INACTIVE');
+            title = 'UniCafé Inactive Suppliers';
+            fileName = 'UniCafe_Inactive_Suppliers';
+        } else if (reportType === 'Supplier Contact List') {
+            reportData = [...suppliers];
+            title = 'UniCafé Supplier Contact List';
+            fileName = 'UniCafe_Supplier_Contacts';
+            tableColumn = ["Supplier Name", "Contact Person", "Email", "Phone"];
+        } else if (reportType === 'Supplied Items Summary') {
+            try {
+                const invRes = await axios.get('/api/inventory');
+                const inventory = invRes.data;
+                
+                title = 'UniCafé Supplied Items Summary';
+                fileName = 'UniCafe_Supplied_Items';
+                tableColumn = ["Supplier", "Item", "Category", "Stock", "Unit"];
+                
+                const tableRows = [];
+                inventory.forEach(item => {
+                    if (item.supplier) {
+                        tableRows.push([
+                            item.supplier,
+                            item.name,
+                            item.category,
+                            item.qty,
+                            item.unit
+                        ]);
+                    }
+                });
+                
+                finalizePdf(doc, title, fileName, tableColumn, tableRows);
+                return;
+            } catch (err) {
+                console.error('Error generating supplied items report:', err);
+                return;
+            }
+        }
+
+        const tableRows = reportData.map(supplier => {
+            if (reportType === 'Supplier Contact List') {
+                return [supplier.name, supplier.contactPerson, supplier.email, supplier.phone];
+            }
+            return [supplier.name, supplier.contactPerson, supplier.email, supplier.phone, supplier.status];
+        });
+
+        finalizePdf(doc, title, fileName, tableColumn, tableRows);
+    };
+
+    const finalizePdf = (doc, title, fileName, tableColumn, tableRows) => {
         // Add Header Branding
         doc.setFillColor(67, 40, 24); // #432818
         doc.rect(0, 0, 210, 40, 'F');
         
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(22);
-        doc.setFont('helvetica', 'bold');
-        doc.text('UniCafé Supplier Registry', 15, 25);
-        
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Generated on: ${new Date().toLocaleString()}`, 15, 33);
-        doc.text(`Total Active: ${suppliers.filter(s => s.status === 'ACTIVE').length}`, 150, 33);
-
-        const tableColumn = ["Supplier Name", "Contact Person", "Email", "Phone", "Status"];
-        const tableRows = [];
-
-        filteredSuppliers.forEach(supplier => {
-            const rowData = [
-                supplier.name,
-                supplier.contactPerson,
-                supplier.email,
-                supplier.phone,
-                supplier.status
-            ];
-            tableRows.push(rowData);
-        });
-
-        doc.autoTable({
-            head: [tableColumn],
-            body: tableRows,
-            startY: 45,
-            theme: 'grid',
-            headStyles: {
-                fillColor: [127, 85, 57], // #7f5539
-                textColor: [255, 255, 255],
-                fontSize: 10,
-                fontStyle: 'bold'
-            },
-            alternateRowStyles: {
-                fillColor: [253, 250, 248]
-            },
-            styles: {
-                fontSize: 9,
-                cellPadding: 4
-            }
-        });
-
-        const pageCount = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.setTextColor(150);
-            doc.text(`Page ${i} of ${pageCount} - UniCafé Inventory Management System`, 105, 285, { align: 'center' });
+        try {
+            // Draw a white circular badge for the logo
+            doc.setFillColor(255, 255, 255);
+            doc.circle(27, 20, 15, 'F');
+            doc.addImage(logo, 'PNG', 15, 8, 24, 24);
+        } catch (e) {
+            console.warn('Logo addition failed:', e);
         }
 
-        doc.save(`UniCafe_Suppliers_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.text('UniCafé', 45, 20);
+        
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'normal');
+        doc.text(title, 45, 30);
+        
+        doc.setFontSize(9);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 150, 20);
+        doc.text(`Total Records: ${tableRows.length}`, 150, 30);
+
+        try {
+            autoTable(doc, {
+                head: [tableColumn],
+                body: tableRows,
+                startY: 45,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [127, 85, 57], // #7f5539
+                    textColor: [255, 255, 255],
+                    fontSize: 10,
+                    fontStyle: 'bold'
+                },
+                alternateRowStyles: {
+                    fillColor: [253, 250, 248]
+                },
+                styles: {
+                    fontSize: 9,
+                    cellPadding: 4
+                }
+            });
+
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text(`Page ${i} of ${pageCount} - UniCafé Inventory Management System`, 105, 285, { align: 'center' });
+            }
+
+            doc.save(`${fileName}_${new Date().toISOString().split('T')[0]}.pdf`);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Failed to generate PDF. Please check the console for details.');
+        }
     };
 
     const stats = [
@@ -251,27 +327,75 @@ const SuppliersView = () => {
                     <p style={{ color: '#64748b', fontSize: '1rem', margin: 0 }}>Manage cafeteria food and ingredient suppliers.</p>
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ position: 'relative' }} ref={reportDropdownRef}>
                     <button 
-                        onClick={generateSuppliersReport}
+                        onClick={() => setIsReportDropdownOpen(!isReportDropdownOpen)}
                         style={{
                             display: 'flex', alignItems: 'center', gap: '8px', 
                             background: 'white', color: '#7f5539', border: '2px solid #7f5539', 
                             padding: '10px 20px', borderRadius: '8px', fontSize: '0.95rem', 
                             fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
                         }}
-                        onMouseOver={(e) => { e.currentTarget.style.background = '#fdfaf8'; }}
+                        onMouseOver={(e) => { e.currentTarget.style.background = '#f5ebe0'; }}
                         onMouseOut={(e) => { e.currentTarget.style.background = 'white'; }}
                     >
                         <FileDown size={18} />
                         Generate Report
                     </button>
+                    
+                    {isReportDropdownOpen && (
+                        <div style={{ 
+                            position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+                            background: 'white', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                            border: '1px solid #f1f5f9', zIndex: 100, width: '280px', overflow: 'hidden',
+                            animation: 'slideDown 0.2s ease-out'
+                        }}>
+                            {[
+                                'Full Registry Report',
+                                'Active Suppliers Report',
+                                'Inactive Suppliers Report',
+                                'Supplier Contact List',
+                                'Supplied Items Summary'
+                            ].map((report, idx) => (
+                                <button 
+                                    key={idx}
+                                    onClick={() => {
+                                        generateSuppliersReport(report);
+                                        setIsReportDropdownOpen(false);
+                                    }}
+                                    style={{
+                                        width: '100%', padding: '12px 20px', textAlign: 'left',
+                                        background: 'none', border: 'none', color: '#1e293b',
+                                        fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
+                                        transition: 'background 0.2s',
+                                        borderBottom: idx === 4 ? 'none' : '1px solid #f1f5f9',
+                                        display: 'block'
+                                    }}
+                                    onMouseOver={(e) => { e.currentTarget.style.background = '#f5ebe0'; e.currentTarget.style.color = '#432818'; }}
+                                    onMouseOut={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#1e293b'; }}
+                                >
+                                    {report}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
                     <button 
                         onClick={() => { resetForm(); setShowModal(true); }}
                         style={{
                             display: 'flex', alignItems: 'center', gap: '8px', 
                             background: 'linear-gradient(135deg, #7f5539 0%, #5c3a21 100%)', color: 'white', border: 'none', 
                             padding: '10px 20px', borderRadius: '8px', fontSize: '0.95rem', 
-                            fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 12px rgba(92,58,33,0.25)'
+                            fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 12px rgba(92,58,33,0.25)',
+                            transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => { 
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(92,58,33,0.35)';
+                        }}
+                        onMouseOut={(e) => { 
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(92,58,33,0.25)';
                         }}
                     >
                         <Plus size={18} />
@@ -693,7 +817,7 @@ const SuppliersView = () => {
                                                 {item.qty} {item.unit}
                                             </div>
                                             <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700 }}>
-                                                {item.status.toUpperCase()}
+                                                {item.status ? item.status.toUpperCase() : 'N/A'}
                                             </div>
                                         </div>
                                     </div>
@@ -789,10 +913,12 @@ const SuppliersView = () => {
             <style>{`
                 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
                 @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+                @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+                .spin { animation: spin 1s linear infinite; }
+                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
             `}</style>
         </div>
     );
 };
 
 export default SuppliersView;
-
