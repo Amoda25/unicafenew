@@ -89,7 +89,7 @@ const SalesManagement = () => {
 
     const [userFormData, setUserFormData] = useState({
         name: '',
-        studentId: '',
+        username: '',
         password: '',
         role: 'student'
     });
@@ -154,7 +154,7 @@ const SalesManagement = () => {
     const resetForm = () => {
         setUserFormData({
             name: '',
-            studentId: '',
+            username: '',
             password: '',
             role: 'student'
         });
@@ -179,14 +179,14 @@ const SalesManagement = () => {
         }
 
         try {
-            await axios.post('/api/users/register', userFormData);
+            await axios.post('/api/users', userFormData);
             setShowSuccess('User registered successfully!');
             setShowUserModal(false);
             resetForm();
             fetchUsers();
             setTimeout(() => setShowSuccess(''), 3000);
         } catch (err) {
-            alert(err.response?.data?.error || 'Registration failed');
+            alert(err.response?.data?.message || 'Registration failed');
         }
     };
 
@@ -1744,8 +1744,8 @@ const SalesManagement = () => {
                                         <input required value={userFormData.name} onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. John Doe" />
                                     </div>
                                     <div style={{ marginBottom: '1.5rem' }}>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Student/Staff ID</label>
-                                        <input required value={userFormData.studentId} onChange={(e) => setUserFormData({ ...userFormData, studentId: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. IT2100000" />
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Student/Staff ID (Username)</label>
+                                        <input required value={userFormData.username} onChange={(e) => setUserFormData({ ...userFormData, username: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. IT2100000" />
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
                                         <div>
