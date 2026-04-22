@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Package, AlertTriangle, Clock, Users, ShieldAlert, ShieldCheck, ShieldX, ArrowUpRight, TrendingDown, RefreshCw, Zap, Trash2, X, RotateCw } from 'lucide-react';
+import { Package, AlertTriangle, Clock, Users, ShieldAlert, ShieldCheck, ShieldX, ArrowUpRight, TrendingDown, RefreshCw, Zap, Trash2, X, RotateCw, Eye } from 'lucide-react';
+
 import axios from 'axios';
 import InventorySidebar from '../components/InventorySidebar';
 import InventoryView from '../components/InventoryView';
 import SuppliersView from '../components/SuppliersView';
 import UsageStockView from '../components/UsageStockView';
+import RestockModal from '../components/RestockModal';
+
 
 const InventoryDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
+    const [inventoryFilter, setInventoryFilter] = useState(null);
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -22,6 +26,10 @@ const InventoryDashboard = () => {
     const [alertsLoading, setAlertsLoading] = useState(false);
     const [lastComputed, setLastComputed]  = useState(null);
     const [recalculating, setRecalculating] = useState(false);
+    // Shared restock state
+    const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
+    const [restockItem, setRestockItem] = useState(null);
+
 
     // ── Data fetchers ────────────────────────────────────────────────────────
     const fetchInventory = useCallback(async () => {
@@ -53,6 +61,11 @@ const InventoryDashboard = () => {
         fetchInventory();
         fetchAlerts();
     }, [fetchInventory, fetchAlerts]);
+
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        setInventoryFilter(null);
+    };
 
     const handleRecalculate = async () => {
         setRecalculating(true);
@@ -121,7 +134,8 @@ const InventoryDashboard = () => {
     }[status] || { bg: '#f8fafc', color: '#64748b', border: '#e2e8f0', leftBar: '#94a3b8' });
 
     const daysLeftBadge = (item) => {
-        if (item.stockDaysLeft === null) return { text: 'No usage data', bg: '#f1f5f9', color: '#94a3b8' };
+        if (item.stockDaysLeft === null) return null;
+
         if (item.stockDaysLeft === 0)    return { text: 'Out of stock soon!', bg: '#fee2e2', color: '#dc2626' };
         if (item.stockDaysLeft < 3)      return { text: `${item.stockDaysLeft} day${item.stockDaysLeft !== 1 ? 's' : ''} left`, bg: '#fee2e2', color: '#dc2626' };
         return { text: `${item.stockDaysLeft} days left`, bg: '#fff7ed', color: '#ea580c' };
@@ -129,7 +143,8 @@ const InventoryDashboard = () => {
 
     return (
         <div style={{ display: 'flex', background: 'var(--bg-page)', width: '100%', fontFamily: '"Inter", sans-serif', animation: 'fadeIn 0.5s ease-out' }}>
-            <InventorySidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+            <InventorySidebar activeTab={activeTab} setActiveTab={handleTabChange} />
+
 
             <main style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px' }}>
                 <div style={{ padding: '32px', maxWidth: '1440px', margin: '0 auto', width: '100%' }}>
@@ -151,10 +166,10 @@ const InventoryDashboard = () => {
                                     disabled={recalculating}
                                     style={{
                                         display: 'flex', alignItems: 'center', gap: '8px',
-                                        padding: '10px 20px', background: recalculating ? '#e2e8f0' : 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+                                        padding: '10px 20px', background: recalculating ? '#e2e8f0' : '#1e293b',
                                         color: recalculating ? '#94a3b8' : 'white', border: 'none', borderRadius: '10px',
                                         fontSize: '0.875rem', fontWeight: 700, cursor: recalculating ? 'not-allowed' : 'pointer',
-                                        boxShadow: '0 4px 12px rgba(30,41,59,0.2)', transition: 'all 0.2s'
+                                        boxShadow: recalculating ? 'none' : '0 4px 12px rgba(30, 41, 59, 0.25)', transition: 'all 0.2s'
                                     }}
                                 >
                                     <RefreshCw size={16} style={{ animation: recalculating ? 'spin 1s linear infinite' : 'none' }} />
@@ -162,82 +177,100 @@ const InventoryDashboard = () => {
                                 </button>
                             </div>
 
-                            {/* ── Stat Cards ──────────────────────────────────── */}
+                            {/* ── Stat Cards (Premium Redesign) ──────────────── */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '32px' }}>
+                                
                                 {/* Total Ingredients */}
-                                <div className="glass" style={{ padding: '24px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                                <div className="stat-card-premium shadow-sm">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+
                                         <div>
-                                            <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 600, marginBottom: '8px' }}>Total Ingredients</div>
-                                            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1e293b' }}>{totalIngredients}</div>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.05em', marginBottom: '8px' }}>TOTAL INGREDIENTS</div>
+                                            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>{totalIngredients}</div>
                                         </div>
-                                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#dcfce7', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: '#dcfce7', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                             <Package size={24} />
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem' }}>
-                                        <ArrowUpRight size={16} style={{ color: '#10b981' }} />
-                                        <span style={{ color: '#10b981', fontWeight: 700 }}>Live</span>
-                                        <span style={{ color: '#94a3b8' }}>from database</span>
+                                    <div style={{ fontSize: '0.9rem', color: '#64748b', marginTop: 'auto', marginBottom: '16px' }}>
+                                        Live from database
+                                    </div>
+                                    <div className="progress-bar-container">
+                                        <div className="progress-bar-fill" style={{ width: '100%' }}></div>
                                     </div>
                                 </div>
 
-                                {/* Smart Alert Count */}
-                                <div className="glass" style={{ padding: '24px', border: totalAlertCount > 0 ? '1px solid #fed7aa' : undefined }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                                        <div>
-                                            <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 600, marginBottom: '8px' }}>Low Stock Alerts</div>
-                                            <div style={{ fontSize: '2rem', fontWeight: 800, color: totalAlertCount > 0 ? '#ea580c' : '#1e293b' }}>{totalAlertCount}</div>
+                                {/* Low Stock Alerts */}
+                                <div className="stat-card-premium shadow-sm">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.05em' }}>LOW STOCK ALERTS</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>{totalAlertCount}</div>
+                                                <span className="live-badge">LIVE</span>
+                                            </div>
                                         </div>
-                                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: totalAlertCount > 0 ? '#fff7ed' : '#fef3c7', color: totalAlertCount > 0 ? '#ea580c' : '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                             <AlertTriangle size={24} />
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                        {criticalItems.length > 0 && (
-                                            <span style={{ padding: '3px 10px', background: '#fee2e2', color: '#dc2626', borderRadius: '99px', fontSize: '0.72rem', fontWeight: 800 }}>
-                                                {criticalItems.length} CRITICAL
-                                            </span>
-                                        )}
-                                        {lowStockOnly.length > 0 && (
-                                            <span style={{ padding: '3px 10px', background: '#fff7ed', color: '#ea580c', borderRadius: '99px', fontSize: '0.72rem', fontWeight: 800 }}>
-                                                {lowStockOnly.length} LOW
-                                            </span>
-                                        )}
-                                        {totalAlertCount === 0 && (
-                                            <span style={{ color: '#10b981', fontWeight: 700, fontSize: '0.875rem' }}>All stocks healthy</span>
-                                        )}
+                                    <div style={{ fontSize: '0.9rem', color: '#64748b', marginTop: 'auto', marginBottom: '16px' }}>
+                                        {totalAlertCount} LOW
+                                    </div>
+                                    <div className="progress-bar-container">
+                                        <div className="progress-bar-fill" style={{ width: `${totalIngredients > 0 ? (totalAlertCount / totalIngredients) * 100 : 0}%` }}></div>
                                     </div>
                                 </div>
 
                                 {/* Expired Items */}
-                                <div className="glass" style={{ padding: '24px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                                        <div>
-                                            <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 600, marginBottom: '8px' }}>Expired Items</div>
-                                            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1e293b' }}>{expiredItems.length}</div>
+                                <div 
+                                    className={`stat-card-premium shadow-sm ${expiredItems.length > 0 ? 'clickable-card' : ''}`}
+                                    onClick={() => {
+                                        if (expiredItems.length > 0) {
+                                            setInventoryFilter('expired');
+                                            setActiveTab('inventory');
+                                        }
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.05em' }}>EXPIRED ITEMS</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>{expiredItems.length}</div>
+                                                <span className="live-badge">LIVE</span>
+                                            </div>
                                         </div>
-                                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                             <Clock size={24} />
                                         </div>
                                     </div>
-                                    <span style={{ color: expiredItems.length > 0 ? '#ef4444' : '#10b981', fontWeight: 700, fontSize: '0.875rem' }}>
-                                        {expiredItems.length > 0 ? 'Action required' : 'No expired items'}
-                                    </span>
+                                    <div style={{ fontSize: '0.9rem', color: '#ef4444', fontWeight: 600, marginTop: 'auto', marginBottom: '16px' }}>
+                                        Action required
+                                    </div>
+                                    <div className="progress-bar-container">
+                                        <div className="progress-bar-fill" style={{ width: `${totalIngredients > 0 ? (expiredItems.length / totalIngredients) * 100 : 0}%` }}></div>
+                                    </div>
                                 </div>
 
                                 {/* Active Suppliers */}
-                                <div className="glass" style={{ padding: '24px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                                <div className="stat-card-premium shadow-sm">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                                         <div>
-                                            <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 600, marginBottom: '8px' }}>Active Suppliers</div>
-                                            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1e293b' }}>4</div>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.05em', marginBottom: '8px' }}>ACTIVE SUPPLIERS</div>
+                                            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>4</div>
                                         </div>
-                                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                             <Users size={24} />
                                         </div>
                                     </div>
+                                    <div style={{ fontSize: '0.9rem', color: '#64748b', marginTop: 'auto', marginBottom: '16px' }}>
+                                        Connected vendors
+                                    </div>
+                                    <div className="progress-bar-container">
+                                        <div className="progress-bar-fill" style={{ width: '75%' }}></div>
+                                    </div>
                                 </div>
+
                             </div>
 
                             {/* ── Main Content Grid ────────────────────────────── */}
@@ -272,7 +305,7 @@ const InventoryDashboard = () => {
                                         <div style={{ padding: '12px 24px', background: '#fafafa', borderBottom: '1px solid #f1f5f9', display: 'flex', gap: '16px' }}>
                                             <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#dc2626', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#dc2626' }} />
-                                                CRITICAL &lt; 3 days
+                                                CRITICAL {'<'} 3 days
                                             </span>
                                             <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#ea580c', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f97316' }} />
@@ -334,12 +367,15 @@ const InventoryDashboard = () => {
                                                         {/* Row 3: Usage stats */}
                                                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                                                             {/* Days left pill */}
-                                                            <span style={{
-                                                                padding: '3px 10px', background: badge.bg, color: badge.color,
-                                                                borderRadius: '99px', fontSize: '0.72rem', fontWeight: 800, border: `1px solid ${badge.color}40`
-                                                            }}>
-                                                                ⏱ {badge.text}
-                                                            </span>
+                                                            {badge && (
+                                                                <span style={{
+                                                                    padding: '3px 10px', background: badge.bg, color: badge.color,
+                                                                    borderRadius: '99px', fontSize: '0.72rem', fontWeight: 800, border: `1px solid ${badge.color}40`
+                                                                }}>
+                                                                    ⏱ {badge.text}
+                                                                </span>
+                                                            )}
+
                                                             {/* Current stock */}
                                                             <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
                                                                 Stock: <strong style={{ color: '#1e293b' }}>{item.qty} {item.unit}</strong>
@@ -352,20 +388,40 @@ const InventoryDashboard = () => {
                                                             )}
                                                         </div>
 
-                                                        {/* Row 4: Manage button */}
-                                                        <button
-                                                            onClick={() => setActiveTab('inventory')}
-                                                            style={{
-                                                                alignSelf: 'flex-end', padding: '6px 14px',
-                                                                background: 'white', border: `1px solid ${s.border}`,
-                                                                borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700,
-                                                                color: s.color, cursor: 'pointer', transition: 'all 0.2s'
-                                                            }}
-                                                            onMouseOver={e => { e.currentTarget.style.background = s.bg; }}
-                                                            onMouseOut={e => { e.currentTarget.style.background = 'white'; }}
-                                                        >
-                                                            RESTOCK
-                                                        </button>
+                                                        {/* Row 4: Action buttons */}
+                                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
+                                                            <button
+                                                                onClick={() => setActiveTab('inventory')}
+                                                                style={{
+                                                                    display: 'flex', alignItems: 'center', gap: '4px',
+                                                                    padding: '6px 14px',
+                                                                    background: 'white', border: `1px solid #e2e8f0`,
+                                                                    borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700,
+                                                                    color: '#64748b', cursor: 'pointer', transition: 'all 0.2s'
+                                                                }}
+                                                                onMouseOver={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#1e293b'; }}
+                                                                onMouseOut={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#64748b'; }}
+                                                            >
+                                                                <Eye size={14} />
+                                                                VIEW ITEM
+                                                            </button>
+                                                            <button
+                                                                onClick={() => { setRestockItem(item); setIsRestockModalOpen(true); }}
+                                                                style={{
+                                                                    display: 'flex', alignItems: 'center', gap: '4px',
+                                                                    padding: '6px 14px',
+                                                                    background: 'white', border: `1px solid ${s.border}`,
+                                                                    borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700,
+                                                                    color: s.color, cursor: 'pointer', transition: 'all 0.2s'
+                                                                }}
+                                                                onMouseOver={e => { e.currentTarget.style.background = s.bg; }}
+                                                                onMouseOut={e => { e.currentTarget.style.background = 'white'; }}
+                                                            >
+                                                                <RotateCw size={14} />
+                                                                RESTOCK
+                                                            </button>
+                                                        </div>
+
                                                     </div>
                                                 );
                                             })
@@ -459,21 +515,27 @@ const InventoryDashboard = () => {
                                                                 </span>
                                                             </td>
                                                             <td style={{ padding: '16px', textAlign: 'center' }}>
-                                                                {isExpired && (
+                                                                 {isExpired && (
                                                                     <button 
-                                                                        onClick={() => setActiveTab('inventory')}
+                                                                        onClick={() => {
+                                                                            setInventoryFilter('expired');
+                                                                            setActiveTab('inventory');
+                                                                        }}
                                                                         style={{ 
+                                                                            display: 'flex', alignItems: 'center', gap: '6px',
                                                                             background: '#9f1239', color: 'white', border: 'none', 
                                                                             padding: '6px 12px', borderRadius: '8px', fontSize: '0.7rem', 
-                                                                            fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(159,18,57,0.2)',
+                                                                            fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(159,18,57,0.2)',
                                                                             transition: 'all 0.2s'
                                                                         }}
                                                                         onMouseOver={e=>e.currentTarget.style.background='#881337'}
                                                                         onMouseOut={e=>e.currentTarget.style.background='#9f1239'}
                                                                     >
+                                                                        <Trash2 size={12} />
                                                                         Dispose
                                                                     </button>
                                                                 )}
+
                                                             </td>
                                                         </tr>
                                                     );
@@ -486,7 +548,8 @@ const InventoryDashboard = () => {
                         </div>
                     )}
 
-                    {activeTab === 'inventory'  && <InventoryView />}
+                    {activeTab === 'inventory'  && <InventoryView inventoryFilter={inventoryFilter} setInventoryFilter={setInventoryFilter} />}
+
                     {activeTab === 'usage'      && <UsageStockView />}
                     {activeTab === 'suppliers'  && <SuppliersView />}
                 </div>
@@ -538,13 +601,25 @@ const InventoryDashboard = () => {
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                                 }}
                             >
-                                {disposeLoading ? <RotateCw size={16} className="spin" /> : <ShieldAlert size={16} />}
+                                {disposeLoading ? <RotateCw size={16} className="spin" /> : <Trash2 size={16} />}
                                 Confirm Dispose
+
                             </button>
                         </div>
                     </div>
                 </div>
             )}
+
+            <RestockModal 
+                isOpen={isRestockModalOpen}
+                onClose={() => { setIsRestockModalOpen(false); setRestockItem(null); }}
+                item={restockItem}
+                onSuccess={(msg) => {
+                    setShowSuccess(msg);
+                    fetchDashboardData();
+                    setTimeout(() => setShowSuccess(''), 3000);
+                }}
+            />
 
             {showSuccess && (
                 <div style={{ 
@@ -559,11 +634,67 @@ const InventoryDashboard = () => {
                 </div>
             )}
 
-            {/* Spinner keyframes */}
+
             <style>{`
                 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                 @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+                
+                .stat-card-premium {
+                    background: white;
+                    border-radius: 24px;
+                    padding: 24px 24px 32px 24px;
+                    display: flex;
+                    flex-direction: column;
+                    position: relative;
+                    overflow: hidden;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    border: 1px solid rgba(226, 232, 240, 0.8);
+                }
+
+                .stat-card-premium.clickable-card {
+                    cursor: pointer;
+                }
+
+                .stat-card-premium.clickable-card:hover {
+                    transform: translateY(-8px) scale(1.01);
+                    box-shadow: 0 20px 40px -15px rgba(225, 29, 72, 0.2) !important;
+                    border-color: #fee2e2;
+                }
+
+                .stat-card-premium:hover {
+                    transform: translateY(-8px);
+                    box-shadow: 0 20px 40px -15px rgba(59, 31, 14, 0.15) !important;
+                    border-color: var(--latte-highlight);
+                }
+
+                .live-badge {
+                    background: #f1f5f9;
+                    color: #64748b;
+                    padding: 4px 10px;
+                    border-radius: 99px;
+                    font-size: 0.65rem;
+                    font-weight: 900;
+                    letter-spacing: 0.05em;
+                }
+
+                .progress-bar-container {
+                    position: absolute;
+                    bottom: 24px;
+                    left: 24px;
+                    right: 24px;
+                    height: 4px;
+                    background: #f1f5f9;
+                    border-radius: 2px;
+                }
+
+                .progress-bar-fill {
+                    height: 100%;
+                    background: #5c3a21;
+                    border-radius: 2px;
+                    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
             `}</style>
         </div>
     );

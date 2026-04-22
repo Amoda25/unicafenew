@@ -84,15 +84,17 @@ const OrderingPage = () => {
 
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-    // Sync Search from URL
+    // Sync Search & Category from URL
     useEffect(() => {
         const query = searchParams.get('q');
-        const categoryParam = searchParams.get('category');
+        const cat = searchParams.get('category');
+        
         if (query) {
             setSearchQuery(query);
             setActiveCategory('All');
-        } else if (categoryParam) {
-            setActiveCategory(categoryParam);
+        } else if (cat) {
+            setActiveCategory(cat);
+            setSearchQuery('');
         }
     }, [searchParams]);
 
@@ -280,21 +282,21 @@ const OrderingPage = () => {
                                                 style={{
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    gap: '0.85rem',
-                                                    padding: '0.9rem 1.5rem',
+                                                    gap: '0.6rem',
+                                                    padding: '0.6rem 1.25rem',
                                                     background: activeCategory === cat.name ? 'var(--coffee-dark)' : '#FFFFFF',
                                                     border: activeCategory === cat.name ? 'none' : '1px solid var(--latte-border)',
-                                                    borderRadius: '16px',
+                                                    borderRadius: '12px',
                                                     cursor: 'pointer',
                                                     minWidth: 'max-content',
                                                     transition: 'background 0.3s, box-shadow 0.3s',
-                                                    boxShadow: activeCategory === cat.name ? '0 10px 20px rgba(81, 43, 21, 0.2)' : '0 4px 10px rgba(0,0,0,0.02)',
+                                                    boxShadow: activeCategory === cat.name ? '0 8px 16px rgba(81, 43, 21, 0.15)' : '0 4px 10px rgba(0,0,0,0.02)',
                                                     color: activeCategory === cat.name ? '#FFFFFF' : 'var(--coffee-muted)'
                                                 }}
                                             >
-                                                <span style={{ fontSize: '1.75rem', filter: activeCategory === cat.name ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : 'none' }}>{cat.icon}</span>
+                                                <span style={{ fontSize: '1.25rem', filter: activeCategory === cat.name ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : 'none' }}>{cat.icon}</span>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <span style={{ fontSize: '1rem', fontWeight: 800, lineHeight: 1.1 }}>
+                                                    <span style={{ fontSize: '0.85rem', fontWeight: 800, lineHeight: 1.1 }}>
                                                         {cat.displayName}
                                                     </span>
                                                     {activeCategory === cat.name && (

@@ -9,7 +9,8 @@ import {
     Info,
     Mail,
     Settings,
-    LogOut
+    LogOut,
+    Star
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/unicafe_logo_vintage.png'; // Assuming it's the same path
@@ -29,7 +30,8 @@ const OrderSidebar = ({ activeTab, setActiveTab }) => {
             items: [
                 { id: 'orders', name: 'Orders & Queue', icon: ClipboardList, path: '/orders?tab=orders' },
                 { id: 'menu', name: 'Menu Management', icon: Utensils, path: '/menu-admin' },
-                { id: 'calendar', name: 'Calendar', icon: Calendar, path: '/orders?tab=calendar' }
+                { id: 'calendar', name: 'Calendar', icon: Calendar, path: '/orders?tab=calendar' },
+                { id: 'special-menu', name: 'Special Menu', icon: Star, path: '/special-menu' }
             ]
         },
         {

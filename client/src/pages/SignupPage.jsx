@@ -354,7 +354,6 @@ const SignupPage = () => {
                             </select>
                         </motion.div>
                     )}
-
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', marginBottom: '1rem' }}>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--coffee-dark)', fontWeight: 800, marginBottom: '0.4rem', marginLeft: '5px' }}>Password</label>
