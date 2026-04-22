@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Save, TrendingUp, Clock, Package, Zap, BarChart3, Users as UsersIcon,
     Plus, X, AlignLeft, Search, Bell, MessageSquare, Trash2, FileText, Download,
-    Target, ArrowUpRight, Award, Flame
+    Target, ArrowUpRight, Award, Flame, Tag, Percent, CheckCircle2, AlertTriangle,
+    Sparkles, TrendingDown, Gift
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -41,6 +42,9 @@ const SalesManagement = () => {
     const [showUserModal, setShowUserModal] = useState(false);
     const [showSuccess, setShowSuccess] = useState('');
     const [showError, setShowError] = useState('');
+
+    const [dismissedPromotions, setDismissedPromotions] = useState(new Set());
+    const [appliedPromotions, setAppliedPromotions] = useState(new Set());
 
     const [aiMessages, setAiMessages] = useState([{
         sender: 'ai',
@@ -812,6 +816,197 @@ const SalesManagement = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* LOW DEMAND AUTO PROMOTION PANEL */}
+                {(() => {
+                    const itemSalesMap = {};
+                    orders.forEach(order => {
+                        order.items?.forEach(item => {
+                            const name = item.name?.en || item.name;
+                            if (!name) return;
+                            if (!itemSalesMap[name]) itemSalesMap[name] = { qty: 0, price: item.price || 0 };
+                            itemSalesMap[name].qty += item.quantity || 1;
+                        });
+                    });
+                    const allItems = Object.entries(itemSalesMap);
+                    if (allItems.length < 2) return null;
+
+                    const totalQty = allItems.reduce((s, [, v]) => s + v.qty, 0);
+                    const avgQty = totalQty / allItems.length;
+                    const threshold = avgQty * 0.3;
+                    const topSeller = [...allItems].sort((a, b) => b[1].qty - a[1].qty)[0]?.[0] || 'our bestseller';
+
+                    const promotionTypes = ['flash', 'bundle', 'happyhour'];
+                    const lowDemandItems = allItems
+                        .filter(([name, data]) => data.qty <= threshold && !dismissedPromotions.has(name))
+                        .slice(0, 5)
+                        .map(([name, data], idx) => {
+                            const dropPct = avgQty > 0 ? Math.round(((avgQty - data.qty) / avgQty) * 100) : 0;
+                            const promoType = promotionTypes[idx % 3];
+                            let suggestion = '', discountLabel = '', promoColor = '', promoIcon = null, discountPct = 0;
+                            if (promoType === 'flash') {
+                                discountPct = dropPct > 70 ? 20 : 10;
+                                suggestion = `Run a ${discountPct}% Flash Sale to spike demand fast!`;
+                                discountLabel = `${discountPct}% OFF`;
+                                promoColor = '#ef4444';
+                                promoIcon = <Percent size={14} />;
+                            } else if (promoType === 'bundle') {
+                                suggestion = `Bundle with "${topSeller}" for a combo deal boost!`;
+                                discountLabel = 'BUNDLE DEAL';
+                                promoColor = '#8b5cf6';
+                                promoIcon = <Gift size={14} />;
+                            } else {
+                                suggestion = `Feature as Happy Hour Special between 2–4 PM!`;
+                                discountLabel = 'HAPPY HOUR';
+                                promoColor = '#f59e0b';
+                                promoIcon = <Tag size={14} />;
+                            }
+                            const urgency = dropPct > 70 ? 'HIGH' : dropPct > 50 ? 'MED' : 'LOW';
+                            const urgencyColor = urgency === 'HIGH' ? '#ef4444' : urgency === 'MED' ? '#f59e0b' : '#10b981';
+                            return { name, qty: data.qty, dropPct, suggestion, discountLabel, promoColor, promoIcon, urgency, urgencyColor, promoType, discountPct };
+                        });
+
+                    const isAllGood = lowDemandItems.length === 0;
+
+                    return (
+                        <div style={{ borderRadius: '28px', overflow: 'hidden', border: '1px solid rgba(245,158,11,0.2)', boxShadow: '0 20px 60px rgba(245,158,11,0.07)' }}>
+                            {/* Header */}
+                            <div style={{ background: 'linear-gradient(135deg,#1e293b,#0f172a)', padding: '28px 36px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+                                    <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: 'linear-gradient(135deg,#f59e0b,#ef4444)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(245,158,11,0.35)' }}>
+                                        <TrendingDown size={26} color="white" />
+                                    </div>
+                                    <div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 900, color: 'white' }}>Low Demand Auto Promotion</h3>
+                                            <div style={{ background: 'linear-gradient(135deg,#f59e0b,#ef4444)', borderRadius: '20px', padding: '3px 10px', fontSize: '0.68rem', fontWeight: 800, color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <Sparkles size={10} /> AI ENGINE
+                                            </div>
+                                        </div>
+                                        <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem' }}>
+                                            {isAllGood ? 'All items performing well — no promotions needed!' : `${lowDemandItems.length} under-performing item${lowDemandItems.length > 1 ? 's' : ''} detected — promotions auto-suggested`}
+                                        </p>
+                                    </div>
+                                </div>
+                                {!isAllGood && (
+                                    <div style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '12px', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <AlertTriangle size={16} color="#f59e0b" />
+                                        <span style={{ color: '#f59e0b', fontSize: '0.78rem', fontWeight: 700 }}>{lowDemandItems.filter(i => i.urgency === 'HIGH').length} HIGH urgency</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Body */}
+                            <div style={{ background: '#f8fafc', padding: '28px 36px' }}>
+                                {isAllGood ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', padding: '36px 20px' }}>
+                                        <div style={{ width: '60px', height: '60px', borderRadius: '18px', background: 'linear-gradient(135deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(16,185,129,0.3)' }}>
+                                            <CheckCircle2 size={30} color="white" />
+                                        </div>
+                                        <p style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1e293b', margin: 0 }}>All items are performing well 🎉</p>
+                                        <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>No promotions needed. Keep it up!</p>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(270px,1fr))', gap: '18px' }}>
+                                        <AnimatePresence>
+                                            {lowDemandItems.map(item => (
+                                                <motion.div
+                                                    key={item.name}
+                                                    layout
+                                                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                    exit={{ opacity: 0, scale: 0.9, x: -20 }}
+                                                    transition={{ duration: 0.3 }}
+                                                    style={{
+                                                        background: appliedPromotions.has(item.name) ? 'linear-gradient(135deg,#ecfdf5,#d1fae5)' : 'white',
+                                                        borderRadius: '20px', padding: '22px',
+                                                        border: appliedPromotions.has(item.name) ? '1.5px solid #10b981' : '1.5px solid #f1f5f9',
+                                                        boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                                                        display: 'flex', flexDirection: 'column', gap: '14px'
+                                                    }}
+                                                >
+                                                    {/* Item header */}
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px', display: 'block' }}>{item.name}</span>
+                                                                <span style={{ background: item.urgencyColor + '20', color: item.urgencyColor, fontSize: '0.62rem', fontWeight: 800, padding: '2px 8px', borderRadius: '20px', border: `1px solid ${item.urgencyColor}40`, whiteSpace: 'nowrap' }}>{item.urgency} PRIORITY</span>
+                                                            </div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '5px' }}>
+                                                                <TrendingDown size={12} color="#ef4444" />
+                                                                <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>{item.qty} sold · {item.dropPct}% below avg</span>
+                                                            </div>
+                                                        </div>
+                                                        <div style={{ background: item.promoColor + '15', border: `1px solid ${item.promoColor}30`, borderRadius: '10px', padding: '5px 9px', display: 'flex', alignItems: 'center', gap: '4px', color: item.promoColor, fontSize: '0.68rem', fontWeight: 800, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                                            {item.promoIcon}{item.discountLabel}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Suggestion */}
+                                                    <div style={{ background: `linear-gradient(135deg,${item.promoColor}08,${item.promoColor}03)`, border: `1px dashed ${item.promoColor}30`, borderRadius: '13px', padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                                                        <Sparkles size={14} color={item.promoColor} style={{ flexShrink: 0, marginTop: '1px' }} />
+                                                        <span style={{ fontSize: '0.8rem', color: '#334155', fontWeight: 600, lineHeight: 1.5 }}>{item.suggestion}</span>
+                                                    </div>
+
+                                                    {/* Actions */}
+                                                    {appliedPromotions.has(item.name) ? (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '11px', background: '#d1fae5', borderRadius: '13px', color: '#059669', fontWeight: 800, fontSize: '0.82rem' }}>
+                                                                <CheckCircle2 size={15} /> Promotion Applied!
+                                                            </div>
+                                                            {item.promoType === 'flash' && (
+                                                                <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                                                    <Sparkles size={10} /> Live on student Home page!
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div style={{ display: 'flex', gap: '9px' }}>
+                                                            <button
+                                                                onClick={async () => {
+                                                                    setAppliedPromotions(prev => new Set([...prev, item.name]));
+                                                                    if (item.promoType === 'flash') {
+                                                                        try {
+                                                                            await axios.post('/api/flash-deals', {
+                                                                                itemName: item.name,
+                                                                                discountPct: item.discountPct,
+                                                                                suggestion: item.suggestion,
+                                                                                promoType: item.promoType,
+                                                                                urgency: item.urgency
+                                                                            });
+                                                                            setShowSuccess(`⚡ Flash Deal for "${item.name}" is now LIVE on the Home page!`);
+                                                                            setTimeout(() => setShowSuccess(''), 5000);
+                                                                        } catch (e) { console.error('Flash deal error:', e); }
+                                                                    } else {
+                                                                        setShowSuccess(`✅ Promotion applied for "${item.name}"!`);
+                                                                        setTimeout(() => setShowSuccess(''), 3000);
+                                                                    }
+                                                                }}
+                                                                style={{ flex: 1, padding: '11px 0', borderRadius: '13px', background: `linear-gradient(135deg,${item.promoColor},${item.promoColor}cc)`, color: 'white', border: 'none', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', boxShadow: `0 4px 14px ${item.promoColor}40`, transition: 'all 0.2s' }}
+                                                                onMouseOver={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                                                                onMouseOut={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                                                            >
+                                                                <CheckCircle2 size={14} /> Apply
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setDismissedPromotions(prev => new Set([...prev, item.name]))}
+                                                                style={{ padding: '11px 14px', borderRadius: '13px', background: '#f1f5f9', color: '#94a3b8', border: 'none', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                                                                onMouseOver={e => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.color = '#ef4444'; }}
+                                                                onMouseOut={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#94a3b8'; }}
+                                                            >
+                                                                <X size={14} />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </motion.div>
+                                            ))}
+                                        </AnimatePresence>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })()}
             </div>
         );
     };
