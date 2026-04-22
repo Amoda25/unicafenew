@@ -46,6 +46,30 @@ const SalesManagement = () => {
     const [dismissedPromotions, setDismissedPromotions] = useState(new Set());
     const [appliedPromotions, setAppliedPromotions] = useState(new Set());
 
+    const handleApplyPromotion = async (item) => {
+        try {
+            // If it's a flash sale, push to backend
+            if (item.type === 'flash') {
+                const expiresAt = new Date();
+                expiresAt.setHours(expiresAt.getHours() + 24); // 24h from now
+
+                await axios.post('/api/flash-deals', {
+                    itemName: item.name,
+                    discountPct: item.discountPct,
+                    suggestion: item.suggestion,
+                    expiresAt: expiresAt.toISOString()
+                });
+                
+                alert(`⚡ Flash Deal for '${item.name}' is now LIVE on the Home page!`);
+            }
+            
+            setAppliedPromotions(prev => new Set([...prev, item.name]));
+        } catch (err) {
+            console.error('Error applying promotion:', err);
+            alert('Failed to apply promotion to student portal.');
+        }
+    };
+
     const [aiMessages, setAiMessages] = useState([{
         sender: 'ai',
         text: "Hello Sales Admin! I've analyzed today's data. Everything looks stable, but I recommend a small promotion for 'Snacks' to boost afternoon sales."
@@ -1072,7 +1096,7 @@ const SalesManagement = () => {
                                                     ) : (
                                                         <div style={{ display: 'flex', gap: '10px' }}>
                                                             <button
-                                                                onClick={() => setAppliedPromotions(prev => new Set([...prev, item.name]))}
+                                                                onClick={() => handleApplyPromotion(item)}
                                                                 style={{
                                                                     flex: 1, padding: '11px 0',
                                                                     borderRadius: '14px',
