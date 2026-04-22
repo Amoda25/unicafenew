@@ -167,7 +167,10 @@ const SuppliersView = () => {
             setIsDeleteModalOpen(false);
             setSupplierToDelete(null);
             fetchSuppliers();
-            setTimeout(() => setShowSuccess(''), 3000);
+            setTimeout(() => {
+                setShowSuccess('');
+                window.location.href = '/ims';
+            }, 2000);
         } catch (err) {
             console.error('Error deleting supplier:', err);
             alert('Failed to delete supplier: ' + (err.response?.data?.error || err.message));
@@ -490,7 +493,6 @@ const SuppliersView = () => {
                                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></div>
                                         {supplier.status}
                                     </span>
-                                    <span style={{ color: '#94a3b8' }}>{supplier.ordersCount || 0} orders</span>
                                 </div>
                             </div>
                         </div>
