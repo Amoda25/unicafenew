@@ -14,6 +14,7 @@ const HomePage = () => {
     const navigate = useNavigate();
     const [specialItems, setSpecialItems] = useState([]);
     const [flashDeals, setFlashDeals] = useState([]);
+    const [timeRemaining, setTimeRemaining] = useState({});
     const user = JSON.parse(localStorage.getItem('user'));
 
     const categories = [
@@ -44,6 +45,7 @@ const HomePage = () => {
                 console.error('Error fetching special items:', err);
             }
         };
+
         const fetchFlashDeals = async () => {
             try {
                 const res = await axios.get('/api/flash-deals');
@@ -52,9 +54,34 @@ const HomePage = () => {
                 console.error('Error fetching flash deals:', err);
             }
         };
+
         fetchSpecialItems();
         fetchFlashDeals();
     }, []);
+
+    // Countdown Timer Logic
+    useEffect(() => {
+        const timer = setInterval(() => {
+            const newTimeRemaining = {};
+            flashDeals.forEach(deal => {
+                const expiry = new Date(deal.expiresAt).getTime();
+                const now = new Date().getTime();
+                const diff = expiry - now;
+
+                if (diff > 0) {
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                    newTimeRemaining[deal._id] = `${hours}h ${minutes}m ${seconds}s`;
+                } else {
+                    newTimeRemaining[deal._id] = 'Expired';
+                }
+            });
+            setTimeRemaining(newTimeRemaining);
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [flashDeals]);
 
     const handleCategoryClick = (name) => {
         navigate(`/order?category=${encodeURIComponent(name)}`);
@@ -249,9 +276,9 @@ const HomePage = () => {
                                 </p>
 
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 600 }}>
-                                        <Clock size={12} />
-                                        Limited time offer
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#ef4444', fontWeight: 800 }}>
+                                        <Clock size={16} />
+                                        Expiring in: {timeRemaining[deal._id] || 'Loading...'}
                                     </div>
                                     <div style={{
                                         padding: '7px 14px', borderRadius: '10px',
