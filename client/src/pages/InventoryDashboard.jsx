@@ -10,7 +10,11 @@ import RestockModal from '../components/RestockModal';
 
 
 const InventoryDashboard = () => {
-    const [activeTab, setActiveTab] = useState('dashboard');
+    const [activeTab, setActiveTab] = useState(localStorage.getItem('inventoryActiveTab') || 'dashboard');
+    
+    useEffect(() => {
+        localStorage.setItem('inventoryActiveTab', activeTab);
+    }, [activeTab]);
     const [inventoryFilter, setInventoryFilter] = useState(null);
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(false);
