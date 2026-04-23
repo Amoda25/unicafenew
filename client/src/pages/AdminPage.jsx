@@ -548,7 +548,7 @@ const AdminPage = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Order Queue <span style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: 500 }}>({orders.length} active)</span></h3>
                 <div style={{ display: 'flex', gap: '12px' }}>
-                    {statuses.map(status => (
+                    {['pending', 'preparing', 'ready', 'picked-up'].map(status => (
                         <div key={status} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                             <div style={{
                                 width: '8px',
@@ -558,7 +558,7 @@ const AdminPage = () => {
                                     status === 'preparing' ? '#f59e0b' :
                                         status === 'pending' ? '#fbbf24' : '#64748b'
                             }} />
-                            {status.toUpperCase()}
+                            {status === 'ready' ? 'READY' : status.toUpperCase()}
                         </div>
                     ))}
                 </div>
@@ -602,43 +602,74 @@ const AdminPage = () => {
                                         fontSize: '0.75rem',
                                         fontWeight: 700,
                                         background: order.status === 'ready' ? 'rgba(16, 185, 129, 0.1)' :
-                                            order.status === 'preparing' ? 'rgba(245, 158, 11, 0.1)' :
-                                                order.status === 'pending' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                                            ['preparing', 'process', 'cookd'].includes(order.status) ? 'rgba(245, 158, 11, 0.1)' :
+                                            order.status === 'pending' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(100, 116, 139, 0.1)',
                                         color: order.status === 'ready' ? '#10b981' :
-                                            order.status === 'preparing' ? '#f59e0b' :
-                                                order.status === 'pending' ? '#fbbf24' : '#64748b',
+                                            ['preparing', 'process', 'cookd'].includes(order.status) ? '#f59e0b' :
+                                            order.status === 'pending' ? '#fbbf24' : '#64748b',
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         gap: '6px'
                                     }}>
-                                        <Clock size={12} />
-                                        {order.status.toUpperCase()}
+                                        <Zap size={12} />
+                                        {order.status === 'ready' ? 'READY' : 
+                                         ['preparing', 'process', 'cookd'].includes(order.status) ? 'PREPARING' : 
+                                         order.status.toUpperCase()}
                                     </span>
                                 </td>
                                 <td style={{ padding: '20px 16px', textAlign: 'right', borderTopRightRadius: '16px', borderBottomRightRadius: '16px' }}>
                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                        {order.status === 'pending' && (
+                                            <button 
+                                                onClick={() => handleUpdateOrderStatus(order._id, 'preparing')}
+                                                style={{ padding: '8px 12px', borderRadius: '8px', background: 'var(--primary)', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                                            >
+                                                Accept
+                                            </button>
+                                        )}
+                                        {['preparing', 'process', 'cookd'].includes(order.status) && (
+                                            <button 
+                                                onClick={() => handleUpdateOrderStatus(order._id, 'ready')}
+                                                style={{ padding: '8px 12px', borderRadius: '8px', background: '#10b981', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                                            >
+                                                Ready for Pickup
+                                            </button>
+                                        )}
+                                        {order.status === 'ready' && (
+                                            <button 
+                                                onClick={() => handleUpdateOrderStatus(order._id, 'picked-up')}
+                                                style={{ padding: '8px 12px', borderRadius: '8px', background: '#6366f1', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                                            >
+                                                Finalize
+                                            </button>
+                                        )}
+
+                                        <div style={{ width: '1px', height: '20px', background: '#e2e8f0', margin: '0 4px' }} />
+
                                         <select
                                             value={order.status}
                                             onChange={(e) => handleUpdateOrderStatus(order._id, e.target.value)}
                                             style={{
-                                                padding: '10px',
-                                                borderRadius: '10px',
+                                                padding: '8px',
+                                                borderRadius: '8px',
                                                 background: '#f8fafc',
                                                 border: '1px solid #cbd5e1',
                                                 color: '#1f2937',
-                                                fontSize: '0.875rem',
+                                                fontSize: '0.75rem',
                                                 fontWeight: 600,
                                                 cursor: 'pointer'
                                             }}
                                         >
-                                            {statuses.map(status => <option key={status} value={status}>{status}</option>)}
+                                            {['pending', 'preparing', 'ready', 'picked-up'].map(status => (
+                                                <option key={status} value={status}>{status === 'ready' ? 'READY' : status.toUpperCase()}</option>
+                                            ))}
                                         </select>
                                         <button
                                             onClick={() => handleDeleteOrder(order._id)}
                                             className="glass"
-                                            style={{ padding: '10px', borderRadius: '10px', background: 'var(--latte-card)', color: '#ef4444', border: '1px solid #fca5a5', cursor: 'pointer' }}
+                                            style={{ padding: '8px', borderRadius: '8px', background: 'var(--latte-card)', color: '#ef4444', border: '1px solid #fca5a5', cursor: 'pointer' }}
                                         >
-                                            <Trash2 size={18} />
+                                            <Trash2 size={16} />
                                         </button>
                                     </div>
                                 </td>

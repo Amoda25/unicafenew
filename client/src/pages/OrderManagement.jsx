@@ -248,11 +248,15 @@ const OrderManagement = () => {
                                         padding: '4px 10px',
                                         borderRadius: '99px',
                                         background: order.status === 'ready' ? '#dcfce7' : 
-                                                   ['preparing', 'process', 'cookd'].includes(order.status) ? '#fef3c7' : '#fee2e2',
+                                                   ['preparing', 'process', 'cookd'].includes(order.status) ? '#fef3c7' : 
+                                                   order.status === 'pending' ? '#fef3c7' : '#fee2e2',
                                         color: order.status === 'ready' ? '#10b981' : 
-                                               ['preparing', 'process', 'cookd'].includes(order.status) ? '#f59e0b' : '#ef4444'
+                                               ['preparing', 'process', 'cookd'].includes(order.status) ? '#f59e0b' : 
+                                               order.status === 'pending' ? '#f59e0b' : '#ef4444'
                                     }}>
-                                        {order.status.toUpperCase()}
+                                        {order.status === 'ready' ? 'READY' : 
+                                         ['preparing', 'process', 'cookd'].includes(order.status) ? 'PREPARING' : 
+                                         order.status.toUpperCase()}
                                     </span>
                                 </div>
                             ))}
@@ -336,28 +340,19 @@ const OrderManagement = () => {
                         <Utensils size={14} /> Manage Menu Items
                     </button>
                 </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                    {statuses.map(status => (
+                    {['pending', 'preparing', 'ready', 'picked-up'].map(status => (
                         <div key={status} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                             <div style={{
                                 width: '8px',
                                 height: '8px',
                                 borderRadius: '50%',
-                                background: status === 'Paid' ? '#10b981' :
-                                    status === 'ready' ? '#10b981' :
-
-                                        status === 'preparing' ? '#f59e0b' :
+                                background: status === 'ready' ? '#10b981' :
+                                            status === 'preparing' ? '#f59e0b' :
                                             status === 'pending' ? '#fbbf24' : '#64748b'
-
-
-
                             }} />
                             {status === 'ready' ? 'READY' : status.toUpperCase()}
-
-
                         </div>
                     ))}
-                </div>
             </div>
 
             <div style={{ padding: '32px', borderRadius: '24px', background: 'var(--latte-card)', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
@@ -424,25 +419,20 @@ const OrderManagement = () => {
                                             borderRadius: '8px',
                                             fontSize: '0.75rem',
                                             fontWeight: 700,
-                                            background: order.status === 'Paid' ? 'rgba(16, 185, 129, 0.1)' :
-                                                order.status === 'ready' ? 'rgba(16, 185, 129, 0.1)' :
-
-                                                    ['preparing', 'process', 'cookd'].includes(order.status) ? 'rgba(245, 158, 11, 0.1)' :
-                                                        order.status === 'pending' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(100, 116, 139, 0.1)',
-                                            color: order.status === 'Paid' ? '#10b981' :
-                                                order.status === 'ready' ? '#10b981' :
-
-                                                    ['preparing', 'process', 'cookd'].includes(order.status) ? '#f59e0b' :
-                                                        order.status === 'pending' ? '#fbbf24' : '#64748b',
-
+                                            background: order.status === 'ready' ? 'rgba(16, 185, 129, 0.1)' :
+                                                ['preparing', 'process', 'cookd'].includes(order.status) ? 'rgba(245, 158, 11, 0.1)' :
+                                                order.status === 'pending' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                                            color: order.status === 'ready' ? '#10b981' :
+                                                ['preparing', 'process', 'cookd'].includes(order.status) ? '#f59e0b' :
+                                                order.status === 'pending' ? '#fbbf24' : '#64748b',
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             gap: '6px'
                                         }}>
                                             <Zap size={12} />
-                                            {order.status === 'ready' ? 'READY' : order.status.toUpperCase()}
-
-
+                                            {order.status === 'ready' ? 'READY' : 
+                                             ['preparing', 'process', 'cookd'].includes(order.status) ? 'PREPARING' : 
+                                             order.status.toUpperCase()}
                                         </span>
                                     </td>
                                     <td style={{ padding: '20px 16px', textAlign: 'right', borderTopRightRadius: '16px', borderBottomRightRadius: '16px' }}>
@@ -455,10 +445,9 @@ const OrderManagement = () => {
                                                     Accept
                                                 </button>
                                             )}
-                                            {order.status === 'preparing' && (
+                                            {['preparing', 'process', 'cookd'].includes(order.status) && (
                                                 <button 
                                                     onClick={() => handleUpdateOrderStatus(order._id, 'ready')}
-
                                                     style={{ padding: '8px 12px', borderRadius: '8px', background: '#10b981', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
                                                 >
                                                     Ready for Pickup
