@@ -16,6 +16,12 @@ const FeedbackManagement = () => {
     const [categoryFilter, setCategoryFilter] = useState('All'); 
     const [adminStatusFilter, setAdminStatusFilter] = useState('all'); // all, pending, responded
     const [impactFilter, setImpactFilter] = useState('All'); // All, High, Medium, Low
+    const [complaints, setComplaints] = useState([
+        { id: 1, user: 'Kasun Perera', studentId: 'IT21000001', title: 'Food Quality Issue', description: 'The lunch served today was cold and not fresh.', status: 'Submitted', date: new Date().toISOString() },
+        { id: 2, user: 'Amani Silva', studentId: 'IT21000002', title: 'Slow Service at Counter 2', description: 'I had to wait for 30 minutes to get my order.', status: 'In Review', date: new Date(Date.now() - 86400000).toISOString() },
+        { id: 3, user: 'Nimal Jayasooriya', studentId: 'IT21000003', title: 'Unclean Tables', description: 'Most tables were not cleaned during the lunch rush.', status: 'Resolved', date: new Date(Date.now() - 172800000).toISOString() },
+        { id: 4, user: 'Sanduni Fernando', studentId: 'IT21000004', title: 'Wrong Item Delivered', description: 'I asked for chicken rice but got fish instead.', status: 'Rejected', date: new Date(Date.now() - 259200000).toISOString() }
+    ]);
     
     
     // Reply states
@@ -636,16 +642,102 @@ const FeedbackManagement = () => {
         );
     };
 
+    const getComplaintStatusStyle = (status) => {
+        switch (status) {
+            case 'Submitted': return { bg: 'rgba(234,179,8,0.1)', color: '#eab308', icon: '🟡' };
+            case 'In Review': return { bg: 'rgba(59,130,246,0.1)', color: '#3b82f6', icon: '🔵' };
+            case 'Resolved': return { bg: 'rgba(16,185,129,0.1)', color: '#10b981', icon: '🟢' };
+            case 'Rejected': return { bg: 'rgba(239,68,68,0.1)', color: '#ef4444', icon: '🔴' };
+            default: return { bg: 'rgba(148,163,184,0.1)', color: '#94a3b8', icon: '⚪' };
+        }
+    };
+
+    const handleUpdateComplaintStatus = (id, newStatus) => {
+        setComplaints(complaints.map(c => c.id === id ? { ...c, status: newStatus } : c));
+    };
+
+    const renderComplaintsManager = () => {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Complaint Status <span style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: 500 }}>({complaints.length} total)</span></h3>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {complaints.map(complaint => {
+                        const statusStyle = getComplaintStatusStyle(complaint.status);
+                        return (
+                            <div key={complaint.id} className="glass" style={{
+                                padding: '24px 28px',
+                                borderRadius: '20px',
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--glass-border)',
+                                display: 'flex', flexDirection: 'column'
+                            }}>
+                                <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+                                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.2rem', color: 'var(--text-main)', flexShrink: 0 }}>
+                                        {complaint.user.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                                            <div>
+                                                <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>{complaint.user}</span>
+                                                <span style={{ marginLeft: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{complaint.studentId}</span>
+                                                <span style={{ marginLeft: '12px', padding: '4px 12px', background: statusStyle.bg, color: statusStyle.color, borderRadius: '99px', fontSize: '0.75rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                    {statusStyle.icon} {complaint.status}
+                                                </span>
+                                            </div>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{new Date(complaint.date).toLocaleString()}</span>
+                                        </div>
+                                        <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-main)', fontSize: '1.1rem' }}>{complaint.title}</h4>
+                                        <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 20px 0', fontSize: '0.95rem' }}>{complaint.description}</p>
+                                        
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px', paddingTop: '15px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Update Status:</span>
+                                            <select 
+                                                value={complaint.status}
+                                                onChange={(e) => handleUpdateComplaintStatus(complaint.id, e.target.value)}
+                                                style={{ 
+                                                    padding: '8px 16px', 
+                                                    borderRadius: '10px', 
+                                                    background: 'var(--latte-card)', 
+                                                    color: '#000000', 
+                                                    border: '1px solid #e2e8f0', 
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer',
+                                                    outline: 'none',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                                                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                            >
+                                                <option value="Submitted" style={{ background: 'var(--latte-card)', color: '#000000' }}>🟡 Submitted</option>
+                                                <option value="In Review" style={{ background: 'var(--latte-card)', color: '#000000' }}>🔵 In Review</option>
+                                                <option value="Resolved" style={{ background: 'var(--latte-card)', color: '#000000' }}>🟢 Resolved</option>
+                                                <option value="Rejected" style={{ background: 'var(--latte-card)', color: '#000000' }}>🔴 Rejected</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-page)', color: 'var(--text-main)', fontFamily: "'Inter', sans-serif" }}>
             <FeedbackSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
             <main style={{ flex: 1, padding: '40px', position: 'relative' }}>
                 <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-                    {renderStatsOverview()}
+                    {activeTab !== 'complaints' && renderStatsOverview()}
                     <AnimatePresence mode="wait">
                         <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                             {activeTab === 'messages' && renderMessagesManager()}
                             {activeTab === 'ratings' && renderRatingsManager()}
+                            {activeTab === 'complaints' && renderComplaintsManager()}
                         </motion.div>
                     </AnimatePresence>
                 </div>
