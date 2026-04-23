@@ -485,8 +485,9 @@ const OrderManagement = () => {
                                                 {['pending', 'preparing', 'ready', 'picked-up'].map(s => (
                                                     <option key={s} value={s}>
                                                         {s === 'pending' ? '🟡 PENDING' : 
-                                                         s === 'preparing' ? '🟠 PREPARING' : 
-                                                         s === 'ready' ? '🟢 READY' : '⚪ PICKED-UP'}
+                                                          s === 'preparing' ? '🔵 PREPARING' : 
+                                                          s === 'ready' ? '🟢 READY' : 
+                                                          s === 'picked-up' ? '✅ PICK UP' : s.toUpperCase()}
                                                     </option>
                                                 ))}
 

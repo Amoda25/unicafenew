@@ -1330,11 +1330,12 @@ const SalesManagement = () => {
                                     </td>
                                     <td style={{ padding: '16px' }}>
                                         {(() => {
-                                            const status = (order.status || 'placed').toLowerCase();
-                                            let config = { label: '🟡 Placed', bg: '#fffbeb', color: '#f59e0b' };
+                                            const status = (order.status || 'pending').toLowerCase();
+                                            let config = { label: '🟡 Pending', bg: '#fffbeb', color: '#f59e0b' };
                                             
-                                            if (['preparing', 'process', 'cookd', 'ready'].includes(status)) config = { label: '🔵 Preparing', bg: '#eff6ff', color: '#3b82f6' };
-                                            else if (status === 'completed' || status === 'picked-up') config = { label: '🟢 Completed', bg: '#ecfdf5', color: '#10b981' };
+                                            if (['preparing', 'process', 'cookd'].includes(status)) config = { label: '🔵 Preparing', bg: '#eff6ff', color: '#3b82f6' };
+                                            else if (status === 'ready') config = { label: '🟢 Ready', bg: '#ecfdf5', color: '#10b981' };
+                                            else if (status === 'picked-up') config = { label: '✅ Pick Up', bg: '#f0fdf4', color: '#15803d' };
                                             else if (status === 'cancelled') config = { label: '🔴 Cancelled', bg: '#fef2f2', color: '#ef4444' };
 
                                             return (

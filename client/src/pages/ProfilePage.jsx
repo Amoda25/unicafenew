@@ -75,17 +75,20 @@ const ProfilePage = () => {
     ];
 
     const getStatusStyle = (status) => {
-        const s = (status || 'placed').toLowerCase();
+        const s = (status || 'pending').toLowerCase();
         if (s === 'picked-up' || s === 'completed') {
-            return { color: '#10b981', bg: '#ecfdf5', icon: <CheckCircle size={16} />, label: '🟢 Completed' };
+            return { color: '#10b981', bg: '#ecfdf5', icon: <CheckCircle size={16} />, label: '✅ Pick Up' };
         }
-        if (['preparing', 'process', 'cookd', 'ready'].includes(s)) {
+        if (s === 'ready') {
+            return { color: '#10b981', bg: '#ecfdf5', icon: <CheckCircle size={16} />, label: '🟢 Ready' };
+        }
+        if (['preparing', 'process', 'cookd'].includes(s)) {
             return { color: '#3b82f6', bg: '#eff6ff', icon: <Timer size={16} className="animate-pulse" />, label: '🔵 Preparing' };
         }
         if (s === 'cancelled') {
             return { color: '#ef4444', bg: '#fef2f2', icon: <AlertCircle size={16} />, label: '🔴 Cancelled' };
         }
-        return { color: '#f59e0b', bg: '#fffbeb', icon: <Clock size={16} />, label: '🟡 Placed' };
+        return { color: '#f59e0b', bg: '#fffbeb', icon: <Clock size={16} />, label: '🟡 Pending' };
     };
 
     return (
