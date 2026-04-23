@@ -1348,6 +1348,7 @@ const SalesManagement = () => {
                                 <th style={{ padding: '16px', textAlign: 'left' }}>Items</th>
                                 <th style={{ padding: '16px', textAlign: 'left' }}>Amount</th>
                                 <th style={{ padding: '16px', textAlign: 'left' }}>Order Status</th>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Payment Status</th>
                                 <th style={{ padding: '16px', textAlign: 'right' }}>Action</th>
                             </tr>
                         </thead>
@@ -1403,6 +1404,19 @@ const SalesManagement = () => {
                                                 </span>
                                             );
                                         })()}
+                                    </td>
+                                    <td style={{ padding: '16px' }}>
+                                        <span style={{
+                                            padding: '6px 12px',
+                                            borderRadius: '8px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 800,
+                                            background: (order.status === 'completed' || order.status === 'picked-up') ? '#ecfdf5' : '#fff7ed',
+                                            color: (order.status === 'completed' || order.status === 'picked-up') ? '#10b981' : '#f97316',
+                                            textTransform: 'uppercase'
+                                        }}>
+                                            {(order.status === 'completed' || order.status === 'picked-up') ? 'Paid' : 'Pending'}
+                                        </span>
                                     </td>
                                     <td style={{ padding: '16px', textAlign: 'right' }}>
                                         <button 
