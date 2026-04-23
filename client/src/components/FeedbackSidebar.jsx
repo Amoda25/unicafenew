@@ -7,7 +7,8 @@ import {
     Star,
     Info,
     Mail,
-    LogOut
+    LogOut,
+    AlertCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/unicafe_logo_vintage.png';
@@ -21,7 +22,8 @@ const FeedbackSidebar = ({ activeTab, setActiveTab }) => {
             items: [
                 { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
                 { id: 'messages', name: 'Contact Messages', icon: MessageSquare },
-                { id: 'ratings', name: 'Food Ratings', icon: Star }
+                { id: 'ratings', name: 'Food Ratings', icon: Star },
+                { id: 'complaints', name: 'Complaint Status', icon: AlertCircle }
             ]
         },
         {
