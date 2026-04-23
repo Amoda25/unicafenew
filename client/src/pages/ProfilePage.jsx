@@ -75,16 +75,17 @@ const ProfilePage = () => {
     ];
 
     const getStatusStyle = (status) => {
-        switch (status) {
-            case 'pending': return { color: '#b45309', bg: '#fef3c7', icon: <Clock size={16} />, label: 'Order Pending' };
-            case 'preparing': return { color: '#ea580c', bg: '#ffedd5', icon: <Timer size={16} className="animate-pulse" />, label: 'Preparing' };
-            case 'process': return { color: '#f59e0b', bg: '#fff7ed', icon: <RefreshCcw size={16} className="animate-spin" />, label: 'Processing' };
-            case 'cookd': return { color: '#ec4899', bg: '#fdf2f8', icon: <Flame size={16} />, label: 'Cooked' };
-            case 'ready': return { color: '#10b981', bg: '#d1fae5', icon: <ShoppingBag size={16} className="animate-bounce" />, label: 'Ready for Pickup' };
-
-            case 'picked-up': return { color: '#475569', bg: '#f1f5f9', icon: <Package size={16} />, label: 'Completed' };
-            default: return { color: '#b91c1c', bg: '#fee2e2', icon: <AlertCircle size={16} />, label: 'Cancelled' };
+        const s = (status || 'placed').toLowerCase();
+        if (s === 'picked-up' || s === 'completed') {
+            return { color: '#10b981', bg: '#ecfdf5', icon: <CheckCircle size={16} />, label: '🟢 Completed' };
         }
+        if (['preparing', 'process', 'cookd', 'ready'].includes(s)) {
+            return { color: '#3b82f6', bg: '#eff6ff', icon: <Timer size={16} className="animate-pulse" />, label: '🔵 Preparing' };
+        }
+        if (s === 'cancelled') {
+            return { color: '#ef4444', bg: '#fef2f2', icon: <AlertCircle size={16} />, label: '🔴 Cancelled' };
+        }
+        return { color: '#f59e0b', bg: '#fffbeb', icon: <Clock size={16} />, label: '🟡 Placed' };
     };
 
     return (

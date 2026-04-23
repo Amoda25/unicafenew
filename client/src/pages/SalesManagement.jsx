@@ -1378,17 +1378,31 @@ const SalesManagement = () => {
                                         LKR {(order.totalAmount || 0).toLocaleString()}
                                     </td>
                                     <td style={{ padding: '16px' }}>
-                                        <span style={{
-                                            padding: '6px 12px',
-                                            borderRadius: '8px',
-                                            fontSize: '0.75rem',
-                                            fontWeight: 800,
-                                            background: order.status === 'completed' ? '#ecfdf5' : '#fff7ed',
-                                            color: order.status === 'completed' ? '#10b981' : '#f97316',
-                                            textTransform: 'uppercase'
-                                        }}>
-                                            {order.status || 'Pending'}
-                                        </span>
+                                        {(() => {
+                                            const status = (order.status || 'placed').toLowerCase();
+                                            let config = { label: '🟡 Placed', bg: '#fffbeb', color: '#f59e0b' };
+                                            
+                                            if (['preparing', 'process', 'cookd', 'ready'].includes(status)) config = { label: '🔵 Preparing', bg: '#eff6ff', color: '#3b82f6' };
+                                            else if (status === 'completed' || status === 'picked-up') config = { label: '🟢 Completed', bg: '#ecfdf5', color: '#10b981' };
+                                            else if (status === 'cancelled') config = { label: '🔴 Cancelled', bg: '#fef2f2', color: '#ef4444' };
+
+                                            return (
+                                                <span style={{
+                                                    padding: '6px 12px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 800,
+                                                    background: config.bg,
+                                                    color: config.color,
+                                                    textTransform: 'uppercase',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '5px'
+                                                }}>
+                                                    {config.label}
+                                                </span>
+                                            );
+                                        })()}
                                     </td>
                                     <td style={{ padding: '16px', textAlign: 'right' }}>
                                         <button 
