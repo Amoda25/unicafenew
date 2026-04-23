@@ -31,7 +31,7 @@ const OrderManagement = () => {
     const [analytics, setAnalytics] = useState(null);
 
     const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Beverages'];
-    const statuses = ['placed', 'preparing', 'completed', 'cancelled'];
+    const statuses = ['pending', 'preparing', 'ready', 'picked-up'];
 
 
 
@@ -348,23 +348,17 @@ const OrderManagement = () => {
                     </button>
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
-                    {statuses.map(status => (
+                    {['pending', 'preparing', 'ready', 'picked-up'].map(status => (
                         <div key={status} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                             <div style={{
                                 width: '8px',
                                 height: '8px',
                                 borderRadius: '50%',
-                                background: status === 'completed' ? '#10b981' :
-                                    status === 'preparing' ? '#3b82f6' :
-                                    status === 'cancelled' ? '#ef4444' : '#f59e0b'
+                                background: status === 'ready' ? '#10b981' :
+                                            status === 'preparing' ? '#f59e0b' :
+                                            status === 'pending' ? '#fbbf24' : '#64748b'
                             }} />
-                            {(() => {
-                                if (status === 'placed') return '🟡 PLACED';
-                                if (status === 'preparing') return '🔵 PREPARING';
-                                if (status === 'completed') return '🟢 COMPLETED';
-                                if (status === 'cancelled') return '🔴 CANCELLED';
-                                return status.toUpperCase();
-                            })()}
+                            {status === 'ready' ? 'READY' : status.toUpperCase()}
                         </div>
                     ))}
                 </div>
@@ -434,23 +428,20 @@ const OrderManagement = () => {
                                             borderRadius: '8px',
                                             fontSize: '0.75rem',
                                             fontWeight: 700,
-                                            background: (order.status === 'picked-up' || order.status === 'completed') ? '#ecfdf5' :
-                                                (['preparing', 'process', 'cookd', 'ready'].includes(order.status)) ? '#eff6ff' :
-                                                order.status === 'cancelled' ? '#fef2f2' : '#fffbeb',
-                                            color: (order.status === 'picked-up' || order.status === 'completed') ? '#10b981' :
-                                                (['preparing', 'process', 'cookd', 'ready'].includes(order.status)) ? '#3b82f6' :
-                                                order.status === 'cancelled' ? '#ef4444' : '#f59e0b',
+                                            background: order.status === 'ready' ? 'rgba(16, 185, 129, 0.1)' :
+                                                ['preparing', 'process', 'cookd'].includes(order.status) ? 'rgba(245, 158, 11, 0.1)' :
+                                                order.status === 'pending' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                                            color: order.status === 'ready' ? '#10b981' :
+                                                ['preparing', 'process', 'cookd'].includes(order.status) ? '#f59e0b' :
+                                                order.status === 'pending' ? '#fbbf24' : '#64748b',
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             gap: '6px'
                                         }}>
-                                            {(() => {
-                                                const s = (order.status || 'placed').toLowerCase();
-                                                if (s === 'picked-up' || s === 'completed') return '🟢 Completed';
-                                                if (['preparing', 'process', 'cookd', 'ready'].includes(s)) return '🔵 Preparing';
-                                                if (s === 'cancelled') return '🔴 Cancelled';
-                                                return '🟡 Placed';
-                                            })()}
+                                            <Zap size={12} />
+                                            {order.status === 'ready' ? 'READY' : 
+                                             ['preparing', 'process', 'cookd'].includes(order.status) ? 'PREPARING' : 
+                                             order.status.toUpperCase()}
                                         </span>
                                     </td>
                                     <td style={{ padding: '20px 16px', textAlign: 'right', borderTopRightRadius: '16px', borderBottomRightRadius: '16px' }}>
@@ -463,10 +454,9 @@ const OrderManagement = () => {
                                                     Accept
                                                 </button>
                                             )}
-                                            {order.status === 'preparing' && (
+                                            {['preparing', 'process', 'cookd'].includes(order.status) && (
                                                 <button 
                                                     onClick={() => handleUpdateOrderStatus(order._id, 'ready')}
-
                                                     style={{ padding: '8px 12px', borderRadius: '8px', background: '#10b981', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
                                                 >
                                                     Ready for Pickup
