@@ -378,7 +378,7 @@ const OrderManagement = () => {
                             <th style={{ padding: '0 16px', textAlign: 'left' }}>Student Details</th>
                             <th style={{ padding: '0 16px', textAlign: 'left' }}>Order Content</th>
                             <th style={{ padding: '0 16px', textAlign: 'left' }}>Payment</th>
-                            <th style={{ padding: '0 16px', textAlign: 'left' }}>Current Status</th>
+                            <th style={{ padding: '0 16px', textAlign: 'left' }}>Order Status</th>
 
                             <th style={{ padding: '0 16px', textAlign: 'right' }}>Update</th>
                         </tr>
