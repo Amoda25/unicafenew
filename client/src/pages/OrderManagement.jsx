@@ -484,9 +484,10 @@ const OrderManagement = () => {
                                             >
                                                 {statuses.map(s => (
                                                     <option key={s} value={s}>
-                                                        {s === 'placed' ? '🟡 PLACED' : 
+                                                        {s === 'pending' ? '🟡 PENDING' : 
                                                          s === 'preparing' ? '🔵 PREPARING' : 
-                                                         s === 'completed' ? '🟢 COMPLETED' : '🔴 CANCELLED'}
+                                                         s === 'ready' ? '🟢 READY' : 
+                                                         s === 'picked-up' ? '✅ PICK UP' : s.toUpperCase()}
                                                     </option>
                                                 ))}
 
