@@ -340,6 +340,7 @@ const OrderManagement = () => {
                         <Utensils size={14} /> Manage Menu Items
                     </button>
                 </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
                     {['pending', 'preparing', 'ready', 'picked-up'].map(status => (
                         <div key={status} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                             <div style={{
@@ -353,6 +354,7 @@ const OrderManagement = () => {
                             {status === 'ready' ? 'READY' : status.toUpperCase()}
                         </div>
                     ))}
+                </div>
             </div>
 
             <div style={{ padding: '32px', borderRadius: '24px', background: 'var(--latte-card)', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
@@ -363,7 +365,7 @@ const OrderManagement = () => {
                             <th style={{ padding: '0 16px', textAlign: 'left' }}>Student Details</th>
                             <th style={{ padding: '0 16px', textAlign: 'left' }}>Order Content</th>
                             <th style={{ padding: '0 16px', textAlign: 'left' }}>Payment</th>
-                            <th style={{ padding: '0 16px', textAlign: 'left' }}>Current Status</th>
+                            <th style={{ padding: '0 16px', textAlign: 'left' }}>Order Status</th>
 
                             <th style={{ padding: '0 16px', textAlign: 'right' }}>Update</th>
                         </tr>

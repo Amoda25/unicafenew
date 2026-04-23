@@ -17,6 +17,7 @@ import OrderManagement from './pages/OrderManagement';
 import SalesManagement from './pages/SalesManagement';
 import FeedbackManagement from './pages/FeedbackManagement';
 import MenuManagement from './pages/MenuManagement';
+import SpecialMenuManagement from './pages/SpecialMenuManagement';
 import NotificationsPage from './pages/NotificationsPage';
 import CartPage from './pages/CartPage';
 import OrderSuccessPage from './pages/OrderSuccessPage';
@@ -39,7 +40,8 @@ const AppContent = () => {
   const isSalesRoute = location.pathname.startsWith('/sales');
   const isFeedbackAdminRoute = location.pathname.startsWith('/feedback-admin');
   const isMenuAdminRoute = location.pathname.startsWith('/menu-admin');
-  const isFullWidthRoute = isAdminRoute || isHomeRoute || isAuthRoute || isOrderRoute || isImsRoute || isOrdersRoute || isSalesRoute || isFeedbackAdminRoute || isMenuAdminRoute;
+  const isSpecialMenuRoute = location.pathname.startsWith('/special-menu');
+  const isFullWidthRoute = isAdminRoute || isHomeRoute || isAuthRoute || isOrderRoute || isImsRoute || isOrdersRoute || isSalesRoute || isFeedbackAdminRoute || isMenuAdminRoute || isSpecialMenuRoute;
 
   return (
     <GoogleAuthWrapper>
@@ -59,6 +61,7 @@ const AppContent = () => {
             <Route path="/sales" element={<SalesManagement />} />
             <Route path="/feedback-admin" element={<FeedbackManagement />} />
             <Route path="/menu-admin" element={<MenuManagement />} />
+            <Route path="/special-menu" element={<SpecialMenuManagement />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/feedback" element={<FeedbackPage />} />

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Star, Utensils, Heart, ShoppingBag, Coffee, Pizza, Navigation, ArrowRight } from 'lucide-react';
+import { MapPin, Star, Utensils, Heart, ShoppingBag, Coffee, Pizza, Navigation, ArrowRight, Image as ImageIcon, Zap, Clock, Tag } from 'lucide-react';
+import axios from 'axios';
 import heroFood from '../assets/hero_food_new.png';
 import stringHoppers from '../assets/string_hoppers.jpg';
 import milkshake from '../assets/milkshake.png';
@@ -11,8 +12,14 @@ import campusBg from '../assets/campus_bg.png';
 
 const HomePage = () => {
     const navigate = useNavigate();
+    const [specialItems, setSpecialItems] = useState([]);
+    const [flashDeals, setFlashDeals] = useState([]);
+    const [menuItems, setMenuItems] = useState([]);
+    const [timeRemaining, setTimeRemaining] = useState({});
+    const user = JSON.parse(localStorage.getItem('user'));
 
     const categories = [
+        { name: 'Special Menu', count: 'Exclusive', img: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&auto=format&fit=crop' },
         { name: 'Pizza', count: '14', img: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=800&auto=format&fit=crop' },
         { name: 'Broast', count: '4', img: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=800&auto=format&fit=crop' },
         { name: 'Chicken', count: '5', img: 'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?w=800&auto=format&fit=crop' },
@@ -24,10 +31,82 @@ const HomePage = () => {
         { name: 'Desserts', count: '15', img: 'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=800&auto=format&fit=crop' }
     ];
 
+    useEffect(() => {
+        const fetchSpecialItems = async () => {
+            try {
+                const res = await axios.get('/api/menu');
+                setMenuItems(res.data);
+                const filtered = res.data.filter(item => 
+                    item.category && 
+                    (Array.isArray(item.category) 
+                        ? item.category.includes('Special Menu') 
+                        : item.category === 'Special Menu')
+                );
+                setSpecialItems(filtered.slice(0, 3));
+            } catch (err) {
+                console.error('Error fetching special items:', err);
+            }
+        };
+
+        const fetchFlashDeals = async () => {
+            try {
+                const res = await axios.get('/api/flash-deals');
+                setFlashDeals(res.data);
+            } catch (err) {
+                console.error('Error fetching flash deals:', err);
+            }
+        };
+
+        fetchSpecialItems();
+        fetchFlashDeals();
+    }, []);
+
+    // Countdown Timer Logic
+    useEffect(() => {
+        const timer = setInterval(() => {
+            const newTimeRemaining = {};
+            flashDeals.forEach(deal => {
+                const expiry = new Date(deal.expiresAt).getTime();
+                const now = new Date().getTime();
+                const diff = expiry - now;
+
+                if (diff > 0) {
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                    newTimeRemaining[deal._id] = `${hours}h ${minutes}m ${seconds}s`;
+                } else {
+                    newTimeRemaining[deal._id] = 'Expired';
+                }
+            });
+            setTimeRemaining(newTimeRemaining);
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [flashDeals]);
+
     const handleCategoryClick = (name) => {
         navigate(`/order?category=${encodeURIComponent(name)}`);
     };
 
+    // Prepare favorites list (dynamic specials + fallbacks)
+    const fallbacks = [
+        { title: 'Study Session Combo', desc: 'Perfect coffee & snacks to keep you focused during exam weeks.', price: 'Rs. 450', img: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=800&auto=format&fit=crop' },
+        { title: 'Hostel Night Special', desc: 'A large pizza meant to be split with your roommates.', price: 'Rs. 2200', img: 'https://images.unsplash.com/photo-1590947132387-155cc02f3212?w=800&auto=format&fit=crop' },
+        { title: 'Morning Lecture Boost', desc: 'Fresh juice and light breakfast to start your uni day right.', price: 'Rs. 300', img: stringHoppers }
+    ];
+
+    const dynamicFavorites = specialItems.map(item => ({
+        title: item.name.en,
+        desc: item.description?.en || 'Premium special item from UniCafé hub.',
+        price: `Rs. ${item.price}`,
+        img: item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop',
+        isReal: true,
+        id: item._id
+    }));
+
+    // Fill with fallbacks if less than 3
+    const finalFavorites = [...dynamicFavorites, ...fallbacks].slice(0, 3);
     return (
         <div style={{ backgroundColor: '#F9F9F9', minHeight: '100vh', paddingBottom: '4rem' }}>
             {/* HERO SECTION - Full Width Redesign */}
@@ -195,19 +274,15 @@ const HomePage = () => {
                     gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
                     gap: '2rem'
                 }}>
-                    {[
-                        { title: 'Study Session Combo', desc: 'Perfect coffee & snacks to keep you focused during exam weeks.', price: 'Rs. 450', img: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=800&auto=format&fit=crop' },
-                        { title: 'Hostel Night Special', desc: 'A large pizza meant to be split with your roommates.', price: 'Rs. 2200', img: 'https://images.unsplash.com/photo-1590947132387-155cc02f3212?w=800&auto=format&fit=crop' },
-                        { title: 'Morning Lecture Boost', desc: 'Fresh juice and light breakfast to start your uni day right.', price: 'Rs. 300', img: stringHoppers }
-                    ].map((item, i) => (
+                    {finalFavorites.map((item, i) => (
                         <motion.div 
                             key={i}
                             whileHover={{ y: -10 }}
                             onClick={() => {
-                                if (item.title.toLowerCase().includes('special')) {
+                                if (item.isReal || item.title.toLowerCase().includes('special')) {
                                     navigate('/order?category=Special%20Menu');
                                 } else {
-                                    navigate(`/order?q=${item.title}`);
+                                    navigate(`/order?q=${encodeURIComponent(item.title)}`);
                                 }
                             }}
                             style={{
@@ -215,7 +290,8 @@ const HomePage = () => {
                                 overflow: 'hidden',
                                 boxShadow: '0 15px 35px rgba(0,0,0,0.06)',
                                 cursor: 'pointer',
-                                position: 'relative'
+                                position: 'relative',
+                                background: 'white'
                             }}
                         >
                             <div style={{ height: '300px', position: 'relative' }}>
@@ -227,18 +303,38 @@ const HomePage = () => {
                                     background: 'var(--primary)',
                                     borderRadius: '50px',
                                     padding: '6px 12px',
-                                    fontWeight: 'bold',
+                                    fontWeight: 800,
                                     color: 'black',
-                                    boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+                                    boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+                                    fontSize: '0.9rem'
                                 }}>
                                     {item.price}
                                 </div>
+                                {item.isReal && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '15px',
+                                        left: '15px',
+                                        background: 'rgba(0,0,0,0.6)',
+                                        backdropFilter: 'blur(10px)',
+                                        borderRadius: '50px',
+                                        padding: '6px 12px',
+                                        fontWeight: 700,
+                                        color: 'white',
+                                        fontSize: '0.75rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                    }}>
+                                        <Star size={12} fill="#FFD700" color="#FFD700" /> SPECIAL
+                                    </div>
+                                )}
                             </div>
-                            <div style={{ padding: '1.5rem', background: 'white', textAlign: 'left' }}>
+                            <div style={{ padding: '1.5rem', textAlign: 'left' }}>
                                 <div style={{ marginBottom: '10px' }}>
                                     <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1F2937' }}>{item.title}</h3>
                                 </div>
-                                <p style={{ color: '#6B7280', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                <p style={{ color: '#6B7280', fontSize: '0.95rem', lineHeight: 1.5, height: '4.5em', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
                                     {item.desc}
                                 </p>
                             </div>
@@ -246,6 +342,144 @@ const HomePage = () => {
                     ))}
                 </div>
             </section>
+
+            {/* FLASH DEALS SECTION — visible when deals are active */}
+            {flashDeals.length > 0 && (
+                <section style={{ width: '100%', background: 'linear-gradient(135deg, var(--coffee-darker) 0%, var(--coffee-dark) 60%, var(--coffee-medium) 100%)', padding: '60px 8%', position: 'relative', overflow: 'hidden', marginTop: '4rem' }}>
+                    {/* Decorative rings */}
+                    <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '300px', height: '300px', borderRadius: '50%', border: '40px solid rgba(255,255,255,0.03)', pointerEvents: 'none' }} />
+                    <div style={{ position: 'absolute', bottom: '-80px', left: '-40px', width: '250px', height: '250px', borderRadius: '50%', border: '30px solid rgba(255,255,255,0.03)', pointerEvents: 'none' }} />
+                    <div style={{ position: 'absolute', top: '20%', right: '-5%', opacity: 0.04, pointerEvents: 'none' }}>
+                        <Zap size={400} color="var(--latte-highlight)" fill="var(--latte-highlight)" />
+                    </div>
+
+                    <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
+                        {/* Section Header */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <div style={{
+                                    width: '52px', height: '52px', borderRadius: '16px',
+                                    background: 'linear-gradient(135deg, var(--latte-highlight), var(--coffee-medium))',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    boxShadow: '0 8px 20px rgba(201,147,90,0.45)', animation: 'pulse 2s infinite'
+                                }}>
+                                    <Zap size={26} color="white" fill="white" />
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--latte-highlight)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3px' }}>Limited Time Offers</div>
+                                    <h2 style={{ margin: 0, fontSize: '2rem', fontWeight: 900, color: 'var(--latte-card)', letterSpacing: '-0.5px', fontFamily: '"Outfit", sans-serif' }}>⚡ Flash Deals</h2>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.07)', padding: '8px 18px', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <Clock size={14} color="var(--latte-highlight)" />
+                                <span style={{ fontSize: '0.8rem', color: 'var(--latte-card)', fontWeight: 600 }}>Offers valid for 24 hours</span>
+                            </div>
+                        </div>
+
+                        {/* Deal Cards */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            {flashDeals.map((deal, i) => {
+                                const matched = menuItems.find(m =>
+                                    (m.name?.en || m.name || '').toLowerCase() === deal.itemName.toLowerCase()
+                                );
+                                const foodImg = matched?.image || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop';
+                                const urgencyColor = deal.urgency === 'HIGH' ? 'var(--status-expired)' : deal.urgency === 'LOW' ? 'var(--coffee-soft)' : 'var(--latte-highlight)';
+
+                                return (
+                                    <motion.div
+                                        key={deal._id}
+                                        initial={{ opacity: 0, x: -30 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: i * 0.1, duration: 0.5 }}
+                                        whileHover={{ scale: 1.015, boxShadow: '0 24px 50px rgba(0,0,0,0.5)' }}
+                                        onClick={() => navigate(`/order?q=${encodeURIComponent(deal.itemName)}`)}
+                                        style={{
+                                            borderRadius: '24px',
+                                            background: 'rgba(255,255,255,0.06)',
+                                            backdropFilter: 'blur(16px)',
+                                            border: '1px solid rgba(201,147,90,0.25)',
+                                            overflow: 'hidden',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'stretch',
+                                            minHeight: '180px',
+                                            transition: 'all 0.35s cubic-bezier(0.4,0,0.2,1)',
+                                            position: 'relative'
+                                        }}
+                                    >
+                                        {/* Left — Food Image */}
+                                        <div style={{ width: '220px', minWidth: '220px', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                                            <img
+                                                src={foodImg}
+                                                alt={deal.itemName}
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                                onError={e => { e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop'; }}
+                                            />
+                                            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, transparent 60%, rgba(59,31,14,0.65) 100%)' }} />
+                                            <div style={{
+                                                position: 'absolute', top: '14px', left: '14px',
+                                                background: urgencyColor,
+                                                color: 'white', fontWeight: 800, fontSize: '0.7rem',
+                                                padding: '4px 10px', borderRadius: '20px',
+                                                letterSpacing: '0.5px', textTransform: 'uppercase',
+                                                boxShadow: '0 3px 10px rgba(0,0,0,0.3)'
+                                            }}>
+                                                {deal.urgency === 'HIGH' ? '🔥 Urgent' : deal.urgency === 'LOW' ? '🟢 Calm' : '⚡ Active'}
+                                            </div>
+                                        </div>
+
+                                        {/* Right — Deal Info */}
+                                        <div style={{ flex: 1, padding: '28px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative' }}>
+                                            {/* Discount badge */}
+                                            <div style={{
+                                                position: 'absolute', top: '20px', right: '24px',
+                                                background: 'linear-gradient(135deg, var(--latte-highlight), var(--coffee-medium))',
+                                                color: 'white', fontWeight: 900, fontSize: '1.1rem',
+                                                padding: '6px 18px', borderRadius: '50px',
+                                                boxShadow: '0 6px 18px rgba(201,147,90,0.5)'
+                                            }}>
+                                                {deal.discountPct}% OFF
+                                            </div>
+
+                                            <div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--latte-highlight)', boxShadow: '0 0 8px var(--latte-highlight)', animation: 'pulse 1.5s infinite' }} />
+                                                    <span style={{ fontSize: '0.7rem', color: 'var(--latte-highlight)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Flash Sale Active</span>
+                                                </div>
+                                                <h3 style={{ margin: '0 0 8px', fontSize: '1.6rem', fontWeight: 900, color: 'var(--latte-card)', fontFamily: '"Outfit", sans-serif', letterSpacing: '-0.5px', paddingRight: '110px' }}>
+                                                    {deal.itemName}
+                                                </h3>
+                                                <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.55, maxWidth: '500px' }}>
+                                                    {deal.suggestion}
+                                                </p>
+                                            </div>
+
+                                            {/* Bottom — timer + CTA */}
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginTop: '18px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.25)', padding: '8px 16px', borderRadius: '50px', border: '1px solid rgba(201,147,90,0.2)' }}>
+                                                    <Clock size={16} color="var(--latte-highlight)" />
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--latte-highlight)', fontWeight: 800, fontFamily: 'monospace', letterSpacing: '0.5px' }}>
+                                                        {timeRemaining[deal._id] || 'Loading...'}
+                                                    </span>
+                                                </div>
+                                                <div style={{
+                                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                                    background: 'linear-gradient(135deg, var(--latte-highlight), var(--coffee-medium))',
+                                                    color: 'white', fontWeight: 700, fontSize: '0.88rem',
+                                                    padding: '10px 24px', borderRadius: '50px',
+                                                    boxShadow: '0 6px 16px rgba(201,147,90,0.35)'
+                                                }}>
+                                                    <Zap size={14} fill="white" /> Claim Deal <ArrowRight size={14} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </section>
+            )}
         </div>
     );
 };

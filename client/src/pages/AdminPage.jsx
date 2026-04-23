@@ -21,6 +21,222 @@ import StatsCard from '../components/StatsCard';
 import PopularItems from '../components/PopularItems';
 import AIAssistant from '../components/AIAssistant';
 
+const StatCard = ({ icon: Icon, title, value, color }) => (
+    <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', flex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+                <div style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '0.5rem' }}>{title}</div>
+                <div style={{ fontSize: '2rem', fontWeight: 800 }}>{value}</div>
+            </div>
+            <div style={{ padding: '0.75rem', borderRadius: '12px', background: `${color}20` }}>
+                <Icon size={24} style={{ color }} />
+            </div>
+        </div>
+    </div>
+);
+
+const StockFormModal = ({ show, onClose, title, onSuccess }) => (
+    <AnimatePresence>
+        {show && (
+            <>
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={onClose}
+                    style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', zIndex: 1001 }}
+                />
+                <div
+                    style={{ position: 'fixed', top: 0, left: '280px', right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1002, pointerEvents: 'none', padding: '20px' }}
+                >
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        style={{ 
+                            pointerEvents: 'auto',
+                            width: '100%', 
+                            maxWidth: '750px', 
+                            maxHeight: '90vh', 
+                            overflowY: 'auto', 
+                            background: 'var(--latte-card)', 
+                            borderRadius: '24px', 
+                            padding: '2.5rem', 
+                            border: '1px solid #f1f5f9', 
+                            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)' 
+                        }}
+                    >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>{title}</h2>
+                        <X onClick={onClose} style={{ cursor: 'pointer', color: 'var(--text-main)' }} />
+                    </div>
+                    <form onSubmit={(e) => { e.preventDefault(); onClose(); onSuccess(); }}>
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Item Name</label>
+                            <input required placeholder="e.g. Basmati Rice" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Category</label>
+                                <select style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
+                                    <option>Vegetables</option>
+                                    <option>Meat</option>
+                                    <option>Dairy</option>
+                                    <option>Dry Goods</option>
+                                    <option>Condiments</option>
+                                    <option>Beverages</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Supplier</label>
+                                <select style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
+                                    <option>Lanka Foods</option>
+                                    <option>Fresh Meats Co</option>
+                                    <option>Agro Distributors</option>
+                                    <option>Daily Farms</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Quantity</label>
+                                <input required type="number" placeholder="0" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Unit</label>
+                                <select style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
+                                    <option>kg</option>
+                                    <option>g</option>
+                                    <option>liters</option>
+                                    <option>ml</option>
+                                    <option>pieces</option>
+                                    <option>boxes</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Min Alert Threshold</label>
+                                <input required type="number" placeholder="e.g. 5" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
+                            </div>
+                        </div>
+                        <div style={{ marginBottom: '2.5rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Expiry Date</label>
+                            <input required type="date" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
+                        </div>
+                        <button type="submit" className="btn-premium" style={{ width: '100%', padding: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
+                            <Save size={20} /> Save Stock Item
+                        </button>
+                    </form>
+                </motion.div>
+            </div>
+            </>
+        )}
+    </AnimatePresence>
+);
+
+const UserFormModal = ({ show, onClose, userFormData, setUserFormData, validatePassword, passwordRequirements, handleAddUser }) => (
+    <AnimatePresence>
+        {show && (
+            <>
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={onClose}
+                    style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', zIndex: 1001 }}
+                />
+                <div
+                    style={{ position: 'fixed', top: 0, left: '280px', right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1002, pointerEvents: 'none', padding: '20px' }}
+                >
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        style={{ 
+                            pointerEvents: 'auto',
+                            width: '100%', 
+                            maxWidth: '500px', 
+                            background: 'var(--latte-card)', 
+                            borderRadius: '24px', 
+                            padding: '2.5rem', 
+                            zIndex: 1002, 
+                            border: '1px solid #f1f5f9', 
+                            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)' 
+                        }}
+                    >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>Add New User</h2>
+                        <X onClick={onClose} style={{ cursor: 'pointer', color: 'var(--text-main)' }} />
+                    </div>
+                    <form onSubmit={handleAddUser}>
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Full Name</label>
+                            <input required value={userFormData.name} onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. John Doe" />
+                        </div>
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Student/Staff ID (Username)</label>
+                            <input required value={userFormData.username} onChange={(e) => setUserFormData({ ...userFormData, username: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. IT2100000" />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Password</label>
+                                <input required type="password" value={userFormData.password} onChange={(e) => { setUserFormData({ ...userFormData, password: e.target.value }); validatePassword(e.target.value); }} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="********" />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Role</label>
+                                <select value={userFormData.role} onChange={(e) => setUserFormData({ ...userFormData, role: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
+                                    <option value="student">Student</option>
+                                    <option value="staff">Staff</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style={{ 
+                            background: '#f8fafc', 
+                            padding: '1rem', 
+                            borderRadius: '12px', 
+                            marginBottom: '1.5rem',
+                            fontSize: '0.75rem',
+                            border: '1px solid #e2e8f0'
+                        }}>
+                            <p style={{ fontWeight: 700, margin: '0 0 0.5rem 0', color: 'var(--text-secondary)' }}>Password Requirements:</p>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                {[
+                                    { key: 'length', text: '8+ Characters' },
+                                    { key: 'uppercase', text: 'Uppercase Letter' },
+                                    { key: 'lowercase', text: 'Lowercase Letter' },
+                                    { key: 'number', text: 'At least one Number' },
+                                    { key: 'special', text: 'Special Character' }
+                                ].map(req => (
+                                    <div key={req.key} style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '6px',
+                                        color: passwordRequirements[req.key] ? '#10b981' : '#fca5a5',
+                                        fontWeight: passwordRequirements[req.key] ? 700 : 500,
+                                        transition: 'all 0.3s ease'
+                                    }}>
+                                        <div style={{ 
+                                            width: '6px', 
+                                            height: '6px', 
+                                            borderRadius: '50%', 
+                                            background: passwordRequirements[req.key] ? '#10b981' : '#fca5a5' 
+                                        }} />
+                                        {req.text}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <button type="submit" className="btn-premium" style={{ width: '100%', padding: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
+                            <Save size={20} /> Create User
+                        </button>
+                    </form>
+                </motion.div>
+            </div>
+            </>
+        )}
+    </AnimatePresence>
+);
+
 const AdminPage = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -324,221 +540,7 @@ const AdminPage = () => {
         }
     };
 
-    const StatCard = ({ icon: Icon, title, value, color }) => (
-        <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', flex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                    <div style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '0.5rem' }}>{title}</div>
-                    <div style={{ fontSize: '2rem', fontWeight: 800 }}>{value}</div>
-                </div>
-                <div style={{ padding: '0.75rem', borderRadius: '12px', background: `${color}20` }}>
-                    <Icon size={24} style={{ color }} />
-                </div>
-            </div>
-        </div>
-    );
 
-    const StockFormModal = ({ show, onClose, title }) => (
-        <AnimatePresence>
-            {show && (
-                <>
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={onClose}
-                        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', zIndex: 1001 }}
-                    />
-                    <div
-                        style={{ position: 'fixed', top: 0, left: '280px', right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1002, pointerEvents: 'none', padding: '20px' }}
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            style={{ 
-                                pointerEvents: 'auto',
-                                width: '100%', 
-                                maxWidth: '750px', 
-                                maxHeight: '90vh', 
-                                overflowY: 'auto', 
-                                background: 'var(--latte-card)', 
-                                borderRadius: '24px', 
-                                padding: '2.5rem', 
-                                border: '1px solid #f1f5f9', 
-                                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)' 
-                            }}
-                        >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>{title}</h2>
-                            <X onClick={onClose} style={{ cursor: 'pointer', color: 'var(--text-main)' }} />
-                        </div>
-                        <form onSubmit={(e) => { e.preventDefault(); onClose(); setShowSuccess('Stock updated successfully!'); setTimeout(() => setShowSuccess(''), 3000); }}>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Item Name</label>
-                                <input required placeholder="e.g. Basmati Rice" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Category</label>
-                                    <select style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
-                                        <option>Vegetables</option>
-                                        <option>Meat</option>
-                                        <option>Dairy</option>
-                                        <option>Dry Goods</option>
-                                        <option>Condiments</option>
-                                        <option>Beverages</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Supplier</label>
-                                    <select style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
-                                        <option>Lanka Foods</option>
-                                        <option>Fresh Meats Co</option>
-                                        <option>Agro Distributors</option>
-                                        <option>Daily Farms</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Quantity</label>
-                                    <input required type="number" placeholder="0" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Unit</label>
-                                    <select style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
-                                        <option>kg</option>
-                                        <option>g</option>
-                                        <option>liters</option>
-                                        <option>ml</option>
-                                        <option>pieces</option>
-                                        <option>boxes</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Min Alert Threshold</label>
-                                    <input required type="number" placeholder="e.g. 5" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
-                                </div>
-                            </div>
-                            <div style={{ marginBottom: '2.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Expiry Date</label>
-                                <input required type="date" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} />
-                            </div>
-                            <button type="submit" className="btn-premium" style={{ width: '100%', padding: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
-                                <Save size={20} /> Save Stock Item
-                            </button>
-                        </form>
-                    </motion.div>
-                </div>
-                </>
-            )}
-        </AnimatePresence>
-    );
-
-    const UserFormModal = () => (
-        <AnimatePresence>
-            {showUserModal && (
-                <>
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => { setShowUserModal(false); resetForm(); }}
-                        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', zIndex: 1001 }}
-                    />
-                    <div
-                        style={{ position: 'fixed', top: 0, left: '280px', right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1002, pointerEvents: 'none', padding: '20px' }}
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            style={{ 
-                                pointerEvents: 'auto',
-                                width: '100%', 
-                                maxWidth: '500px', 
-                                background: 'var(--latte-card)', 
-                                borderRadius: '24px', 
-                                padding: '2.5rem', 
-                                zIndex: 1002, 
-                                border: '1px solid #f1f5f9', 
-                                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)' 
-                            }}
-                        >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>Add New User</h2>
-                            <X onClick={() => { setShowUserModal(false); resetForm(); }} style={{ cursor: 'pointer', color: 'var(--text-main)' }} />
-                        </div>
-                        <form onSubmit={handleAddUser}>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Full Name</label>
-                                <input required value={userFormData.name} onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. John Doe" />
-                            </div>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Student/Staff ID (Username)</label>
-                                <input required value={userFormData.username} onChange={(e) => setUserFormData({ ...userFormData, username: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. IT2100000" />
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Password</label>
-                                    <input required type="password" value={userFormData.password} onChange={(e) => { setUserFormData({ ...userFormData, password: e.target.value }); validatePassword(e.target.value); }} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="********" />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Role</label>
-                                    <select value={userFormData.role} onChange={(e) => setUserFormData({ ...userFormData, role: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'var(--latte-card)', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
-                                        <option value="student">Student</option>
-                                        <option value="staff">Staff</option>
-                                        <option value="admin">Admin</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div style={{ 
-                                background: '#f8fafc', 
-                                padding: '1rem', 
-                                borderRadius: '12px', 
-                                marginBottom: '1.5rem',
-                                fontSize: '0.75rem',
-                                border: '1px solid #e2e8f0'
-                            }}>
-                                <p style={{ fontWeight: 700, margin: '0 0 0.5rem 0', color: 'var(--text-secondary)' }}>Password Requirements:</p>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                                    {[
-                                        { key: 'length', text: '8+ Characters' },
-                                        { key: 'uppercase', text: 'Uppercase Letter' },
-                                        { key: 'lowercase', text: 'Lowercase Letter' },
-                                        { key: 'number', text: 'At least one Number' },
-                                        { key: 'special', text: 'Special Character' }
-                                    ].map(req => (
-                                        <div key={req.key} style={{ 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            gap: '6px',
-                                            color: passwordRequirements[req.key] ? '#10b981' : '#fca5a5',
-                                            fontWeight: passwordRequirements[req.key] ? 700 : 500,
-                                            transition: 'all 0.3s ease'
-                                        }}>
-                                            <div style={{ 
-                                                width: '6px', 
-                                                height: '6px', 
-                                                borderRadius: '50%', 
-                                                background: passwordRequirements[req.key] ? '#10b981' : '#fca5a5' 
-                                            }} />
-                                            {req.text}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <button type="submit" className="btn-premium" style={{ width: '100%', padding: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
-                                <Save size={20} /> Create User
-                            </button>
-                        </form>
-                    </motion.div>
-                </div>
-                </>
-            )}
-        </AnimatePresence>
-    );
 
 
     // Menu management is now handled in MenuManagement.jsx
@@ -1208,9 +1210,25 @@ const AdminPage = () => {
 
             <AIAssistant />
 
-            {/* Modals and Toasts */}
-            <StockFormModal show={showStockModal} onClose={() => setShowStockModal(false)} title="Add/Edit Stock Item" />
-            <UserFormModal />
+            <StockFormModal 
+                show={showStockModal} 
+                onClose={() => setShowStockModal(false)} 
+                title="Add New Stock Item"
+                onSuccess={() => {
+                    setShowSuccess('Stock updated successfully!');
+                    setTimeout(() => setShowSuccess(''), 3000);
+                }}
+            />
+            
+            <UserFormModal 
+                show={showUserModal} 
+                onClose={() => { setShowUserModal(false); resetForm(); }}
+                userFormData={userFormData}
+                setUserFormData={setUserFormData}
+                validatePassword={validatePassword}
+                passwordRequirements={passwordRequirements}
+                handleAddUser={handleAddUser}
+            />
 
             {showSuccess && (
                 <motion.div

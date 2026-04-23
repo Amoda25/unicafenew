@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Save, TrendingUp, Clock, Package, Zap, BarChart3, Users as UsersIcon,
     Plus, X, AlignLeft, Search, Bell, MessageSquare, Trash2, FileText, Download,
-    Target, ArrowUpRight, Award, Flame
+    Target, ArrowUpRight, Award, Flame, Tag, Percent, CheckCircle2, AlertTriangle,
+    Sparkles, TrendingDown, Gift
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -42,6 +43,33 @@ const SalesManagement = () => {
     const [showSuccess, setShowSuccess] = useState('');
     const [showError, setShowError] = useState('');
 
+    const [dismissedPromotions, setDismissedPromotions] = useState(new Set());
+    const [appliedPromotions, setAppliedPromotions] = useState(new Set());
+
+    const handleApplyPromotion = async (item) => {
+        try {
+            // If it's a flash sale, push to backend
+            if (item.type === 'flash') {
+                const expiresAt = new Date();
+                expiresAt.setHours(expiresAt.getHours() + 24); // 24h from now
+
+                await axios.post('/api/flash-deals', {
+                    itemName: item.name,
+                    discountPct: item.discountPct,
+                    suggestion: item.suggestion,
+                    expiresAt: expiresAt.toISOString()
+                });
+                
+                alert(`⚡ Flash Deal for '${item.name}' is now LIVE on the Home page!`);
+            }
+            
+            setAppliedPromotions(prev => new Set([...prev, item.name]));
+        } catch (err) {
+            console.error('Error applying promotion:', err);
+            alert('Failed to apply promotion to student portal.');
+        }
+    };
+
     const [aiMessages, setAiMessages] = useState([{
         sender: 'ai',
         text: "Hello Sales Admin! I've analyzed today's data. Everything looks stable, but I recommend a small promotion for 'Snacks' to boost afternoon sales."
@@ -61,7 +89,7 @@ const SalesManagement = () => {
 
     const [userFormData, setUserFormData] = useState({
         name: '',
-        studentId: '',
+        username: '',
         password: '',
         role: 'student'
     });
@@ -126,7 +154,7 @@ const SalesManagement = () => {
     const resetForm = () => {
         setUserFormData({
             name: '',
-            studentId: '',
+            username: '',
             password: '',
             role: 'student'
         });
@@ -151,14 +179,14 @@ const SalesManagement = () => {
         }
 
         try {
-            await axios.post('/api/users/register', userFormData);
+            await axios.post('/api/users', userFormData);
             setShowSuccess('User registered successfully!');
             setShowUserModal(false);
             resetForm();
             fetchUsers();
             setTimeout(() => setShowSuccess(''), 3000);
         } catch (err) {
-            alert(err.response?.data?.error || 'Registration failed');
+            alert(err.response?.data?.message || 'Registration failed');
         }
     };
 
@@ -469,53 +497,6 @@ const SalesManagement = () => {
         setAiInput('');
     };
 
-    const handleDownloadReport = () => {
-        const dayOrders = orders.filter(o => new Date(o.createdAt).toISOString().split('T')[0] === selectedReportDate);
-        if (dayOrders.length === 0) {
-            alert('No data to download for this date.');
-            return;
-        }
-
-        let csvContent = "data:text/csv;charset=utf-8,";
-        
-        // CSV Header for Summary
-        csvContent += "Report Date,Total Revenue(LKR),Total Orders\n";
-        
-        const dayRevenue = dayOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
-        csvContent += `${selectedReportDate},${dayRevenue},${dayOrders.length}\n\n`;
-
-        // Itemized breakdown
-        csvContent += "Item Name,Quantity Sold,Total Value(LKR)\n";
-        const dayItemCounts = {};
-        dayOrders.forEach(o => o.items?.forEach(i => {
-            const name = i.name?.en || i.name;
-            const priceStr = String(i.price || 0).replace(/,/g, '');
-            const price = parseFloat(priceStr);
-            const qty = i.quantity || 1;
-            
-            if (!dayItemCounts[name]) {
-                dayItemCounts[name] = { qty: 0, revenue: 0 };
-            }
-            dayItemCounts[name].qty += qty;
-            dayItemCounts[name].revenue += price * qty;
-        }));
-
-        const sortedItems = Object.entries(dayItemCounts).sort((a, b) => b[1].qty - a[1].qty);
-        sortedItems.forEach(([name, data]) => {
-            // escape quotes in name just in case
-            const safeName = `"${name.replace(/"/g, '""')}"`;
-            csvContent += `${safeName},${data.qty},${data.revenue}\n`;
-        });
-
-        // Create link and download
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Sales_Report_${selectedReportDate}.csv`);
-        document.body.appendChild(link); // Required for FF
-        link.click();
-        document.body.removeChild(link);
-    };
 
     const handleDownloadPDF = () => {
         const { jsPDF } = window.jspdf;
@@ -543,14 +524,11 @@ const SalesManagement = () => {
         doc.setTextColor(148, 163, 184);
         doc.text("TOTAL REVENUE", 20, 50);
         doc.text("TOTAL ORDERS", 80, 50);
-        doc.text("AVG. ORDER VALUE", 140, 50);
 
         doc.setFontSize(14);
         doc.setTextColor(15, 23, 42);
         doc.text(`LKR ${dayRevenue.toLocaleString()}`, 20, 60);
         doc.text(`${dayOrders.length}`, 80, 60);
-        const avg = dayOrders.length > 0 ? Math.round(dayRevenue / dayOrders.length) : 0;
-        doc.text(`LKR ${avg.toLocaleString()}`, 140, 60);
 
         // Itemized Table
         const dayItemCounts = {};
@@ -812,6 +790,7 @@ const SalesManagement = () => {
                         </div>
                     </div>
                 </div>
+
             </div>
         );
     };
@@ -1275,6 +1254,149 @@ const SalesManagement = () => {
         </div>
     );
 
+    const renderInvoiceHistory = () => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '15px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <FileText size={24} />
+                    </div>
+                    <div>
+                        <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>Invoice History</h3>
+                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: 500 }}>Manage and track all generated invoices</p>
+                    </div>
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ position: 'relative' }}>
+                        <Search size={18} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                        <input 
+                            type="text" 
+                            placeholder="Search invoices..." 
+                            value={globalSearch}
+                            onChange={(e) => setGlobalSearch(e.target.value)}
+                            style={{
+                                padding: '12px 16px 12px 45px',
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0',
+                                width: '300px',
+                                fontSize: '0.9rem',
+                                outline: 'none'
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div style={{ padding: '32px', borderRadius: '24px', background: 'var(--latte-card)', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
+                <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
+                        <thead>
+                            <tr style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 600 }}>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Order ID</th>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Date & Time</th>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Customer</th>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Items</th>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Amount</th>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Order Status</th>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Payment Status</th>
+                                <th style={{ padding: '16px', textAlign: 'right' }}>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {orders
+                                .filter(order => 
+                                    order._id.toLowerCase().includes(globalSearch.toLowerCase()) ||
+                                    (order.username || '').toLowerCase().includes(globalSearch.toLowerCase()) ||
+                                    (order.customerName || '').toLowerCase().includes(globalSearch.toLowerCase())
+                                )
+                                .map((order) => (
+                                <tr key={order._id} style={{ background: '#f8fafc', borderRadius: '12px', transition: 'transform 0.2s' }}>
+                                    <td style={{ padding: '16px', fontWeight: 800, color: '#1e293b', fontSize: '0.85rem' }}>
+                                        #{order._id.slice(-8).toUpperCase()}
+                                    </td>
+                                    <td style={{ padding: '16px', color: '#64748b', fontSize: '0.9rem' }}>
+                                        <div>{new Date(order.createdAt).toLocaleDateString()}</div>
+                                        <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{new Date(order.createdAt).toLocaleTimeString()}</div>
+                                    </td>
+                                    <td style={{ padding: '16px' }}>
+                                        <div style={{ fontWeight: 700, color: '#1e293b' }}>{order.username || order.customerName || 'Guest'}</div>
+                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{order.studentId || 'N/A'}</div>
+                                    </td>
+                                    <td style={{ padding: '16px', color: '#64748b' }}>
+                                        <span style={{ fontWeight: 700, color: '#3b82f6' }}>{order.items?.length || 0}</span> items
+                                    </td>
+                                    <td style={{ padding: '16px', fontWeight: 800, color: '#0f172a' }}>
+                                        LKR {(order.totalAmount || 0).toLocaleString()}
+                                    </td>
+                                    <td style={{ padding: '16px' }}>
+                                        {(() => {
+                                            const status = (order.status || 'placed').toLowerCase();
+                                            let config = { label: '🟡 Placed', bg: '#fffbeb', color: '#f59e0b' };
+                                            
+                                            if (['preparing', 'process', 'cookd', 'ready'].includes(status)) config = { label: '🔵 Preparing', bg: '#eff6ff', color: '#3b82f6' };
+                                            else if (status === 'completed' || status === 'picked-up') config = { label: '🟢 Completed', bg: '#ecfdf5', color: '#10b981' };
+                                            else if (status === 'cancelled') config = { label: '🔴 Cancelled', bg: '#fef2f2', color: '#ef4444' };
+
+                                            return (
+                                                <span style={{
+                                                    padding: '6px 12px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 800,
+                                                    background: config.bg,
+                                                    color: config.color,
+                                                    textTransform: 'uppercase',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '5px'
+                                                }}>
+                                                    {config.label}
+                                                </span>
+                                            );
+                                        })()}
+                                    </td>
+                                    <td style={{ padding: '16px' }}>
+                                        <span style={{
+                                            padding: '6px 12px',
+                                            borderRadius: '8px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 800,
+                                            background: (order.status === 'completed' || order.status === 'picked-up') ? '#ecfdf5' : '#fff7ed',
+                                            color: (order.status === 'completed' || order.status === 'picked-up') ? '#10b981' : '#f97316',
+                                            textTransform: 'uppercase'
+                                        }}>
+                                            {(order.status === 'completed' || order.status === 'picked-up') ? 'Paid' : 'Pending'}
+                                        </span>
+                                    </td>
+                                    <td style={{ padding: '16px', textAlign: 'right' }}>
+                                        <button 
+                                            onClick={() => {
+                                                setSelectedReportDate(new Date(order.createdAt).toISOString().split('T')[0]);
+                                                setShowDailyReport(true);
+                                            }}
+                                            className="glass" 
+                                            style={{ 
+                                                padding: '8px 16px', 
+                                                borderRadius: '10px', 
+                                                fontSize: '0.8rem', 
+                                                fontWeight: 700, 
+                                                color: '#3b82f6', 
+                                                border: '1px solid rgba(59, 130, 246, 0.2)',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            View Report
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-page)', color: '#111827' }}>
             <SalesSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -1290,6 +1412,7 @@ const SalesManagement = () => {
                         >
                             {activeTab === 'dashboard' && renderDashboardOverview()}
                             {activeTab === 'analytics' && renderAnalytics()}
+                            {activeTab === 'invoices' && renderInvoiceHistory()}
                             {activeTab === 'users' && renderUserManager()}
                         </motion.div>
                     </AnimatePresence>
@@ -1322,10 +1445,6 @@ const SalesManagement = () => {
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                    <button onClick={handleDownloadReport} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', color: 'white', fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s' }} onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-                                        <Download size={18} />
-                                        Download CSV
-                                    </button>
                                     <button onClick={() => setShowDailyReport(false)} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', width: 44, height: 44, borderRadius: '15px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
                                         <X size={24} />
                                     </button>
@@ -1336,7 +1455,6 @@ const SalesManagement = () => {
                                 {(() => {
                                     const dayOrders = orders.filter(o => new Date(o.createdAt).toISOString().split('T')[0] === selectedReportDate);
                                     const dayRevenue = dayOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
-                                    const avgOrderVal = dayOrders.length > 0 ? Math.round(dayRevenue / dayOrders.length) : 0;
 
                                     const dayItemCounts = {};
                                     dayOrders.forEach(o => o.items?.forEach(i => {
@@ -1350,7 +1468,7 @@ const SalesManagement = () => {
 
                                     return (
                                         <>
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '40px' }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '40px' }}>
                                                 <div style={{ padding: '25px', borderRadius: '24px', background: '#f8fafc', border: '1px solid #f1f5f9' }}>
                                                     <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Total Revenue</div>
                                                     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e293b' }}>LKR {dayRevenue.toLocaleString()}</div>
@@ -1358,10 +1476,6 @@ const SalesManagement = () => {
                                                 <div style={{ padding: '25px', borderRadius: '24px', background: '#f8fafc', border: '1px solid #f1f5f9' }}>
                                                     <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Total Orders</div>
                                                     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e293b' }}>{dayOrders.length}</div>
-                                                </div>
-                                                <div style={{ padding: '25px', borderRadius: '24px', background: '#f8fafc', border: '1px solid #f1f5f9' }}>
-                                                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Avg. Order</div>
-                                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e293b' }}>LKR {avgOrderVal.toLocaleString()}</div>
                                                 </div>
                                             </div>
 
@@ -1414,8 +1528,8 @@ const SalesManagement = () => {
                                         <input required value={userFormData.name} onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. John Doe" />
                                     </div>
                                     <div style={{ marginBottom: '1.5rem' }}>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Student/Staff ID</label>
-                                        <input required value={userFormData.studentId} onChange={(e) => setUserFormData({ ...userFormData, studentId: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. IT2100000" />
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Student/Staff ID (Username)</label>
+                                        <input required value={userFormData.username} onChange={(e) => setUserFormData({ ...userFormData, username: e.target.value })} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', background: 'white', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }} placeholder="e.g. IT2100000" />
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
                                         <div>

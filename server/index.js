@@ -14,6 +14,7 @@ const Notification = require('./models/Notification');
 const Supplier = require('./models/Supplier');
 const StockUsage = require('./models/StockUsage');
 const WasteLog = require('./models/WasteLog');
+const FlashDeal = require('./models/FlashDeal');
 
 
 // ─── Smart Low-Stock Alert Engine ──────────────────────────────────────────
@@ -122,7 +123,7 @@ const isPasswordComplex = (password) => {
 // Auth Routes
 app.post('/api/auth/register', async (req, res) => {
     try {
-        const { name, username, password, role } = req.body;
+        const { name, username, password, role, faculty } = req.body;
 
         // Robust Input Validation
         if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -137,6 +138,9 @@ app.post('/api/auth/register', async (req, res) => {
             const studentIdRegex = /^[A-Za-z]{2,}\d{5,}$/;
             if (!studentIdRegex.test(username.trim())) {
                 return res.status(400).json({ message: 'Invalid Student ID. Use letters followed by digits (e.g., IT123456).' });
+            }
+            if (!faculty) {
+                return res.status(400).json({ message: 'Faculty is required for students' });
             }
         }
         if (!password || typeof password !== 'string' || !isPasswordComplex(password)) {
@@ -158,7 +162,8 @@ app.post('/api/auth/register', async (req, res) => {
             name: name.trim(),
             username: username.trim(),
             password: hashedPassword,
-            role: role || 'student'
+            role: role || 'student',
+            faculty: role === 'student' ? faculty : undefined
         });
 
         await user.save();
@@ -210,7 +215,8 @@ app.post('/api/auth/google', async (req, res) => {
                 name,
                 username: email,
                 password: await bcrypt.hash(sub, 10), // Random password for Google users
-                role: 'student'
+                role: 'student',
+                faculty: 'Other' // Default for Google users as we don't have faculty info yet
             });
             await user.save();
         }
@@ -630,7 +636,7 @@ app.get('/api/users', async (req, res) => {
 
 app.post('/api/users', async (req, res) => {
     try {
-        const { name, username, password, role } = req.body;
+        const { name, username, password, role, faculty } = req.body;
 
         if (!name || name.trim().length === 0) return res.status(400).json({ message: 'Name is required' });
         if (!username || username.trim().length === 0) return res.status(400).json({ message: 'Username is required' });
@@ -660,7 +666,8 @@ app.post('/api/users', async (req, res) => {
             name,
             username,
             password: hashedPassword,
-            role: role || 'student'
+            role: role || 'student',
+            faculty
         });
 
         const savedUser = await newUser.save();
@@ -1213,6 +1220,55 @@ app.delete('/api/suppliers/:id', async (req, res) => {
         res.json({ message: 'Supplier deleted successfully' });
     } catch (err) {
         res.status(400).json({ error: err.message });
+    }
+});
+
+// ─── Flash Deal Routes ────────────────────────────────────────────────────────
+
+// GET all active (non-expired) flash deals — used by student home page
+app.get('/api/flash-deals', async (req, res) => {
+    try {
+        const now = new Date();
+        const deals = await FlashDeal.find({ isActive: true, expiresAt: { $gt: now } }).sort({ createdAt: -1 });
+        res.json(deals);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST — admin applies a new flash deal
+app.post('/api/flash-deals', async (req, res) => {
+    try {
+        const { itemName, discountPct, suggestion, promoType, urgency } = req.body;
+        if (!itemName || !discountPct) {
+            return res.status(400).json({ error: 'itemName and discountPct are required' });
+        }
+        // Deactivate any previous deal for the same item to avoid duplicates
+        await FlashDeal.updateMany({ itemName }, { isActive: false });
+
+        const deal = new FlashDeal({
+            itemName,
+            discountPct: Number(discountPct),
+            suggestion: suggestion || `${discountPct}% Flash Sale on ${itemName}!`,
+            promoType: promoType || 'flash',
+            urgency: urgency || 'MED',
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // active for 24h
+        });
+        await deal.save();
+        res.status(201).json(deal);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// DELETE — admin removes / deactivates a specific flash deal
+app.delete('/api/flash-deals/:id', async (req, res) => {
+    try {
+        const deal = await FlashDeal.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
+        if (!deal) return res.status(404).json({ error: 'Deal not found' });
+        res.json({ message: 'Flash deal deactivated' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
