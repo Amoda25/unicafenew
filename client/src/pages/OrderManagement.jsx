@@ -480,8 +480,12 @@ const OrderManagement = () => {
                                                     outline: 'none'
                                                 }}
                                             >
-                                                {statuses.filter(s => s !== 'Paid' && s !== 'picked-up').map(s => (
-                                                    <option key={s} value={s}>{s === 'ready' ? 'READY' : s.toUpperCase()}</option>
+                                                {['pending', 'preparing', 'ready', 'picked-up'].map(s => (
+                                                    <option key={s} value={s}>
+                                                        {s === 'pending' ? '🟡 PENDING' : 
+                                                         s === 'preparing' ? '🟠 PREPARING' : 
+                                                         s === 'ready' ? '🟢 READY' : '⚪ PICKED-UP'}
+                                                    </option>
                                                 ))}
 
 

@@ -660,8 +660,12 @@ const AdminPage = () => {
                                                 cursor: 'pointer'
                                             }}
                                         >
-                                            {['pending', 'preparing', 'ready', 'picked-up'].map(status => (
-                                                <option key={status} value={status}>{status === 'ready' ? 'READY' : status.toUpperCase()}</option>
+                                            {['pending', 'preparing', 'ready', 'picked-up'].map(s => (
+                                                <option key={s} value={s}>
+                                                    {s === 'pending' ? '🟡 PENDING' : 
+                                                     s === 'preparing' ? '🟠 PREPARING' : 
+                                                     s === 'ready' ? '🟢 READY' : '⚪ PICKED-UP'}
+                                                </option>
                                             ))}
                                         </select>
                                         <button
