@@ -354,6 +354,7 @@ const OrderManagement = () => {
                             {status === 'ready' ? 'READY' : status.toUpperCase()}
                         </div>
                     ))}
+                </div>
             </div>
 
             <div style={{ padding: '32px', borderRadius: '24px', background: 'var(--latte-card)', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
