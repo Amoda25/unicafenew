@@ -497,53 +497,6 @@ const SalesManagement = () => {
         setAiInput('');
     };
 
-    const handleDownloadReport = () => {
-        const dayOrders = orders.filter(o => new Date(o.createdAt).toISOString().split('T')[0] === selectedReportDate);
-        if (dayOrders.length === 0) {
-            alert('No data to download for this date.');
-            return;
-        }
-
-        let csvContent = "data:text/csv;charset=utf-8,";
-        
-        // CSV Header for Summary
-        csvContent += "Report Date,Total Revenue(LKR),Total Orders\n";
-        
-        const dayRevenue = dayOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
-        csvContent += `${selectedReportDate},${dayRevenue},${dayOrders.length}\n\n`;
-
-        // Itemized breakdown
-        csvContent += "Item Name,Quantity Sold,Total Value(LKR)\n";
-        const dayItemCounts = {};
-        dayOrders.forEach(o => o.items?.forEach(i => {
-            const name = i.name?.en || i.name;
-            const priceStr = String(i.price || 0).replace(/,/g, '');
-            const price = parseFloat(priceStr);
-            const qty = i.quantity || 1;
-            
-            if (!dayItemCounts[name]) {
-                dayItemCounts[name] = { qty: 0, revenue: 0 };
-            }
-            dayItemCounts[name].qty += qty;
-            dayItemCounts[name].revenue += price * qty;
-        }));
-
-        const sortedItems = Object.entries(dayItemCounts).sort((a, b) => b[1].qty - a[1].qty);
-        sortedItems.forEach(([name, data]) => {
-            // escape quotes in name just in case
-            const safeName = `"${name.replace(/"/g, '""')}"`;
-            csvContent += `${safeName},${data.qty},${data.revenue}\n`;
-        });
-
-        // Create link and download
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Sales_Report_${selectedReportDate}.csv`);
-        document.body.appendChild(link); // Required for FF
-        link.click();
-        document.body.removeChild(link);
-    };
 
     const handleDownloadPDF = () => {
         const { jsPDF } = window.jspdf;
@@ -571,14 +524,11 @@ const SalesManagement = () => {
         doc.setTextColor(148, 163, 184);
         doc.text("TOTAL REVENUE", 20, 50);
         doc.text("TOTAL ORDERS", 80, 50);
-        doc.text("AVG. ORDER VALUE", 140, 50);
 
         doc.setFontSize(14);
         doc.setTextColor(15, 23, 42);
         doc.text(`LKR ${dayRevenue.toLocaleString()}`, 20, 60);
         doc.text(`${dayOrders.length}`, 80, 60);
-        const avg = dayOrders.length > 0 ? Math.round(dayRevenue / dayOrders.length) : 0;
-        doc.text(`LKR ${avg.toLocaleString()}`, 140, 60);
 
         // Itemized Table
         const dayItemCounts = {};
@@ -1495,10 +1445,6 @@ const SalesManagement = () => {
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                    <button onClick={handleDownloadReport} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', color: 'white', fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s' }} onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-                                        <Download size={18} />
-                                        Download CSV
-                                    </button>
                                     <button onClick={() => setShowDailyReport(false)} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', width: 44, height: 44, borderRadius: '15px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
                                         <X size={24} />
                                     </button>
@@ -1509,7 +1455,6 @@ const SalesManagement = () => {
                                 {(() => {
                                     const dayOrders = orders.filter(o => new Date(o.createdAt).toISOString().split('T')[0] === selectedReportDate);
                                     const dayRevenue = dayOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
-                                    const avgOrderVal = dayOrders.length > 0 ? Math.round(dayRevenue / dayOrders.length) : 0;
 
                                     const dayItemCounts = {};
                                     dayOrders.forEach(o => o.items?.forEach(i => {
@@ -1523,7 +1468,7 @@ const SalesManagement = () => {
 
                                     return (
                                         <>
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '40px' }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '40px' }}>
                                                 <div style={{ padding: '25px', borderRadius: '24px', background: '#f8fafc', border: '1px solid #f1f5f9' }}>
                                                     <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Total Revenue</div>
                                                     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e293b' }}>LKR {dayRevenue.toLocaleString()}</div>
@@ -1531,10 +1476,6 @@ const SalesManagement = () => {
                                                 <div style={{ padding: '25px', borderRadius: '24px', background: '#f8fafc', border: '1px solid #f1f5f9' }}>
                                                     <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Total Orders</div>
                                                     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e293b' }}>{dayOrders.length}</div>
-                                                </div>
-                                                <div style={{ padding: '25px', borderRadius: '24px', background: '#f8fafc', border: '1px solid #f1f5f9' }}>
-                                                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Avg. Order</div>
-                                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e293b' }}>LKR {avgOrderVal.toLocaleString()}</div>
                                                 </div>
                                             </div>
 
