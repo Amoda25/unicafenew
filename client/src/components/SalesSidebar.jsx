@@ -8,7 +8,8 @@ import {
     MessageSquare,
     Info,
     Mail,
-    LogOut
+    LogOut,
+    FileText
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/unicafe_logo_vintage.png';
@@ -22,6 +23,7 @@ const SalesSidebar = ({ activeTab, setActiveTab }) => {
             items: [
                 { id: 'dashboard', name: 'Dashboard Overview', icon: LayoutDashboard },
                 { id: 'analytics', name: 'Analytics', icon: BarChart3 },
+                { id: 'invoices', name: 'Invoice History', icon: FileText },
                 { id: 'users', name: 'User Access', icon: Users }
             ]
         },

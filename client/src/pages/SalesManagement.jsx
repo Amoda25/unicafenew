@@ -1304,6 +1304,121 @@ const SalesManagement = () => {
         </div>
     );
 
+    const renderInvoiceHistory = () => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '15px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <FileText size={24} />
+                    </div>
+                    <div>
+                        <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>Invoice History</h3>
+                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: 500 }}>Manage and track all generated invoices</p>
+                    </div>
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ position: 'relative' }}>
+                        <Search size={18} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                        <input 
+                            type="text" 
+                            placeholder="Search invoices..." 
+                            value={globalSearch}
+                            onChange={(e) => setGlobalSearch(e.target.value)}
+                            style={{
+                                padding: '12px 16px 12px 45px',
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0',
+                                width: '300px',
+                                fontSize: '0.9rem',
+                                outline: 'none'
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div style={{ padding: '32px', borderRadius: '24px', background: 'var(--latte-card)', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
+                <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
+                        <thead>
+                            <tr style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 600 }}>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Order ID</th>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Date & Time</th>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Customer</th>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Items</th>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Amount</th>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Status</th>
+                                <th style={{ padding: '16px', textAlign: 'right' }}>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {orders
+                                .filter(order => 
+                                    order._id.toLowerCase().includes(globalSearch.toLowerCase()) ||
+                                    (order.username || '').toLowerCase().includes(globalSearch.toLowerCase()) ||
+                                    (order.customerName || '').toLowerCase().includes(globalSearch.toLowerCase())
+                                )
+                                .map((order) => (
+                                <tr key={order._id} style={{ background: '#f8fafc', borderRadius: '12px', transition: 'transform 0.2s' }}>
+                                    <td style={{ padding: '16px', fontWeight: 800, color: '#1e293b', fontSize: '0.85rem' }}>
+                                        #{order._id.slice(-8).toUpperCase()}
+                                    </td>
+                                    <td style={{ padding: '16px', color: '#64748b', fontSize: '0.9rem' }}>
+                                        <div>{new Date(order.createdAt).toLocaleDateString()}</div>
+                                        <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{new Date(order.createdAt).toLocaleTimeString()}</div>
+                                    </td>
+                                    <td style={{ padding: '16px' }}>
+                                        <div style={{ fontWeight: 700, color: '#1e293b' }}>{order.username || order.customerName || 'Guest'}</div>
+                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{order.studentId || 'N/A'}</div>
+                                    </td>
+                                    <td style={{ padding: '16px', color: '#64748b' }}>
+                                        <span style={{ fontWeight: 700, color: '#3b82f6' }}>{order.items?.length || 0}</span> items
+                                    </td>
+                                    <td style={{ padding: '16px', fontWeight: 800, color: '#0f172a' }}>
+                                        LKR {(order.totalAmount || 0).toLocaleString()}
+                                    </td>
+                                    <td style={{ padding: '16px' }}>
+                                        <span style={{
+                                            padding: '6px 12px',
+                                            borderRadius: '8px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 800,
+                                            background: order.status === 'completed' ? '#ecfdf5' : '#fff7ed',
+                                            color: order.status === 'completed' ? '#10b981' : '#f97316',
+                                            textTransform: 'uppercase'
+                                        }}>
+                                            {order.status || 'Pending'}
+                                        </span>
+                                    </td>
+                                    <td style={{ padding: '16px', textAlign: 'right' }}>
+                                        <button 
+                                            onClick={() => {
+                                                setSelectedReportDate(new Date(order.createdAt).toISOString().split('T')[0]);
+                                                setShowDailyReport(true);
+                                            }}
+                                            className="glass" 
+                                            style={{ 
+                                                padding: '8px 16px', 
+                                                borderRadius: '10px', 
+                                                fontSize: '0.8rem', 
+                                                fontWeight: 700, 
+                                                color: '#3b82f6', 
+                                                border: '1px solid rgba(59, 130, 246, 0.2)',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            View Report
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-page)', color: '#111827' }}>
             <SalesSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -1319,6 +1434,7 @@ const SalesManagement = () => {
                         >
                             {activeTab === 'dashboard' && renderDashboardOverview()}
                             {activeTab === 'analytics' && renderAnalytics()}
+                            {activeTab === 'invoices' && renderInvoiceHistory()}
                             {activeTab === 'users' && renderUserManager()}
                         </motion.div>
                     </AnimatePresence>
