@@ -31,7 +31,7 @@ const OrderManagement = () => {
     const [analytics, setAnalytics] = useState(null);
 
     const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Beverages'];
-    const statuses = ['pending', 'preparing', 'ready', 'picked-up'];
+    const statuses = ['placed', 'preparing', 'completed', 'cancelled'];
 
 
 
@@ -247,12 +247,23 @@ const OrderManagement = () => {
                                         fontWeight: 800,
                                         padding: '4px 10px',
                                         borderRadius: '99px',
-                                        background: order.status === 'ready' ? '#dcfce7' : 
-                                                   ['preparing', 'process', 'cookd'].includes(order.status) ? '#fef3c7' : '#fee2e2',
-                                        color: order.status === 'ready' ? '#10b981' : 
-                                               ['preparing', 'process', 'cookd'].includes(order.status) ? '#f59e0b' : '#ef4444'
+                                        background: order.status === 'picked-up' || order.status === 'completed' ? '#ecfdf5' : 
+                                                   ['preparing', 'process', 'cookd', 'ready'].includes(order.status) ? '#eff6ff' : 
+                                                   order.status === 'cancelled' ? '#fef2f2' : '#fffbeb',
+                                        color: order.status === 'picked-up' || order.status === 'completed' ? '#10b981' : 
+                                               ['preparing', 'process', 'cookd', 'ready'].includes(order.status) ? '#3b82f6' : 
+                                               order.status === 'cancelled' ? '#ef4444' : '#f59e0b',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
                                     }}>
-                                        {order.status.toUpperCase()}
+                                        {(() => {
+                                            const s = (order.status || 'placed').toLowerCase();
+                                            if (s === 'picked-up' || s === 'completed') return '🟢 Completed';
+                                            if (['preparing', 'process', 'cookd', 'ready'].includes(s)) return '🔵 Preparing';
+                                            if (s === 'cancelled') return '🔴 Cancelled';
+                                            return '🟡 Placed';
+                                        })()}
                                     </span>
                                 </div>
                             ))}
@@ -343,18 +354,17 @@ const OrderManagement = () => {
                                 width: '8px',
                                 height: '8px',
                                 borderRadius: '50%',
-                                background: status === 'Paid' ? '#10b981' :
-                                    status === 'ready' ? '#10b981' :
-
-                                        status === 'preparing' ? '#f59e0b' :
-                                            status === 'pending' ? '#fbbf24' : '#64748b'
-
-
-
+                                background: status === 'completed' ? '#10b981' :
+                                    status === 'preparing' ? '#3b82f6' :
+                                    status === 'cancelled' ? '#ef4444' : '#f59e0b'
                             }} />
-                            {status === 'ready' ? 'READY' : status.toUpperCase()}
-
-
+                            {(() => {
+                                if (status === 'placed') return '🟡 PLACED';
+                                if (status === 'preparing') return '🔵 PREPARING';
+                                if (status === 'completed') return '🟢 COMPLETED';
+                                if (status === 'cancelled') return '🔴 CANCELLED';
+                                return status.toUpperCase();
+                            })()}
                         </div>
                     ))}
                 </div>
@@ -424,25 +434,23 @@ const OrderManagement = () => {
                                             borderRadius: '8px',
                                             fontSize: '0.75rem',
                                             fontWeight: 700,
-                                            background: order.status === 'Paid' ? 'rgba(16, 185, 129, 0.1)' :
-                                                order.status === 'ready' ? 'rgba(16, 185, 129, 0.1)' :
-
-                                                    ['preparing', 'process', 'cookd'].includes(order.status) ? 'rgba(245, 158, 11, 0.1)' :
-                                                        order.status === 'pending' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(100, 116, 139, 0.1)',
-                                            color: order.status === 'Paid' ? '#10b981' :
-                                                order.status === 'ready' ? '#10b981' :
-
-                                                    ['preparing', 'process', 'cookd'].includes(order.status) ? '#f59e0b' :
-                                                        order.status === 'pending' ? '#fbbf24' : '#64748b',
-
+                                            background: (order.status === 'picked-up' || order.status === 'completed') ? '#ecfdf5' :
+                                                (['preparing', 'process', 'cookd', 'ready'].includes(order.status)) ? '#eff6ff' :
+                                                order.status === 'cancelled' ? '#fef2f2' : '#fffbeb',
+                                            color: (order.status === 'picked-up' || order.status === 'completed') ? '#10b981' :
+                                                (['preparing', 'process', 'cookd', 'ready'].includes(order.status)) ? '#3b82f6' :
+                                                order.status === 'cancelled' ? '#ef4444' : '#f59e0b',
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             gap: '6px'
                                         }}>
-                                            <Zap size={12} />
-                                            {order.status === 'ready' ? 'READY' : order.status.toUpperCase()}
-
-
+                                            {(() => {
+                                                const s = (order.status || 'placed').toLowerCase();
+                                                if (s === 'picked-up' || s === 'completed') return '🟢 Completed';
+                                                if (['preparing', 'process', 'cookd', 'ready'].includes(s)) return '🔵 Preparing';
+                                                if (s === 'cancelled') return '🔴 Cancelled';
+                                                return '🟡 Placed';
+                                            })()}
                                         </span>
                                     </td>
                                     <td style={{ padding: '20px 16px', textAlign: 'right', borderTopRightRadius: '16px', borderBottomRightRadius: '16px' }}>
@@ -491,8 +499,12 @@ const OrderManagement = () => {
                                                     outline: 'none'
                                                 }}
                                             >
-                                                {statuses.filter(s => s !== 'Paid' && s !== 'picked-up').map(s => (
-                                                    <option key={s} value={s}>{s === 'ready' ? 'READY' : s.toUpperCase()}</option>
+                                                {statuses.map(s => (
+                                                    <option key={s} value={s}>
+                                                        {s === 'placed' ? '🟡 PLACED' : 
+                                                         s === 'preparing' ? '🔵 PREPARING' : 
+                                                         s === 'completed' ? '🟢 COMPLETED' : '🔴 CANCELLED'}
+                                                    </option>
                                                 ))}
 
 
