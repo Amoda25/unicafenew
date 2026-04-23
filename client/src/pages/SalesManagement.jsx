@@ -1347,7 +1347,7 @@ const SalesManagement = () => {
                                 <th style={{ padding: '16px', textAlign: 'left' }}>Customer</th>
                                 <th style={{ padding: '16px', textAlign: 'left' }}>Items</th>
                                 <th style={{ padding: '16px', textAlign: 'left' }}>Amount</th>
-                                <th style={{ padding: '16px', textAlign: 'left' }}>Status</th>
+                                <th style={{ padding: '16px', textAlign: 'left' }}>Order Status</th>
                                 <th style={{ padding: '16px', textAlign: 'right' }}>Action</th>
                             </tr>
                         </thead>
