@@ -17,8 +17,15 @@ const OrderSuccessPage = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
 
+    // --- QR CODE GENERATION LOGIC ---
+    // Construct the unique URL that will be encoded into the QR code.
+    // This URL leads to the order scanning page for the cashier.
     const scanUrl = `${window.location.origin}/order-scan/${orderId}`;
+
+    // Generate the QR code image URL using the QRServer external API.
+    // We pass the scanUrl as the data to be encoded.
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(scanUrl)}`;
+    // ---------------------------------
 
     const [status, setStatus] = React.useState('pending');
 
@@ -104,6 +111,7 @@ const OrderSuccessPage = () => {
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '8px', background: 'var(--latte-highlight)' }}></div>
                     
                     <div style={{ marginBottom: '2.5rem' }}>
+                        {/* Display the generated QR code image */}
                         <div style={{ background: 'white', padding: '1.5rem', borderRadius: '30px', border: '1px solid #e2e8f0', display: 'inline-block', boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.02)' }}>
                             <img 
                                 src={qrUrl} 
@@ -146,6 +154,7 @@ const OrderSuccessPage = () => {
                     <div style={{ display: 'flex', gap: '1rem' }}>
                         <button 
                             onClick={async () => {
+                                // Logic to download the QR code image as a PNG file
                                 try {
                                     const response = await fetch(qrUrl);
                                     const blob = await response.blob();

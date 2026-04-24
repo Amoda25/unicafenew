@@ -68,14 +68,16 @@ const ItemCard = ({ item, language, addToCart, toggleWishlist, isWishlisted }) =
 );
 
 const OrderingPage = () => {
-    const [activeCategory, setActiveCategory] = useState('All');
-    const [menuItems, setMenuItems] = useState([]);
-    const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem('cart') || '[]'));
-    const [wishlist, setWishlist] = useState(() => JSON.parse(localStorage.getItem('wishlist') || '[]'));
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [language, setLanguage] = useState('en');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [dietaryFilter, setDietaryFilter] = useState('All');
+    // --- STATE MANAGEMENT ---
+    const [activeCategory, setActiveCategory] = useState('All'); // Current selected food category
+    const [menuItems, setMenuItems] = useState([]); // Stores the list of food items from the database
+    const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem('cart') || '[]')); // Shopping cart items
+    const [wishlist, setWishlist] = useState(() => JSON.parse(localStorage.getItem('wishlist') || '[]')); // Favorite items
+    const [isProcessing, setIsProcessing] = useState(false); // Loading state for order submission
+    const [language, setLanguage] = useState('en'); // Multi-language support (English, Sinhala, Tamil)
+    const [searchQuery, setSearchQuery] = useState(''); // Text for searching food items
+    const [dietaryFilter, setDietaryFilter] = useState('All'); // Filter for Veg/Non-Veg (if needed)
+    // ------------------------
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [queueData, setQueueData] = useState({ queueLength: 0, estimatedWaitTime: 12 });
@@ -104,6 +106,8 @@ const OrderingPage = () => {
         window.dispatchEvent(new Event('cartUpdated'));
     }, [cart, wishlist]);
 
+    // --- DATA FETCHING ---
+    // Fetch all menu items from the backend API when the page loads.
     useEffect(() => {
         const fetchMenu = async () => {
             try {
@@ -111,14 +115,15 @@ const OrderingPage = () => {
                 if (response.data && response.data.length > 0) {
                     setMenuItems(response.data);
                 } else {
-                    setMenuItems(MOCK_DATA);
+                    setMenuItems(MOCK_DATA); // Fallback to mock data if API is empty
                 }
             } catch (err) {
-                setMenuItems(MOCK_DATA);
+                setMenuItems(MOCK_DATA); // Fallback to mock data on error
             }
         };
         fetchMenu();
     }, []);
+    // ---------------------
 
     const MOCK_DATA = [
         { _id: '1', name: { en: 'Kiribath with Lunu Miris', si: 'ලුණු මිරිස් සමඟ කිරි බත්', ta: 'கிரிபத் உடன் லினு மிரிஸ்' }, price: 150, category: 'Breakfast', isVeg: true, image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&q=80&w=800' },
@@ -156,6 +161,8 @@ const OrderingPage = () => {
         { name: 'Beverages', icon: '🥤', displayName: 'Beverages' }
     ];
 
+    // --- CART ACTIONS ---
+    // Add a selected item to the cart or increase its quantity.
     const addToCart = (item) => {
         const existing = cart.find(i => i._id === item._id);
         if (existing) {
@@ -164,6 +171,7 @@ const OrderingPage = () => {
             setCart([...cart, { ...item, quantity: 1 }]);
         }
     };
+    // --------------------
 
     const toggleWishlist = (item) => {
         if (wishlist.find(i => i._id === item._id)) {
@@ -179,7 +187,10 @@ const OrderingPage = () => {
     const tax = subTotal > 0 ? 50 : 0;
     const cartTotal = subTotal + tax;
 
+    // --- ORDER PLACEMENT ---
+    // Submit the final order to the backend and redirect to the success page.
     const handlePlaceOrder = async () => {
+        // Ensure the user is logged in
         if (!user.email && !localStorage.getItem('username')) {
             alert('Please login first');
             navigate('/login');
@@ -192,14 +203,15 @@ const OrderingPage = () => {
                 items: cart.map(i => ({ name: i.name[language], quantity: i.quantity, price: i.price })),
                 totalAmount: cartTotal
             });
-            setCart([]);
-            navigate(`/order-success/${res.data._id}`);
+            setCart([]); // Clear cart after success
+            navigate(`/order-success/${res.data._id}`); // Redirect to QR display page
         } catch (err) {
             alert('Failed to place order');
         } finally {
             setIsProcessing(false);
         }
     };
+    // -----------------------
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%', background: '#F8F9FA', fontFamily: "'Inter', sans-serif" }}>
@@ -337,7 +349,8 @@ const OrderingPage = () => {
 
                         {/* Items Grid */}
                         <div id="items-grid-start">
-                            {searchQuery ? (() => {
+                                // --- SEARCH FILTERING LOGIC ---
+                                // Filter items based on the search query across multiple languages (English, Sinhala, Tamil)
                                 const query = searchQuery.toLowerCase();
                                 const allMatches = menuItems.filter(i => {
                                     const name = i.name;

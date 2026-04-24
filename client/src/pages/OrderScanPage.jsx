@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 
 const OrderScanPage = () => {
+    // This page is accessed by the cashier when they scan the customer's QR code.
+    // The orderId is extracted from the URL.
     const { orderId } = useParams();
     const navigate = useNavigate();
     const [order, setOrder] = useState(null);
@@ -41,10 +43,12 @@ const OrderScanPage = () => {
         }
     }, [orderId]);
 
+    // This function allows the cashier to mark the order as 'Paid' after receiving cash.
     const handlePayment = async () => {
 
         setIsPaying(true);
         try {
+            // Update the order status in the backend database.
             const response = await axios.patch(`/api/orders/pay/${orderId}`);
             setOrder(response.data);
             setIsPaid(true);
