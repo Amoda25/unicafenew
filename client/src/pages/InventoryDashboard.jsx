@@ -10,32 +10,37 @@ import RestockModal from '../components/RestockModal';
 
 
 const InventoryDashboard = () => {
-    const [activeTab, setActiveTab] = useState(localStorage.getItem('inventoryActiveTab') || 'dashboard');
+    // --- STATE DEFINITIONS ---
+    const [activeTab, setActiveTab] = useState(localStorage.getItem('inventoryActiveTab') || 'dashboard'); // Persists the selected tab
     
     useEffect(() => {
         localStorage.setItem('inventoryActiveTab', activeTab);
     }, [activeTab]);
-    const [inventoryFilter, setInventoryFilter] = useState(null);
-    const [inventory, setInventory] = useState([]);
+
+    const [inventoryFilter, setInventoryFilter] = useState(null); // Used to filter items (e.g., 'expired')
+    const [inventory, setInventory] = useState([]); // All inventory items from DB
     const [loading, setLoading] = useState(false);
 
-    // Dispose confirmation state
+    // Modal states for disposing items (removing waste)
     const [isDisposeModalOpen, setIsDisposeModalOpen] = useState(false);
     const [itemToDispose, setItemToDispose] = useState(null);
     const [disposeLoading, setDisposeLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState('');
 
-    // Smart alert state
-    const [alerts, setAlerts]             = useState([]);
+    // Smart Stock Alerts (AI-based predictions)
+    const [alerts, setAlerts]             = useState([]); // List of items predicted to run out soon
     const [alertsLoading, setAlertsLoading] = useState(false);
-    const [lastComputed, setLastComputed]  = useState(null);
+    const [lastComputed, setLastComputed]  = useState(null); // Timestamp of last alert calculation
     const [recalculating, setRecalculating] = useState(false);
-    // Shared restock state
+
+    // Modal states for restocking items
     const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
     const [restockItem, setRestockItem] = useState(null);
+    // -------------------------
 
 
-    // ── Data fetchers ────────────────────────────────────────────────────────
+    // --- DATA FETCHING ---
+    // Fetches the raw inventory list (name, qty, unit, expiry, etc.)
     const fetchInventory = useCallback(async () => {
         setLoading(true);
         try {
@@ -48,6 +53,7 @@ const InventoryDashboard = () => {
         }
     }, []);
 
+    // Fetches the alerts (Items that are CRITICAL or LOW STOCK based on usage)
     const fetchAlerts = useCallback(async () => {
         setAlertsLoading(true);
         try {
@@ -65,6 +71,7 @@ const InventoryDashboard = () => {
         fetchInventory();
         fetchAlerts();
     }, [fetchInventory, fetchAlerts]);
+    // ----------------------
 
     const handleTabChange = (tab) => {
         setActiveTab(tab);
@@ -102,11 +109,13 @@ const InventoryDashboard = () => {
         }
     };
 
+    // --- AUTO-REFRESH LOGIC ---
     useEffect(() => {
         if (activeTab === 'dashboard') {
             fetchDashboardData();
             
-            // Real-time auto-refresh every 30 seconds
+            // Real-time auto-refresh: Dashboard updates every 30 seconds
+            // to show live stock usage from orders being placed.
             const interval = setInterval(() => {
                 fetchDashboardData();
             }, 30000);
@@ -114,6 +123,7 @@ const InventoryDashboard = () => {
             return () => clearInterval(interval);
         }
     }, [activeTab, fetchDashboardData]);
+    // ---------------------------
 
     // ── Derived stats ────────────────────────────────────────────────────────
     const totalIngredients = inventory.length;

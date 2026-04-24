@@ -19,20 +19,21 @@ import {
 import axios from 'axios';
 
 const UsageStockView = () => {
-    // ── State ────────────────────────────────────────────────────────────────
-    const [inventory, setInventory] = useState([]);
-    const [usageHistory, setUsageHistory] = useState([]);
+    // --- STATE DEFINITIONS ---
+    const [inventory, setInventory] = useState([]); // List of items to choose from
+    const [usageHistory, setUsageHistory] = useState([]); // Log of past consumption
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
-    const [qtyError, setQtyError] = useState('');
+    const [qtyError, setQtyError] = useState(''); // Real-time error if usage > stock
 
     const [formData, setFormData] = useState({
-        inventoryId: '',
-        usedQty: '',
-        date: new Date().toISOString().split('T')[0],
+        inventoryId: '', // Selected ingredient
+        usedQty: '', // Amount used today
+        date: new Date().toISOString().split('T')[0], // Default to today
         notes: ''
     });
+    // -------------------------
 
     // ── Data Fetching ────────────────────────────────────────────────────────
     const fetchData = useCallback(async () => {
@@ -63,11 +64,12 @@ const UsageStockView = () => {
     const usedQtyNum = Number(formData.usedQty) || 0;
     const remainingQty = Math.max(0, currentQty - usedQtyNum);
     
-    // Status prediction based on remaining quantity
+    // --- STATUS PREDICTION ---
+    // Predicts what the stock status will be AFTER this usage is logged.
+    // Helps admin see if they are about to run out of an item.
     const getStatusPrediction = () => {
         if (!selectedItem) return { text: 'N/A', color: '#94a3b8', bg: '#f1f5f9' };
         
-        // Use minStockThreshold for prediction
         const threshold = selectedItem.minStockThreshold || 10;
         if (remainingQty <= Math.floor(threshold / 2)) {
             return { text: 'CRITICAL', color: '#ef4444', bg: '#fee2e2' };
@@ -76,6 +78,7 @@ const UsageStockView = () => {
         }
         return { text: 'STOCK OK', color: '#10b981', bg: '#dcfce7' };
     };
+    // -------------------------
 
     const statusPred = getStatusPrediction();
 
@@ -90,6 +93,7 @@ const UsageStockView = () => {
         }
     };
 
+    // --- QUANTITY VALIDATION ---
     const handleQtyChange = (e) => {
         const value = e.target.value;
         const numValue = Number(value);
@@ -101,14 +105,18 @@ const UsageStockView = () => {
             return;
         }
 
+        // Rule 1: Cannot use 0 or negative
         if (numValue <= 0) {
             setQtyError('Quantity must be greater than 0');
-        } else if (selectedItem && numValue > selectedItem.qty) {
+        } 
+        // Rule 2: Cannot use more than what we actually have in stock
+        else if (selectedItem && numValue > selectedItem.qty) {
             setQtyError(`Insufficient stock! Max available: ${selectedItem.qty} ${selectedItem.unit}`);
         } else {
             setQtyError('');
         }
     };
+    // ----------------------------
 
     const handleSubmit = async (e) => {
         e.preventDefault();

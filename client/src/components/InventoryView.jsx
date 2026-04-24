@@ -7,16 +7,18 @@ import logo from '../assets/unicafe_logo_vintage.png';
 import RestockModal from './RestockModal';
 
 const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
-    const [activeCategory, setActiveCategory] = useState('All');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingId, setEditingId] = useState(null);
-    const [formData, setFormData] = useState({ name: '', category: 'Beverage', qty: '', unit: 'kg', expiry: '', supplier: '', minStockThreshold: '' });
-    const [formErrors, setFormErrors] = useState({});
-    const [inventoryData, setInventoryData] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [showSuccess, setShowSuccess] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [suppliersList, setSuppliersList] = useState([]);
+    // --- STATE DEFINITIONS ---
+    const [activeCategory, setActiveCategory] = useState('All'); // Current category filter
+    const [isModalOpen, setIsModalOpen] = useState(false); // Controls the Add/Edit form modal
+    const [editingId, setEditingId] = useState(null); // ID of the item being edited (null if adding new)
+    const [formData, setFormData] = useState({ name: '', category: 'Beverage', qty: '', unit: 'kg', expiry: '', supplier: '', minStockThreshold: '' }); // Form fields
+    const [formErrors, setFormErrors] = useState({}); // Validation error messages
+    const [inventoryData, setInventoryData] = useState([]); // Array of all inventory items
+    const [loading, setLoading] = useState(false); // Fetching state
+    const [showSuccess, setShowSuccess] = useState(''); // Success notification message
+    const [searchTerm, setSearchTerm] = useState(''); // Text for searching items
+    const [suppliersList, setSuppliersList] = useState([]); // List of suppliers for the dropdown
+    // -------------------------
     
     // Restock state
     const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
@@ -108,6 +110,8 @@ const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
         }
     };
 
+    // --- VALIDATION LOGIC ---
+    // Checks if the user input is valid before allowing submission
     const validateField = (name, value) => {
         let error = '';
         switch (name) {
@@ -125,6 +129,7 @@ const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
                     const selectedDate = new Date(value);
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
+                    // Prevent entering already expired items manually
                     if (selectedDate < today) error = 'Expiry date must be in the future';
                 }
                 break;
@@ -140,6 +145,7 @@ const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
         }
         return error;
     };
+    // -------------------------
 
     const handleFormChange = (e) => {
         const { name, value } = e.target;
@@ -240,18 +246,26 @@ const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
         }
     };
 
+    // --- FILTERING & SEARCHING ---
     const filteredData = inventoryData.filter(item => {
+        // Filter by selected category tab
         const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
+        
+        // Search by item name or supplier name
         const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                              (item.supplier && item.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
         
+        // Global filter from dashboard (e.g., showing only expired items)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const matchesExpired = inventoryFilter === 'expired' ? (item.expiry && new Date(item.expiry) < today) : true;
         
         return matchesCategory && matchesSearch && matchesExpired;
     });
+    // ------------------------------
 
+    // --- PDF REPORT GENERATION ---
+    // Uses jsPDF and autoTable to generate professional PDF documents.
     const generateInventoryReport = (reportType = 'Stock Summary Report') => {
         const doc = new jsPDF();
         let reportData = [...inventoryData];
@@ -259,7 +273,7 @@ const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
         let fileName = 'UniCafe_Inventory_Report';
         let tableColumn = ["Item Name", "Category", "Quantity", "Unit", "Expiry Date", "Status"];
 
-        // Filtering logic based on reportType
+        // 1. Logic to filter data based on the requested report type
         if (reportType === 'Low Stock Report') {
             reportData = inventoryData.filter(item => item.qty <= (item.minStockThreshold || 10));
             title = 'UniCafé Low Stock Report';
@@ -291,6 +305,7 @@ const InventoryView = ({ inventoryFilter, setInventoryFilter }) => {
             fileName = 'UniCafe_Stock_Summary';
             tableColumn = ["Item Name", "Category", "Stock Level", "Unit", "Last Restocked", "Status"];
         }
+        // -------------------------------------------------------------
 
         // Add Header Branding
         doc.setFillColor(67, 40, 24); // #432818 (Mahogany Espresso)

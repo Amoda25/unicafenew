@@ -7,18 +7,20 @@ import logo from '../assets/unicafe_logo_vintage.png';
 
 
 const SuppliersView = () => {
-    const [activeFilter, setActiveFilter] = useState('All');
-    const [suppliers, setSuppliers] = useState([]);
+    // --- STATE DEFINITIONS ---
+    const [activeFilter, setActiveFilter] = useState('All'); // 'All', 'Active', or 'Inactive'
+    const [suppliers, setSuppliers] = useState([]); // Array of all suppliers in DB
     const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [showModal, setShowModal] = useState(false); // Controls the Add/Edit supplier modal
+    const [searchTerm, setSearchTerm] = useState(''); // Text for searching suppliers
     const [isEditing, setIsEditing] = useState(false);
     const [editId, setEditId] = useState(null);
-    const [showOrdersModal, setShowOrdersModal] = useState(false);
+    const [showOrdersModal, setShowOrdersModal] = useState(false); // Controls the "Supplied Items" modal
     const [selectedSupplier, setSelectedSupplier] = useState(null);
-    const [supplierItems, setSupplierItems] = useState([]);
+    const [supplierItems, setSupplierItems] = useState([]); // Items supplied by the selected supplier
     const [itemsLoading, setItemsLoading] = useState(false);
-    const [showSuccess, setShowSuccess] = useState('');
+    const [showSuccess, setShowSuccess] = useState(''); // Toast notification message
+    // -------------------------
 
     // Validation state
     const [emailError, setEmailError] = useState('');
@@ -69,21 +71,22 @@ const SuppliersView = () => {
         }
     };
 
+    // --- FORM HANDLING & VALIDATION ---
     const handleAddSupplier = async (e) => {
         e.preventDefault();
         
-        // Reset errors
+        // Reset validation errors
         setEmailError('');
         setPhoneError('');
 
-        // Email validation
+        // 1. Email Format Validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(newSupplier.email)) {
             setEmailError('Please enter a valid email address (e.g., sunil@ceylon.com)');
             return;
         }
 
-        // Phone validation (Flexible digits, allows +)
+        // 2. Phone Format Validation (Min 9 digits)
         const phoneClean = newSupplier.phone.replace(/[\s-]/g, '');
         const phoneRegex = /^\+?\d{9,15}$/;
         if (!phoneRegex.test(phoneClean)) {
@@ -93,9 +96,11 @@ const SuppliersView = () => {
 
         try {
             if (isEditing) {
+                // Update existing supplier
                 await axios.put(`/api/suppliers/${editId}`, newSupplier);
                 setShowSuccess(`${newSupplier.name} updated successfully!`);
             } else {
+                // Register new supplier
                 await axios.post('/api/suppliers', newSupplier);
                 setShowSuccess(`${newSupplier.name} registered successfully!`);
             }
@@ -108,6 +113,7 @@ const SuppliersView = () => {
             alert('Failed to save supplier: ' + (err.response?.data?.error || err.message));
         }
     };
+    // ------------------------------------
 
     const resetForm = () => {
         setNewSupplier({
@@ -138,11 +144,14 @@ const SuppliersView = () => {
         setShowModal(true);
     };
 
+    // --- CROSS-ENTITY LOGIC ---
+    // Fetches all inventory items linked to a specific supplier.
     const handleOrdersClick = async (supplier) => {
         setSelectedSupplier(supplier);
         setShowOrdersModal(true);
         setItemsLoading(true);
         try {
+            // Find items where supplier name matches
             const response = await axios.get(`/api/inventory/supplier/${encodeURIComponent(supplier.name)}`);
             setSupplierItems(response.data);
             setItemsLoading(false);
@@ -151,6 +160,7 @@ const SuppliersView = () => {
             setItemsLoading(false);
         }
     };
+    // ---------------------------
 
 
     const handleDeleteSupplier = (supplier) => {
