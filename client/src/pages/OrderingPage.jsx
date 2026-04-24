@@ -349,6 +349,7 @@ const OrderingPage = () => {
 
                         {/* Items Grid */}
                         <div id="items-grid-start">
+                            {searchQuery ? (() => {
                                 // --- SEARCH FILTERING LOGIC ---
                                 // Filter items based on the search query across multiple languages (English, Sinhala, Tamil)
                                 const query = searchQuery.toLowerCase();

@@ -447,6 +447,7 @@ const OrderManagement = () => {
                                         </span>
                                     </td>
                                     <td style={{ padding: '20px 16px', textAlign: 'right', borderTopRightRadius: '16px', borderBottomRightRadius: '16px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
                                             {/* Action buttons based on the current order status */}
                                             {order.status === 'pending' && (
                                                 <button 
