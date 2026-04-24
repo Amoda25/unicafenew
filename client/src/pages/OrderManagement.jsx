@@ -1,34 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+// Import icons from lucide-react library for UI elements
 import {
     Save, Clock, Utensils, ClipboardList,
     Plus, X, AlignLeft, Search, Bell, MessageSquare, Edit2, Trash2, Calendar,
     Activity, TrendingUp, CheckCircle, Smartphone, BarChart, Users, Zap
 } from 'lucide-react';
 import axios from 'axios';
+// Custom components for Sidebar and Calendar
 import OrderSidebar from '../components/OrderSidebar';
 import CalendarView from './CalendarView';
 
 const OrderManagement = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [activeTab, setActiveTab] = useState('orders');
-    const [orders, setOrders] = useState([]);
-
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const tab = params.get('tab');
-        if (tab && ['dashboard', 'orders', 'menu', 'calendar'].includes(tab)) {
-            setActiveTab(tab);
-        } else {
-            setActiveTab('dashboard'); // Default to overview
-        }
-    }, [location.search]);
-    const [users, setUsers] = useState([]);
-    const [globalSearch, setGlobalSearch] = useState('');
-    const [showSuccess, setShowSuccess] = useState('');
-    const [analytics, setAnalytics] = useState(null);
+    
+    // --- STATE DEFINITIONS ---
+    const [activeTab, setActiveTab] = useState('orders'); // Currently selected tab (dashboard, orders, menu, calendar)
+    const [orders, setOrders] = useState([]); // Array to store all customer orders
+    const [users, setUsers] = useState([]); // List of users (students/staff)
+    const [globalSearch, setGlobalSearch] = useState(''); // Text for searching across the dashboard
+    const [showSuccess, setShowSuccess] = useState(''); // Message to show on successful actions (toast notification)
+    const [analytics, setAnalytics] = useState(null); // Stores statistical data (top items, wait times)
+    // -------------------------
 
     const categories = ['Breakfast', 'Lunch', 'Dinner', 'Snacks', 'Beverages'];
     const statuses = ['pending', 'preparing', 'ready', 'picked-up'];
@@ -37,6 +32,8 @@ const OrderManagement = () => {
 
 
 
+    // --- LIFECYCLE HOOKS ---
+    // Fetch initial data and setup polling every 5 seconds for live updates
     useEffect(() => {
         fetchOrders();
         fetchUsers();
@@ -45,11 +42,12 @@ const OrderManagement = () => {
         const intervalId = setInterval(() => {
             fetchOrders();
             fetchAnalytics();
-        }, 5000);
+        }, 5000); // Poll every 5 seconds to get new orders in real-time
 
-        return () => clearInterval(intervalId);
+        return () => clearInterval(intervalId); // Cleanup interval on component unmount
     }, []);
 
+    // Fetch statistical data (revenue, popular items, etc.)
     const fetchAnalytics = async () => {
         try {
             const response = await axios.get('/api/admin/stats');
@@ -59,6 +57,7 @@ const OrderManagement = () => {
         }
     };
 
+    // Fetch all orders from the database
     const fetchOrders = async () => {
         try {
             const response = await axios.get('/api/orders/all');
@@ -79,30 +78,35 @@ const OrderManagement = () => {
 
     // Menu Management functions removed (now in MenuManagement.jsx)
 
+    // Update the status of an order (e.g., from 'pending' to 'preparing')
     const handleUpdateOrderStatus = async (orderId, newStatus) => {
         try {
             await axios.put(`/api/orders/${orderId}/status`, { status: newStatus });
             setShowSuccess('Order status updated!');
-            fetchOrders();
-            setTimeout(() => setShowSuccess(''), 3000);
+            fetchOrders(); // Refresh order list
+            setTimeout(() => setShowSuccess(''), 3000); // Hide success message after 3s
         } catch (err) {
             alert('Failed to update order status');
         }
     };
 
+    // Delete or cancel an order
     const handleDeleteOrder = async (orderId) => {
         if (!window.confirm('Are you sure you want to cancel/delete this order?')) return;
         try {
             await axios.delete(`/api/orders/${orderId}`);
             setShowSuccess('Order deleted successfully!');
-            fetchOrders();
+            fetchOrders(); // Refresh order list
             setTimeout(() => setShowSuccess(''), 3000);
         } catch (err) {
             alert('Failed to delete order');
         }
     };
 
+    // --- DASHBOARD UI RENDERING ---
+    // This function calculates and renders the main analytics dashboard
     const renderDashboardOverview = () => {
+        // Calculate counts based on current status of orders
         const pendingCount = orders.filter(o => o.status === 'pending').length;
         const activeCount = orders.filter(o => ['preparing', 'process', 'cookd'].includes(o.status)).length;
         const readyCount = orders.filter(o => o.status === 'ready').length;
@@ -110,6 +114,7 @@ const OrderManagement = () => {
         const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
         const totalOrdersToday = orders.length;
 
+        // Configuration for the summary cards at the top
         const statCards = [
             { title: 'Pending Orders', val: pendingCount, sub: 'Waiting to start', icon: Clock, color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.1)' },
             { title: 'Kitchen Active', val: activeCount, sub: 'Preparing/Cooking', icon: Activity, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
@@ -298,6 +303,8 @@ const OrderManagement = () => {
         );
     };
 
+    // --- ORDER QUEUE UI RENDERING ---
+    // This function renders the live table of active orders
     const renderOrderManager = () => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -371,7 +378,9 @@ const OrderManagement = () => {
                         </tr>
                     </thead>
                     <tbody>
+                        {/* Filter and map through orders based on the search query */}
                         {orders.filter(order => (order._id?.toLowerCase() || '').includes(globalSearch.toLowerCase()) || (order.username?.toLowerCase() || '').includes(globalSearch.toLowerCase())).map(order => {
+                            // Calculate how many minutes ago the order was placed
                             const timeDiff = Math.floor((new Date() - new Date(order.createdAt)) / 60000);
                             return (
                                 <tr key={order._id} style={{ background: '#f8fafc', borderBottom: '4px solid var(--latte-bg)' }}>
@@ -438,7 +447,7 @@ const OrderManagement = () => {
                                         </span>
                                     </td>
                                     <td style={{ padding: '20px 16px', textAlign: 'right', borderTopRightRadius: '16px', borderBottomRightRadius: '16px' }}>
-                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                            {/* Action buttons based on the current order status */}
                                             {order.status === 'pending' && (
                                                 <button 
                                                     onClick={() => handleUpdateOrderStatus(order._id, 'preparing')}
@@ -519,6 +528,7 @@ const OrderManagement = () => {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ position: 'relative', padding: '20px' }}>
                     <AnimatePresence mode="wait">
+                        {/* Tab switching with smooth animations */}
                         <motion.div
                             key={activeTab}
                             initial={{ opacity: 0, y: 10 }}
@@ -527,6 +537,7 @@ const OrderManagement = () => {
                             transition={{ duration: 0.2 }}
                             style={{ height: '100%' }}
                         >
+                            {/* Render different components based on the active tab */}
                             {activeTab === 'dashboard' && renderDashboardOverview()}
                             {activeTab === 'orders' && renderOrderManager()}
                             {activeTab === 'calendar' && (
