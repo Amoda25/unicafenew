@@ -19,27 +19,32 @@ import {
 } from 'lucide-react';
 
 const FeedbackPage = () => {
+    // --- STATE DEFINITIONS ---
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
-    const orderId = queryParams.get('orderId');
+    const orderId = queryParams.get('orderId'); // Optional orderId passed from success page
 
-    const [rating, setRating] = useState(0);
-    const [hover, setHover] = useState(0);
-    const [quickRating, setQuickRating] = useState(null);
-    const [category, setCategory] = useState('Food');
-    const [comment, setComment] = useState('');
-    const [isAnonymous, setIsAnonymous] = useState(false);
+    const [rating, setRating] = useState(0); // Star rating (1-5)
+    const [hover, setHover] = useState(0); // For star hover effect
+    const [quickRating, setQuickRating] = useState(null); // Mood-based rating (Love, Happy, etc.)
+    const [category, setCategory] = useState('Food'); // Category being reviewed
+    const [comment, setComment] = useState(''); // Textual feedback
+    const [isAnonymous, setIsAnonymous] = useState(false); // Option to hide user ID
     const [submitted, setSubmitted] = useState(false);
-    const [complaintText, setComplaintText] = useState('');
-    const [hasOrders, setHasOrders] = useState(true); // Default to true to avoid flicker
+    const [complaintText, setComplaintText] = useState(''); // Text for the separate complaint box
+    const [hasOrders, setHasOrders] = useState(true); // Verification: did the user actually buy anything?
     const [isLoadingOrders, setIsLoadingOrders] = useState(true);
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [imagePreview, setImagePreview] = useState(null);
-    const [isUploading, setIsUploading] = useState(false);
-    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null); // Photo file for upload
+    const [imagePreview, setImagePreview] = useState(null); // Local preview of the uploaded photo
+    const [isUploading, setIsUploading] = useState(false); // API progress state
+    const [showSuccessModal, setShowSuccessModal] = useState(false); // Success toast
     const [successType, setSuccessType] = useState('Feedback');
     const [error, setError] = useState('');
+    // -------------------------
 
+    // --- VERIFICATION LOGIC ---
+    // Check if the current user has any previous orders.
+    // If not, we restrict them from rating food (to prevent fake reviews).
     useEffect(() => {
         const checkOrders = async () => {
             const userStr = localStorage.getItem('user');
@@ -47,7 +52,7 @@ const FeedbackPage = () => {
                 const user = JSON.parse(userStr);
                 try {
                     const response = await axios.get(`/api/orders/${user.username}`);
-                    setHasOrders(response.data.length > 0);
+                    setHasOrders(response.data.length > 0); // User must have at least 1 order
                 } catch (error) {
                     console.error('Error checking orders:', error);
                 }
@@ -58,6 +63,7 @@ const FeedbackPage = () => {
         };
         checkOrders();
     }, []);
+    // ---------------------------
 
     const emojis = [
         { icon: Heart, label: 'Love', color: '#ef4444' },
@@ -85,6 +91,7 @@ const FeedbackPage = () => {
         }
     };
 
+    // --- FEEDBACK SUBMISSION ---
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
         setError('');
@@ -94,7 +101,8 @@ const FeedbackPage = () => {
         const username = user ? user.username : 'Unknown User';
 
         try {
-            // If no rating but has content, treat as Contact Message
+            // FALLBACK: If no rating is selected but there is a comment, 
+            // we send it to the contact/complaint system instead of feedback.
             if (rating === 0 && !quickRating && comment.trim()) {
                 await axios.post('/api/contact', {
                     name: 'Anonymous User',
@@ -110,6 +118,7 @@ const FeedbackPage = () => {
                 return;
             }
 
+            // Validation: User must provide some kind of rating
             if (rating === 0 && !quickRating) {
                 setError('Please provide a star rating or select a mood.');
                 return;
@@ -118,20 +127,22 @@ const FeedbackPage = () => {
             setIsUploading(true);
             let finalImageUrl = '';
 
-            // Upload image first if selected
+            // 1. Image Upload Logic: If a photo was selected, upload it to the server first
             if (selectedFile) {
                 const formData = new FormData();
                 formData.append('image', selectedFile);
                 const uploadRes = await axios.post('/api/upload', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                finalImageUrl = uploadRes.data.imageUrl;
+                finalImageUrl = uploadRes.data.imageUrl; // Get the URL of the uploaded image
             }
 
+            // 2. Sentiment Mapping: Map the selected mood emoji to a sentiment category
             let sentiment = 'Neutral';
             if (quickRating === 'Love' || quickRating === 'Happy') sentiment = 'Positive';
             else if (quickRating === 'Sad' || quickRating === 'Angry') sentiment = 'Negative';
 
+            // 3. Final Submission: Send all feedback data to the feedback API
             await axios.post('/api/feedback', {
                 username,
                 rating,
@@ -143,6 +154,7 @@ const FeedbackPage = () => {
                 imageUrl: finalImageUrl
             });
 
+            // UI Cleanup after success
             setSuccessType('Feedback');
             setShowSuccessModal(true);
             setRating(0);
@@ -152,7 +164,7 @@ const FeedbackPage = () => {
             setImagePreview(null);
             
             setError('');
-            setTimeout(() => setShowSuccessModal(false), 5000); // Close after 5 seconds
+            setTimeout(() => setShowSuccessModal(false), 5000); 
         } catch (err) {
             console.error('Error submitting feedback:', err);
             setError(err.response?.data?.error || err.response?.data?.message || 'Failed to submit feedback. Please try again.');
@@ -160,6 +172,7 @@ const FeedbackPage = () => {
             setIsUploading(false);
         }
     };
+    // ---------------------------
 
     const handleComplaintSubmit = async () => {
         if (!complaintText.trim()) {

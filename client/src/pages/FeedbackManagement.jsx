@@ -6,22 +6,26 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import FeedbackSidebar from '../components/FeedbackSidebar';
 
 const FeedbackManagement = () => {
-    const [activeTab, setActiveTab] = useState('messages');
-    const [globalSearch, setGlobalSearch] = useState('');
-    const [contactMessages, setContactMessages] = useState([]);
-    const [feedbacks, setFeedbacks] = useState([]);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [isRatingsRefreshing, setIsRatingsRefreshing] = useState(false);
-    const [ratingFilter, setRatingFilter] = useState('all'); 
-    const [categoryFilter, setCategoryFilter] = useState('All'); 
-    const [adminStatusFilter, setAdminStatusFilter] = useState('all'); // all, pending, responded
-    const [impactFilter, setImpactFilter] = useState('All'); // All, High, Medium, Low
+    // --- STATE DEFINITIONS ---
+    const [activeTab, setActiveTab] = useState('messages'); // Currently selected management tab
+    const [globalSearch, setGlobalSearch] = useState(''); // Text for searching entries
+    const [contactMessages, setContactMessages] = useState([]); // Array for direct contact messages
+    const [feedbacks, setFeedbacks] = useState([]); // Array for food/service ratings
+    const [isRefreshing, setIsRefreshing] = useState(false); // Loading state for messages
+    const [isRatingsRefreshing, setIsRatingsRefreshing] = useState(false); // Loading state for ratings
+    const [ratingFilter, setRatingFilter] = useState('all'); // Filter ratings by star count
+    const [categoryFilter, setCategoryFilter] = useState('All'); // Filter by Food/Service/Delivery
+    const [adminStatusFilter, setAdminStatusFilter] = useState('all'); // Filter by Responded/Pending
+    const [impactFilter, setImpactFilter] = useState('All'); // Filter by calculated impact score (AI generated)
+    
+    // Mock data for complaints (if database is empty)
     const [complaints, setComplaints] = useState([
         { id: 1, user: 'Kasun Perera', studentId: 'IT21000001', title: 'Food Quality Issue', description: 'The lunch served today was cold and not fresh.', status: 'Submitted', date: new Date().toISOString() },
         { id: 2, user: 'Amani Silva', studentId: 'IT21000002', title: 'Slow Service at Counter 2', description: 'I had to wait for 30 minutes to get my order.', status: 'In Review', date: new Date(Date.now() - 86400000).toISOString() },
         { id: 3, user: 'Nimal Jayasooriya', studentId: 'IT21000003', title: 'Unclean Tables', description: 'Most tables were not cleaned during the lunch rush.', status: 'Resolved', date: new Date(Date.now() - 172800000).toISOString() },
         { id: 4, user: 'Sanduni Fernando', studentId: 'IT21000004', title: 'Wrong Item Delivered', description: 'I asked for chicken rice but got fish instead.', status: 'Rejected', date: new Date(Date.now() - 259200000).toISOString() }
     ]);
+    // -------------------------
     
     
     // Reply states
@@ -75,16 +79,21 @@ const FeedbackManagement = () => {
         }
     };
 
-    // Analytics Calculations
+    // --- ANALYTICS CALCULATIONS ---
+    // Calculate global average rating from all student feedback
     const avgRating = feedbacks.length > 0 ? (feedbacks.reduce((acc, curr) => acc + curr.rating, 0) / feedbacks.length).toFixed(1) : 0;
+    // Count items that still need admin attention
     const pendingActions = contactMessages.filter(m => m.status !== 'Resolved').length + feedbacks.filter(fb => fb.status !== 'Resolved').length;
+    // Count unique users who have participated in feedback
     const totalUsers = new Set([...feedbacks.map(f => f.username || f.studentId), ...contactMessages.map(m => m.email)]).size;
 
+    // Categorize sentiment (AI parsed) into data for the pie chart
     const sentimentData = [
         { name: 'Positive', value: feedbacks.filter(f => f.sentiment === 'Positive').length, color: '#10b981' },
         { name: 'Neutral', value: feedbacks.filter(f => f.sentiment === 'Neutral').length, color: '#f59e0b' },
         { name: 'Negative', value: feedbacks.filter(f => f.sentiment === 'Negative').length, color: '#ef4444' }
     ].filter(d => d.value > 0);
+    // ------------------------------
 
     const handleReplySubmit = async (type, id) => {
         if (replyText.length < 5) {
