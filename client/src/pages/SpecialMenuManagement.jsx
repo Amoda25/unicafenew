@@ -174,15 +174,17 @@ const FormModal = ({ show, onClose, onSubmit, title, isEdit, formData, handleInp
 );
 
 const SpecialMenuManagement = () => {
+    // --- STATE MANAGEMENT ---
     const navigate = useNavigate();
-    const [menuItems, setMenuItems] = useState([]);
-    const [globalSearch, setGlobalSearch] = useState('');
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editingItem, setEditingItem] = useState(null);
-    const [showSuccess, setShowSuccess] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [validationErrors, setValidationErrors] = useState({ si: '', ta: '', price: '', description: '' });
+    const [menuItems, setMenuItems] = useState([]); // All special menu items fetched from DB
+    const [globalSearch, setGlobalSearch] = useState(''); // Search filter text
+    const [showAddModal, setShowAddModal] = useState(false); // Controls 'Add' modal visibility
+    const [showEditModal, setShowEditModal] = useState(false); // Controls 'Edit' modal visibility
+    const [editingItem, setEditingItem] = useState(null); // The item currently being edited
+    const [showSuccess, setShowSuccess] = useState(''); // Success notification text
+    const [loading, setLoading] = useState(false); // Loading state during API calls
+    const [validationErrors, setValidationErrors] = useState({ si: '', ta: '', price: '', description: '' }); // Stores form validation errors
+    // -------------------------
 
     const [formData, setFormData] = useState({
         name: { en: '', si: '', ta: '' },
@@ -198,11 +200,12 @@ const SpecialMenuManagement = () => {
         fetchMenuItems();
     }, []);
 
+    // Fetch menu items and filter for those in the 'Special Menu' category
     const fetchMenuItems = async () => {
         setLoading(true);
         try {
             const response = await axios.get('/api/menu/all');
-            // Filter only Special Menu category
+            // We only want items that have 'Special Menu' in their category array
             const specials = response.data.filter(item => 
                 Array.isArray(item.category) ? item.category.includes('Special Menu') : item.category === 'Special Menu'
             );
@@ -225,12 +228,15 @@ const SpecialMenuManagement = () => {
         return '';
     };
 
+    // Handle changes to form inputs with built-in validation
     const handleInputChange = (field, lang, value) => {
         if (lang) {
+            // Validate language-specific fields
             if (field === 'name' && (lang === 'si' || lang === 'ta')) {
                 const error = validateField(lang, value);
                 setValidationErrors(prev => ({ ...prev, [lang]: error }));
             }
+            // Ensure descriptions are long enough
             if (field === 'description' && lang === 'en') {
                 if (!value.trim()) {
                     setValidationErrors(prev => ({ ...prev, description: 'Description is required.' }));
@@ -245,6 +251,7 @@ const SpecialMenuManagement = () => {
                 [field]: { ...prev[field], [lang]: value }
             }));
         } else {
+            // Validate numeric fields like price
             if (field === 'price') {
                 const currencyChars = /[$£€¥₹]|Rs|LKR/i;
                 const onlyNumbers = /^[0-9]*\.?[0-9]*$/;

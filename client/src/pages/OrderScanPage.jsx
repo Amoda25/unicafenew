@@ -16,14 +16,15 @@ import {
 const OrderScanPage = () => {
     // This page is accessed by the cashier when they scan the customer's QR code.
     // The orderId is extracted from the URL.
-    const { orderId } = useParams();
+    // --- STATE DEFINITIONS ---
+    const { orderId } = useParams(); // Get order ID from the browser URL (scanned from QR)
     const navigate = useNavigate();
-    const [order, setOrder] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    const [isPaying, setIsPaying] = useState(false);
-    const [isPaid, setIsPaid] = useState(false);
+    const [order, setOrder] = useState(null); // Data for the scanned order
+    const [loading, setLoading] = useState(true); // Is the order data still loading?
+    const [error, setError] = useState(null); // Error message if order not found
+    const [isPaying, setIsPaying] = useState(false); // Is the payment update in progress?
+    const [isPaid, setIsPaid] = useState(false); // Local state for successful payment confirmation
+    // -------------------------
 
     useEffect(() => {
         const fetchOrderDetails = async () => {
@@ -43,22 +44,23 @@ const OrderScanPage = () => {
         }
     }, [orderId]);
 
-    // This function allows the cashier to mark the order as 'Paid' after receiving cash.
+    // --- PAYMENT PROCESSING ---
+    // Mark the order as 'Paid' when the cashier clicks the confirmation button
     const handlePayment = async () => {
-
         setIsPaying(true);
         try {
-            // Update the order status in the backend database.
+            // Send request to backend to update order status
             const response = await axios.patch(`/api/orders/pay/${orderId}`);
-            setOrder(response.data);
-            setIsPaid(true);
+            setOrder(response.data); // Update local order data with new status
+            setIsPaid(true); // Confirm payment success
         } catch (err) {
             console.error('Payment Error:', err);
             alert('Failed to mark order as paid.');
         } finally {
-            setIsPaying(false);
+            setIsPaying(false); // Stop loading animation on button
         }
     };
+    // --------------------------
 
     if (loading) {
         return (
@@ -72,6 +74,8 @@ const OrderScanPage = () => {
         );
     }
 
+    // --- ERROR VIEW ---
+    // If the order ID is invalid or server error occurs
     if (error) {
         return (
             <div style={{ minHeight: '100vh', background: '#F8F9FA', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>

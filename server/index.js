@@ -18,6 +18,7 @@ const FlashDeal = require('./models/FlashDeal');
 
 
 // ─── Smart Low-Stock Alert Engine ──────────────────────────────────────────
+// This function automatically calculates stock levels based on sales data.
 // Computes weekly usage from last 7 days of orders per inventory item name,
 // calculates dailyUsage = weeklyUsage / 7, stockDaysLeft = qty / dailyUsage,
 // and assigns stockStatus: CRITICAL (<3 days), LOW STOCK (< weeklyUsage), GOOD.
@@ -300,17 +301,20 @@ app.post('/api/menu', async (req, res) => {
     }
 });
 
-// Order Routes
+// Order Routes - Logic to handle new orders from customers
 app.post('/api/orders', async (req, res) => {
     try {
-        // Calculate queue position based on pending/preparing orders
+        // --- REAL-TIME QUEUE CALCULATION ---
+        // 1. Calculate queue position by counting how many orders are still 'pending' or 'preparing'
         const activeOrders = await Order.countDocuments({
             status: { $in: ['pending', 'preparing'] }
         });
 
-        // Estimate wait time: 5 mins per order + 10 mins base
+        // 2. Estimate wait time: 
+        // We assume each order takes 5 mins, and add a 10 min base buffer.
         const estimatedWaitTime = (activeOrders * 5) + 10;
 
+        // 3. Create the new order object with the calculated queue data
         const newOrder = new Order({
             ...req.body,
             queuePosition: activeOrders + 1,
@@ -318,6 +322,7 @@ app.post('/api/orders', async (req, res) => {
         });
 
         const savedOrder = await newOrder.save();
+        // ------------------------------------
 
         // Notification for order placement
         const notification = new Notification({
@@ -386,9 +391,10 @@ app.patch('/api/orders/pay/:id', async (req, res) => {
     }
 });
 
-// Queue Status Route
+// Queue Status Route - Used by the customer front-end to show live queue info
 app.get('/api/queue/status', async (req, res) => {
     try {
+        // Count all orders currently being worked on in the kitchen
         const activeOrders = await Order.countDocuments({
             status: { $in: ['pending', 'Paid', 'preparing', 'process'] }
         });
@@ -401,7 +407,7 @@ app.get('/api/queue/status', async (req, res) => {
         .limit(10)
         .select('queuePosition status totalAmount createdAt');
 
-        // Calculate average wait time (rough estimate)
+        // Calculate average wait time (rough estimate for the general public)
         const avgWaitTime = (activeOrders * 4) + 8;
 
         res.json({
@@ -416,7 +422,7 @@ app.get('/api/queue/status', async (req, res) => {
 });
 
 
-// Admin Routes
+// Admin Routes - Generates data for the admin dashboard
 app.get('/api/admin/stats', async (req, res) => {
     try {
         const totalOrders = await Order.countDocuments();
@@ -435,7 +441,7 @@ app.get('/api/admin/stats', async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(10);
 
-        // Analytics: Most popular items
+        // Analytics: Calculate the most popular kaffee items
         const popularItems = await Order.aggregate([
             { $unwind: '$items' },
             { $group: { _id: '$items.name', count: { $sum: '$items.quantity' }, revenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } } } },
@@ -443,7 +449,7 @@ app.get('/api/admin/stats', async (req, res) => {
             { $limit: 5 }
         ]);
 
-        // Weekly trends (last 7 days)
+        // Weekly trends (last 7 days of sales)
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         const weeklyOrders = await Order.aggregate([
@@ -458,7 +464,7 @@ app.get('/api/admin/stats', async (req, res) => {
             { $sort: { _id: 1 } }
         ]);
 
-        // Average order value
+        // Calculate average order value across the entire history
         const avgOrderValue = totalOrders > 0 ? (totalRevenue[0]?.total || 0) / totalOrders : 0;
 
         res.json({

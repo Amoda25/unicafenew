@@ -31,21 +31,26 @@ const OrderSuccessPage = () => {
 
 
 
+    // --- REAL-TIME STATUS POLLING ---
+    // Every 5 seconds, ask the server for the current status of this order.
+    // This allows the page to update automatically when the cashier marks it as paid.
     React.useEffect(() => {
         const checkStatus = async () => {
             try {
                 const response = await axios.get(`/api/orders/details/${orderId}`);
-                setStatus(response.data.status);
+                setStatus(response.data.status); // Update status (e.g., 'pending' -> 'Paid')
             } catch (err) {
                 console.error('Error polling status:', err);
             }
         };
 
-        checkStatus();
-        const interval = setInterval(checkStatus, 5000);
-        return () => clearInterval(interval);
+        checkStatus(); // Initial check
+        const interval = setInterval(checkStatus, 5000); // Repeat every 5 seconds
+        return () => clearInterval(interval); // Stop polling when the user leaves the page
     }, [orderId]);
+    // ---------------------------------
 
+    // Check if the order is already paid or in the process of being prepared
     const isPaid = status === 'Paid' || status === 'preparing' || status === 'process' || status === 'cookd' || status === 'ready' || status === 'picked-up';
 
 
