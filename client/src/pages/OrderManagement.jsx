@@ -35,6 +35,14 @@ const OrderManagement = () => {
     // --- LIFECYCLE HOOKS ---
     // Fetch initial data and setup polling every 5 seconds for live updates
     useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const tab = params.get('tab');
+        if (tab) {
+            setActiveTab(tab);
+        }
+    }, [location.search]);
+
+    useEffect(() => {
         fetchOrders();
         fetchUsers();
         fetchAnalytics();

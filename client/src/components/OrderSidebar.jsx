@@ -22,7 +22,7 @@ const OrderSidebar = ({ activeTab, setActiveTab }) => {
         {
             title: 'CORE SERVICES',
             items: [
-                { id: 'dashboard', name: 'Dashboard Overview', icon: LayoutDashboard }
+                { id: 'dashboard', name: 'Dashboard Overview', icon: LayoutDashboard, path: '/orders?tab=dashboard' }
             ]
         },
         {
